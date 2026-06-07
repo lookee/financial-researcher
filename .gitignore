@@ -3,7 +3,4 @@ __pycache__/
 .DS_Store
 data/identity/
 data/market/
-output/reports/*
-!output/reports/US67066G1040_NVDA_2026-06-07.md
-!output/reports/IE00BK5BCD43_AIAI_MI_2026-06-07.md
-!output/reports/IE00BMC38736_SMH_MI_2026-06-07.md
+output/

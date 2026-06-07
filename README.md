@@ -92,21 +92,21 @@ Default: **English**.
 
 | Path | Description |
 |------|-------------|
-| `output/reports/{ISIN}_{TICKER}_{DATE}.md` | Generated report |
+| `output/reports/{ISIN}_{TICKER}_{DATE}.md` | Generated report (local only, not in git) |
 | `data/identity/{ISIN}.json` | Cached instrument identity |
 | `data/market/{ISIN}/latest.json` | Cached market snapshot (1 h TTL) |
 
-New reports are written to `output/reports/` locally (ignored by git except the samples below).
+The entire `output/` directory is gitignored — it holds your local run artifacts.
 
 ## Sample reports
 
-Three example outputs are included in the repository (generated on 2026-06-07):
+Static examples live under [`examples/reports/`](examples/reports/) (generated on 2026-06-07):
 
 | Instrument | Type | Report |
 |------------|------|--------|
-| NVIDIA Corporation (NVDA) | Stock | [US67066G1040_NVDA_2026-06-07.md](output/reports/US67066G1040_NVDA_2026-06-07.md) |
-| L&G Artificial Intelligence UCITS ETF (AIAI.MI) | ETF | [IE00BK5BCD43_AIAI_MI_2026-06-07.md](output/reports/IE00BK5BCD43_AIAI_MI_2026-06-07.md) |
-| VanEck Semiconductor UCITS ETF (SMH.MI) | ETF | [IE00BMC38736_SMH_MI_2026-06-07.md](output/reports/IE00BMC38736_SMH_MI_2026-06-07.md) |
+| NVIDIA Corporation (NVDA) | Stock | [US67066G1040_NVDA_2026-06-07.md](examples/reports/US67066G1040_NVDA_2026-06-07.md) |
+| L&G Artificial Intelligence UCITS ETF (AIAI.MI) | ETF | [IE00BK5BCD43_AIAI_MI_2026-06-07.md](examples/reports/IE00BK5BCD43_AIAI_MI_2026-06-07.md) |
+| VanEck Semiconductor UCITS ETF (SMH.MI) | ETF | [IE00BMC38736_SMH_MI_2026-06-07.md](examples/reports/IE00BMC38736_SMH_MI_2026-06-07.md) |
 
 ## Disclaimer
 
