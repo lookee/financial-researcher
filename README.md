@@ -4,48 +4,72 @@
 ![CrewAI](https://img.shields.io/badge/CrewAI-multi--agent-8957E5?logo=openai&logoColor=white)
 ![Status](https://img.shields.io/badge/status-experimental-red)
 
-A [CrewAI](https://crewai.com) multi-agent CLI that generates Markdown research reports for **stocks and ETFs** from an **ISIN** code. Market data, ETF holdings, and report structure are fetched deterministically in Python; two LLM agents handle news research and final composition.
+Financial Researcher is a command-line application that produces structured Markdown research reports for **stocks and ETFs** starting from an **ISIN** code. Market data, instrument identity, and report scaffolding are resolved deterministically in Python; a small [CrewAI](https://crewai.com) crew handles news gathering and final report writing.
 
-## Author
+## Overview
 
-Created by **Luca Amore**.
+The pipeline resolves the instrument (OpenFIGI, Yahoo Finance), fetches a cached market snapshot (prices, performance, fundamentals, ETF top holdings), pre-formats cited data sections, then runs two LLM agents in sequence. The result is a single Markdown file with numbered references, separate templates for stocks and ETFs, and explicit data-limitation notes.
 
-- Email: [luca.amore@gmail.com](mailto:luca.amore@gmail.com)
-- GitHub: [@lookee](https://github.com/lookee)
-- Website: [lucaamore.com](https://www.lucaamore.com)
-- LinkedIn: [lucaamore](https://www.linkedin.com/in/lucaamore)
+**Experimental project** — intended for learning and exploration, not production use. See [Disclaimer](#disclaimer).
 
-This code is **free to use, copy, modify, and redistribute for any purpose**, without restrictions.
+## Agents
 
-## Acknowledgements
+The crew runs **sequentially** (`Process.sequential`): the news researcher completes its task before the report composer starts. Both agents use **OpenAI GPT-4o mini** (`openai/gpt-4o-mini`).
 
-This project is a **fork and extension** of the CrewAI patterns taught in **Ed Donner's** Udemy course:
+### 1. `news_researcher` — Financial News Researcher
 
-**[AI Engineer Agentic Track: The Complete Agent & MCP Course](https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/)**
+| | |
+|---|---|
+| **Task** | Collect recent, verifiable news and events for the target instrument |
+| **Tools** | [Serper](https://serper.dev) web & news search, Yahoo Finance news, optional website scraping for issuer/IR pages |
+| **Input** | Company name, ticker, ISIN, pre-loaded `market_context` (read-only) |
+| **Output** | News brief with titled items, dates, summaries, and numbered citations |
 
-The original course codebase demonstrated multi-agent crews, tasks, and tools. This repository adapts that foundation for ISIN-based financial research: instrument resolution, Yahoo Finance snapshots, ETF portfolio composition, cached identity/market data, and structured report templates for stocks vs ETFs.
+**Behaviour**
 
-Thank you to **Ed Donner** for the excellent agentic AI engineering curriculum.
+- Focuses on the **last 72 hours**; does not re-fetch prices already present in market data
+- Assigns citation **`[1]`** to Yahoo Finance (reserved by the pipeline); new sources start at **`[2]`**
+- Cites every fact; omits unsupported claims
+- Surfaces risks or opportunities **only when mentioned in sources**
 
-## Architecture
+### 2. `report_composer` — Financial Instrument Report Writer
+
+| | |
+|---|---|
+| **Task** | Assemble the final Markdown report in the configured language |
+| **Tools** | None — relies on pre-loaded data and the news researcher output |
+| **Input** | `identity_context`, `market_summary` (pre-formatted sections), news task output |
+| **Output** | Complete report written to `output/reports/` |
+
+**Behaviour**
+
+- Copies pre-formatted market sections from `market_summary` **verbatim** (key metrics, performance, ETF top holdings, data limitations)
+- Applies the **stock** or **ETF** template based on `instrument_type`
+- Writes the news section from the news researcher; includes risks only when cited
+- Produces a numbered **References** section; does not issue buy/sell/hold recommendations
+
+Agent definitions: [`agents_instrument.yaml`](src/financial_researcher/config/agents_instrument.yaml) · Task definitions: [`tasks_instrument.yaml`](src/financial_researcher/config/tasks_instrument.yaml)
+
+## Pipeline
 
 ```
 ISIN + ticker
     │
-    ├─ IsinResolver        (OpenFIGI + Yahoo Finance)
-    ├─ MarketDataService   (prices, performance, ETF holdings)
-    └─ report_builder      (pre-formatted market_summary → citation [1])
+    ├─ IsinResolver          OpenFIGI → cached identity
+    ├─ MarketDataService     Yahoo Finance → cached snapshot
+    └─ report_builder        pre-formatted market_summary  →  citation [1]
             │
             ▼
     CrewAI (sequential)
-    ├─ news_researcher     (Serper, Yahoo News → citations [2+])
-    └─ report_composer     (final Markdown report)
+    ├─ news_researcher       Serper, Yahoo News, scrape  →  citations [2+]
+    └─ report_composer       final Markdown report
 ```
 
 ## Requirements
 
 - Python 3.10–3.12
 - [uv](https://github.com/astral-sh/uv) (recommended)
+- API keys: OpenAI, Serper (see [Setup](#setup))
 
 ## Setup
 
@@ -53,28 +77,28 @@ ISIN + ticker
 pip install uv
 uv sync
 cp .env.sample .env
-# Add OPENAI_API_KEY and SERPER_API_KEY to .env
+# Set OPENAI_API_KEY and SERPER_API_KEY in .env
 ```
 
-## Commands
+## Usage
 
 ```bash
-# Generate a report (ISIN + exchange ticker)
+# Stock report
 uv run report US67066G1040 NVDA
 
-# ETF example
+# ETF report
 uv run report IE00BK5BQT80 VWCE.DE
 
-# ISIN only (uses cached identity if available)
+# ISIN only (uses cached identity when available)
 uv run report US67066G1040
 
 # Resolve and cache instrument identity
 uv run resolve US67066G1040 NVDA
 
-# Batch reports from watchlist.yaml
+# Batch run from watchlist.yaml
 uv run watchlist
 
-# Regenerate all reports already present in output/reports/
+# Regenerate reports for ISINs already present under output/reports/
 uv run refresh-reports
 ```
 
@@ -84,7 +108,7 @@ Optional flags: `--force`, `--type stock|etf`.
 
 Default: **English**.
 
-- Global default: `default_language` in `src/financial_researcher/config/settings.yaml`
+- Global default: `default_language` in [`settings.yaml`](src/financial_researcher/config/settings.yaml)
 - Override via `.env`: `REPORT_LANGUAGE=Italian`
 - Per run: `uv run report US67066G1040 NVDA --language Italian`
 
@@ -92,15 +116,15 @@ Default: **English**.
 
 | Path | Description |
 |------|-------------|
-| `output/reports/{ISIN}_{TICKER}_{DATE}.md` | Generated report (local only, not in git) |
+| `output/reports/{ISIN}_{TICKER}_{DATE}.md` | Generated report (local, gitignored) |
 | `data/identity/{ISIN}.json` | Cached instrument identity |
 | `data/market/{ISIN}/latest.json` | Cached market snapshot (1 h TTL) |
 
-The entire `output/` directory is gitignored — it holds your local run artifacts.
+The `output/` directory is not tracked by git.
 
 ## Sample reports
 
-Static examples live under [`examples/reports/`](examples/reports/) (generated on 2026-06-07):
+Static examples in [`examples/reports/`](examples/reports/) (2026-06-07):
 
 | Instrument | Type | Report |
 |------------|------|--------|
@@ -108,18 +132,30 @@ Static examples live under [`examples/reports/`](examples/reports/) (generated o
 | L&G Artificial Intelligence UCITS ETF (AIAI.MI) | ETF | [IE00BK5BCD43_AIAI_MI_2026-06-07.md](examples/reports/IE00BK5BCD43_AIAI_MI_2026-06-07.md) |
 | VanEck Semiconductor UCITS ETF (SMH.MI) | ETF | [IE00BMC38736_SMH_MI_2026-06-07.md](examples/reports/IE00BMC38736_SMH_MI_2026-06-07.md) |
 
+## Acknowledgements
+
+This project extends CrewAI patterns from **Ed Donner's** Udemy course:
+
+**[AI Engineer Agentic Track: The Complete Agent & MCP Course](https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/)**
+
+Thank you to **Ed Donner** for the excellent agentic AI engineering course. See [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md) for details.
+
+## Author
+
+**Luca Amore** — [GitHub](https://github.com/lookee) · [lucaamore.com](https://www.lucaamore.com) · [LinkedIn](https://www.linkedin.com/in/lucaamore)
+
+This code is free to use, copy, modify, and redistribute without restrictions.
+
 ## Disclaimer
 
-**Experimental software.** This repository is **experimental code** developed as a personal extension of exercises and patterns from an agentic AI engineering course. It is shared for learning and exploration only — not as a finished, audited, or production-ready product.
+**Experimental software.** Developed as an extension of agentic AI coursework. Not audited or intended for production.
 
-**No warranty.** The software is provided **as is**, without guarantees of correctness, completeness, availability, or fitness for any purpose. APIs, data sources, LLM outputs, and dependencies may change or fail without notice. Use it at your own risk.
+**No warranty.** Provided *as is* without guarantees of correctness, completeness, or fitness for any purpose.
 
-**Not financial advice.** Generated reports are for **informational and educational purposes only** and do not constitute investment, legal, or tax advice. Market data may be delayed, incomplete, or wrong; LLM-generated text may contain errors or hallucinations. Always verify information against primary sources (issuer KID/prospectus, regulated filings, official exchange data) before making any investment decision.
+**Not financial advice.** Reports are for informational and educational use only. Market data and LLM output may be incomplete or incorrect. Verify against primary sources before any investment decision.
 
-**Your responsibility.** You are solely responsible for how you use this software, including API costs, compliance with third-party terms of service (OpenAI, Serper, Yahoo Finance, OpenFIGI), and any decisions taken on the basis of generated output.
+**Your responsibility.** You are responsible for API costs, third-party terms of service, and any use of generated output.
 
 ## License
 
-This project is released into the **public domain**. You may use, modify, and distribute it freely, for any purpose, without restrictions.
-
-See [LICENSE](LICENSE). Course-derived patterns remain attributed to Ed Donner's Udemy material as described in [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md).
+Released into the **public domain**. See [LICENSE](LICENSE).
