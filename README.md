@@ -96,6 +96,18 @@ Default: **English**.
 | `data/identity/{ISIN}.json` | Cached instrument identity |
 | `data/market/{ISIN}/latest.json` | Cached market snapshot (1 h TTL) |
 
+New reports are written to `output/reports/` locally (ignored by git except the samples below).
+
+## Sample reports
+
+Three example outputs are included in the repository (generated on 2026-06-07):
+
+| Instrument | Type | Report |
+|------------|------|--------|
+| NVIDIA Corporation (NVDA) | Stock | [US67066G1040_NVDA_2026-06-07.md](output/reports/US67066G1040_NVDA_2026-06-07.md) |
+| L&G Artificial Intelligence UCITS ETF (AIAI.MI) | ETF | [IE00BK5BCD43_AIAI_MI_2026-06-07.md](output/reports/IE00BK5BCD43_AIAI_MI_2026-06-07.md) |
+| VanEck Semiconductor UCITS ETF (SMH.MI) | ETF | [IE00BMC38736_SMH_MI_2026-06-07.md](output/reports/IE00BMC38736_SMH_MI_2026-06-07.md) |
+
 ## Disclaimer
 
 **Experimental software.** This repository is **experimental code** developed as a personal extension of exercises and patterns from an agentic AI engineering course. It is shared for learning and exploration only — not as a finished, audited, or production-ready product.
