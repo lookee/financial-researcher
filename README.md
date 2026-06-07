@@ -6,6 +6,8 @@
 
 CLI tool that generates cited Markdown research reports for **stocks and ETFs** from an **ISIN** code, using deterministic market-data pipelines and a two-agent [CrewAI](https://crewai.com) workflow.
 
+[Article from my blog](https://www.lucaamore.com/?p=2777)
+
 ## Requirements
 
 | Requirement | Details |
