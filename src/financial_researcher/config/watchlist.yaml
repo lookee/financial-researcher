@@ -1,0 +1,18 @@
+# Optional: override default_language from config/settings.yaml for this batch only.
+# language: Italian
+
+instruments:
+  - isin: US67066G1040
+    name: NVIDIA Corporation
+    ticker: NVDA
+    type: stock
+
+  - isin: IE00BK5BQT80
+    name: Vanguard FTSE All-World UCITS ETF
+    ticker: VWCE.DE
+    type: etf
+
+  - isin: US0378331005
+    name: Apple Inc.
+    ticker: AAPL
+    type: stock
