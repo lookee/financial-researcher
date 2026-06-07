@@ -4,13 +4,15 @@
 ![CrewAI](https://img.shields.io/badge/CrewAI-multi--agent-8957E5?logo=openai&logoColor=white)
 ![Status](https://img.shields.io/badge/status-experimental-red)
 
-Financial Researcher is a command-line application that produces structured Markdown research reports for **stocks and ETFs** starting from an **ISIN** code. Market data, instrument identity, and report scaffolding are resolved deterministically in Python; a small [CrewAI](https://crewai.com) crew handles news gathering and final report writing.
+CLI tool that generates cited Markdown research reports for **stocks and ETFs** from an **ISIN** code, using deterministic market-data pipelines and a two-agent [CrewAI](https://crewai.com) workflow.
 
 ## Requirements
 
-- Python 3.10–3.12
-- [uv](https://github.com/astral-sh/uv) (recommended)
-- API keys: OpenAI, Serper (see Setup below)
+| Requirement | Details |
+|-------------|---------|
+| Python | 3.10 – 3.12 |
+| Package manager | [uv](https://github.com/astral-sh/uv) (recommended) |
+| API keys | `OPENAI_API_KEY`, `SERPER_API_KEY` — see Setup |
 
 ## Setup
 
@@ -18,10 +20,13 @@ Financial Researcher is a command-line application that produces structured Mark
 pip install uv
 uv sync
 cp .env.sample .env
-# Set OPENAI_API_KEY and SERPER_API_KEY in .env
 ```
 
+Edit `.env` and set your API keys. Optional: `OPENFIGI_API_KEY` for higher OpenFIGI rate limits; `REPORT_LANGUAGE` to override the default report language.
+
 ## Usage
+
+### Commands
 
 ```bash
 # Stock report
@@ -39,78 +44,75 @@ uv run resolve US67066G1040 NVDA
 # Batch run from watchlist.yaml
 uv run watchlist
 
-# Regenerate reports for ISINs already present under output/reports/
+# Regenerate reports for ISINs already under output/reports/
 uv run refresh-reports
 ```
 
-Optional flags: `--force`, `--type stock|etf`.
+### Options
 
-## Overview
+| Flag | Description |
+|------|-------------|
+| `--force` | Refresh cached identity and market data |
+| `--type stock\|etf` | Force instrument type when resolving |
+| `--language LANG` | Report language for a single run (default: English) |
 
-The pipeline resolves the instrument (OpenFIGI, Yahoo Finance), fetches a cached market snapshot (prices, performance, fundamentals, ETF top holdings), pre-formats cited data sections, then runs two LLM agents in sequence. The result is a single Markdown file with numbered references, separate templates for stocks and ETFs, and explicit data-limitation notes.
+### Report language
 
-**Experimental project** — intended for learning and exploration, not production use. See [Disclaimer](#disclaimer).
+Default: **English**. Configure globally in [`settings.yaml`](src/financial_researcher/config/settings.yaml) (`default_language`) or via `.env` (`REPORT_LANGUAGE=Italian`).
 
-## Agents
+---
 
-The crew runs **sequentially** (`Process.sequential`): the news researcher completes its task before the report composer starts. Both agents use **OpenAI GPT-4o mini** (`openai/gpt-4o-mini`).
+## How it works
 
-### 1. `news_researcher` — Financial News Researcher
+### Overview
 
-| | |
-|---|---|
-| **Task** | Collect recent, verifiable news and events for the target instrument |
-| **Tools** | [Serper](https://serper.dev) web & news search, Yahoo Finance news, optional website scraping for issuer/IR pages |
-| **Input** | Company name, ticker, ISIN, pre-loaded `market_context` (read-only) |
-| **Output** | News brief with titled items, dates, summaries, and numbered citations |
+Financial Researcher combines a **deterministic data layer** with a **sequential agent crew**:
 
-**Behaviour**
+1. **Resolve** the instrument from ISIN (OpenFIGI, Yahoo Finance) and cache identity.
+2. **Fetch** a market snapshot — prices, performance, fundamentals, ETF top holdings — with a 1-hour cache.
+3. **Pre-format** cited market sections in Python (`report_builder`); Yahoo Finance is always reference **`[1]`**.
+4. **Run agents** — news research, then report composition — to produce a single Markdown file with numbered references, stock/ETF-specific templates, and explicit data-limitations.
 
-- Focuses on the **last 72 hours**; does not re-fetch prices already present in market data
-- Assigns citation **`[1]`** to Yahoo Finance (reserved by the pipeline); new sources start at **`[2]`**
-- Cites every fact; omits unsupported claims
-- Surfaces risks or opportunities **only when mentioned in sources**
+> **Note:** Experimental software for learning and exploration, not production use. See [Disclaimer](#disclaimer).
 
-### 2. `report_composer` — Financial Instrument Report Writer
-
-| | |
-|---|---|
-| **Task** | Assemble the final Markdown report in the configured language |
-| **Tools** | None — relies on pre-loaded data and the news researcher output |
-| **Input** | `identity_context`, `market_summary` (pre-formatted sections), news task output |
-| **Output** | Complete report written to `output/reports/` |
-
-**Behaviour**
-
-- Copies pre-formatted market sections from `market_summary` **verbatim** (key metrics, performance, ETF top holdings, data limitations)
-- Applies the **stock** or **ETF** template based on `instrument_type`
-- Writes the news section from the news researcher; includes risks only when cited
-- Produces a numbered **References** section; does not issue buy/sell/hold recommendations
-
-Agent definitions: [`agents_instrument.yaml`](src/financial_researcher/config/agents_instrument.yaml) · Task definitions: [`tasks_instrument.yaml`](src/financial_researcher/config/tasks_instrument.yaml)
-
-## Pipeline
+### Pipeline
 
 ```
 ISIN + ticker
     │
     ├─ IsinResolver          OpenFIGI → cached identity
     ├─ MarketDataService     Yahoo Finance → cached snapshot
-    └─ report_builder        pre-formatted market_summary  →  citation [1]
+    └─ report_builder        pre-formatted market_summary  →  [1]
             │
             ▼
     CrewAI (sequential)
-    ├─ news_researcher       Serper, Yahoo News, scrape  →  citations [2+]
+    ├─ news_researcher       Serper, Yahoo News, scrape  →  [2+]
     └─ report_composer       final Markdown report
 ```
 
-## Report language
+### Agents
 
-Default: **English**.
+Both agents use **OpenAI GPT-4o mini**. The news researcher finishes before the composer starts.
 
-- Global default: `default_language` in [`settings.yaml`](src/financial_researcher/config/settings.yaml)
-- Override via `.env`: `REPORT_LANGUAGE=Italian`
-- Per run: `uv run report US67066G1040 NVDA --language Italian`
+#### `news_researcher` — Financial News Researcher
+
+| | |
+|---|---|
+| **Purpose** | Collect recent, verifiable news and events |
+| **Tools** | [Serper](https://serper.dev) search & news, Yahoo Finance news, website scraping (issuer/IR pages) |
+| **Scope** | Last **72 hours**; does not duplicate prices from market data |
+| **Citations** | New sources from **`[2]`** onward (`[1]` reserved for Yahoo Finance) |
+
+#### `report_composer` — Financial Instrument Report Writer
+
+| | |
+|---|---|
+| **Purpose** | Assemble the final report in the configured language |
+| **Tools** | None — uses pre-loaded data and the news task output |
+| **Templates** | Separate layouts for **stock** and **ETF** instruments |
+| **Constraints** | Copies market sections verbatim; cites every statement; no buy/sell/hold advice |
+
+Configuration: [`agents_instrument.yaml`](src/financial_researcher/config/agents_instrument.yaml) · [`tasks_instrument.yaml`](src/financial_researcher/config/tasks_instrument.yaml)
 
 ## Output
 
@@ -120,11 +122,9 @@ Default: **English**.
 | `data/identity/{ISIN}.json` | Cached instrument identity |
 | `data/market/{ISIN}/latest.json` | Cached market snapshot (1 h TTL) |
 
-The `output/` directory is not tracked by git.
-
 ## Sample reports
 
-Static examples in [`examples/reports/`](examples/reports/) (2026-06-07):
+Examples in [`examples/reports/`](examples/reports/) (2026-06-07):
 
 | Instrument | Type | Report |
 |------------|------|--------|
@@ -134,28 +134,28 @@ Static examples in [`examples/reports/`](examples/reports/) (2026-06-07):
 
 ## Acknowledgements
 
-This project extends CrewAI patterns from **Ed Donner's** Udemy course:
+Extends CrewAI patterns from **Ed Donner's** Udemy course:
 
 **[AI Engineer Agentic Track: The Complete Agent & MCP Course](https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/)**
 
-Thank you to **Ed Donner** for the excellent agentic AI engineering course. See [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md) for details.
+Thank you to **Ed Donner** for the excellent agentic AI engineering course. Details in [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md).
 
 ## Author
 
 **Luca Amore** — [GitHub](https://github.com/lookee) · [lucaamore.com](https://www.lucaamore.com) · [LinkedIn](https://www.linkedin.com/in/lucaamore)
 
-This code is free to use, copy, modify, and redistribute without restrictions.
+Free to use, copy, modify, and redistribute without restrictions.
 
 ## Disclaimer
 
-**Experimental software.** Developed as an extension of agentic AI coursework. Not audited or intended for production.
+**Experimental software** — coursework extension, not audited for production.
 
-**No warranty.** Provided *as is* without guarantees of correctness, completeness, or fitness for any purpose.
+**No warranty** — provided *as is* without guarantees of correctness or fitness for purpose.
 
-**Not financial advice.** Reports are for informational and educational use only. Market data and LLM output may be incomplete or incorrect. Verify against primary sources before any investment decision.
+**Not financial advice** — reports are informational only; verify data against primary sources.
 
-**Your responsibility.** You are responsible for API costs, third-party terms of service, and any use of generated output.
+**Your responsibility** — API costs, third-party terms, and use of generated output.
 
 ## License
 
-Released into the **public domain**. See [LICENSE](LICENSE).
+Public domain. See [LICENSE](LICENSE).
