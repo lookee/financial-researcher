@@ -6,6 +6,45 @@
 
 Financial Researcher is a command-line application that produces structured Markdown research reports for **stocks and ETFs** starting from an **ISIN** code. Market data, instrument identity, and report scaffolding are resolved deterministically in Python; a small [CrewAI](https://crewai.com) crew handles news gathering and final report writing.
 
+## Requirements
+
+- Python 3.10–3.12
+- [uv](https://github.com/astral-sh/uv) (recommended)
+- API keys: OpenAI, Serper (see Setup below)
+
+## Setup
+
+```bash
+pip install uv
+uv sync
+cp .env.sample .env
+# Set OPENAI_API_KEY and SERPER_API_KEY in .env
+```
+
+## Usage
+
+```bash
+# Stock report
+uv run report US67066G1040 NVDA
+
+# ETF report
+uv run report IE00BK5BQT80 VWCE.DE
+
+# ISIN only (uses cached identity when available)
+uv run report US67066G1040
+
+# Resolve and cache instrument identity
+uv run resolve US67066G1040 NVDA
+
+# Batch run from watchlist.yaml
+uv run watchlist
+
+# Regenerate reports for ISINs already present under output/reports/
+uv run refresh-reports
+```
+
+Optional flags: `--force`, `--type stock|etf`.
+
 ## Overview
 
 The pipeline resolves the instrument (OpenFIGI, Yahoo Finance), fetches a cached market snapshot (prices, performance, fundamentals, ETF top holdings), pre-formats cited data sections, then runs two LLM agents in sequence. The result is a single Markdown file with numbered references, separate templates for stocks and ETFs, and explicit data-limitation notes.
@@ -64,45 +103,6 @@ ISIN + ticker
     ├─ news_researcher       Serper, Yahoo News, scrape  →  citations [2+]
     └─ report_composer       final Markdown report
 ```
-
-## Requirements
-
-- Python 3.10–3.12
-- [uv](https://github.com/astral-sh/uv) (recommended)
-- API keys: OpenAI, Serper (see [Setup](#setup))
-
-## Setup
-
-```bash
-pip install uv
-uv sync
-cp .env.sample .env
-# Set OPENAI_API_KEY and SERPER_API_KEY in .env
-```
-
-## Usage
-
-```bash
-# Stock report
-uv run report US67066G1040 NVDA
-
-# ETF report
-uv run report IE00BK5BQT80 VWCE.DE
-
-# ISIN only (uses cached identity when available)
-uv run report US67066G1040
-
-# Resolve and cache instrument identity
-uv run resolve US67066G1040 NVDA
-
-# Batch run from watchlist.yaml
-uv run watchlist
-
-# Regenerate reports for ISINs already present under output/reports/
-uv run refresh-reports
-```
-
-Optional flags: `--force`, `--type stock|etf`.
 
 ## Report language
 
