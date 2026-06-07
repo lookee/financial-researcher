@@ -56,19 +56,6 @@ cp .env.sample .env
 # Add OPENAI_API_KEY and SERPER_API_KEY to .env
 ```
 
-## Configuration
-
-Default report language is **English**. Change it in either place (env wins):
-
-| Source | File / variable | Example |
-|--------|------------------|---------|
-| Settings file | `src/financial_researcher/config/settings.yaml` | `default_language: Italian` |
-| Environment | `.env` → `REPORT_LANGUAGE` | `REPORT_LANGUAGE=Italian` |
-| Watchlist batch | `watchlist.yaml` → `language` | `language: Italian` |
-| CLI override | `--language` flag | `uv run report ... --language Italian` |
-
-Priority: `--language` > watchlist `language` > `REPORT_LANGUAGE` > `settings.yaml`.
-
 ## Commands
 
 ```bash
@@ -91,7 +78,15 @@ uv run watchlist
 uv run refresh-reports
 ```
 
-Optional flags: `--force`, `--language Italian`, `--type stock|etf`.
+Optional flags: `--force`, `--type stock|etf`.
+
+## Report language
+
+Default: **English**.
+
+- Global default: `default_language` in `src/financial_researcher/config/settings.yaml`
+- Override via `.env`: `REPORT_LANGUAGE=Italian`
+- Per run: `uv run report US67066G1040 NVDA --language Italian`
 
 ## Output
 
