@@ -1,8 +1,5 @@
-# Example watchlist — copied to config/watchlist.yaml on first run if missing.
-# Edit config/watchlist.yaml for your own instruments; keep this file as reference.
-
-# Optional: override default_language from config/settings.yaml for this batch only.
-# language: English
+# Example watchlist bundled with the project (same as config/watchlist.yaml.example).
+# Copy to config/watchlist.yaml before running: cp config/watchlist.yaml.example config/watchlist.yaml
 
 instruments:
   - isin: IE00BK5BCD43

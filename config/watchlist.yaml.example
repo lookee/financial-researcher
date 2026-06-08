@@ -1,8 +1,14 @@
-# Copy to watchlist.yaml and edit your instruments.
+# Example watchlist — copy to watchlist.yaml and edit for your own portfolio.
+#   cp config/watchlist.yaml.example config/watchlist.yaml
+#
+# Three Milan-listed ETFs plus equities on Borsa Italiana (FTSE MIB + Apple on GEM).
+# No banking names.
+
 # Optional: override default_language from config/settings.yaml for this batch only.
-# language: Italian
+# language: English
 
 instruments:
+  # --- ETFs (Borsa Italiana) ---
   - isin: IE00BK5BCD43
     ticker: AIAI.MI
     type: etf
@@ -15,14 +21,19 @@ instruments:
     ticker: IWQU.MI
     type: etf
 
-  - isin: IE000C6ITGC8
-    ticker: QOMP.DE
-    type: etf
+  # --- Equities (Borsa Italiana) ---
+  - isin: NL0000226223
+    ticker: STMMI.MI
+    type: stock
 
-  - isin: IE00BQT3WG13
-    ticker: 36BZ.DE
-    type: etf
+  - isin: IT0003132476
+    ticker: ENI.MI
+    type: stock
 
-  - isin: IT0000072618
-    ticker: ISP.MI
+  - isin: NL0011585146
+    ticker: RACE.MI
+    type: stock
+
+  - isin: US0378331005
+    ticker: 1AAPL.MI
     type: stock

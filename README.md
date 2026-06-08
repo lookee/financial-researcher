@@ -4,294 +4,170 @@
 ![CrewAI](https://img.shields.io/badge/CrewAI-multi--agent-8957E5?logo=openai&logoColor=white)
 ![Status](https://img.shields.io/badge/status-experimental-red)
 
-CLI tool that generates a **single executive briefing** for your entire **watchlist** — not one report per instrument. Output reads like a senior strategy consultant memo, with cited market data and news, focused on **Borsa Italiana** instruments and **Milan trading sessions**.
+> One **executive briefing** for your whole **watchlist** — not one report per ticker.
 
-Built with a deterministic data layer and a five-agent [CrewAI](https://crewai.com) workflow (four parallel analysts + chief strategist).
+A CLI that turns a list of ISINs into a single, cited strategy memo for **Borsa Italiana** instruments and **Milan trading sessions**. It pairs a deterministic data layer (Yahoo Finance + OpenFIGI) with a five-agent [CrewAI](https://crewai.com) workflow — four analysts in parallel, then a chief strategist who writes the memo.
 
-[Article from my blog](https://www.lucaamore.com/?p=2777)
+📄 **[See a sample briefing →](examples/briefings/watchlist_2026-06-09_close.md)** · ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
 
-## Requirements
+---
 
-| Requirement | Details |
-|-------------|---------|
-| Python | 3.10 – 3.12 |
-| Package manager | [uv](https://github.com/astral-sh/uv) (recommended) |
-| API keys | `OPENAI_API_KEY`, `SERPER_API_KEY` — see [Setup](#setup) |
+## Why
 
-## Setup
+- **Portfolio-level, not ticker-level** — cross-instrument narrative, leaders/laggards, shared themes.
+- **Cited & verifiable** — every claim maps to a numbered Yahoo Finance or news source.
+- **Milan-native** — four daily sessions aligned with Borsa Italiana hours.
+- **Deterministic core** — prices and identities resolved in Python; agents reason, they don't invent data.
+
+## Quickstart
 
 ```bash
 pip install uv
 uv sync
-cp .env.sample .env
+cp .env.sample .env        # add OPENAI_API_KEY and SERPER_API_KEY
+
+uv run briefing            # session inferred from the Milan clock
 ```
 
-Edit `.env` and set your API keys:
+The first run scaffolds `config/`, `output/briefings/`, and `data/`, and seeds `config/watchlist.yaml` from the example template.
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `OPENAI_API_KEY` | Yes | LLM backend for CrewAI agents |
-| `SERPER_API_KEY` | Yes | News and web search tools |
-| `OPENFIGI_API_KEY` | No | Higher OpenFIGI rate limits for ISIN resolution |
-| `REPORT_LANGUAGE` | No | Override briefing language (e.g. `Italian`) |
-
-On first run the CLI creates `output/briefings/`, `data/identity/`, `data/market/`, and `config/` automatically.
-
-Copy `config/watchlist.yaml.example` to `config/watchlist.yaml` (or let the CLI create it on first run) and edit your instruments there.
+| `OPENAI_API_KEY` | ✅ | LLM backend for the agents |
+| `SERPER_API_KEY` | ✅ | News and web search |
+| `OPENFIGI_API_KEY` | — | Higher ISIN-resolution rate limits |
+| `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
 
 ## Usage
 
-### Generate a briefing
-
 ```bash
-# Infer Milan session from current Europe/Rome time
-uv run briefing
-
-# Explicit session
-uv run briefing --session close
-
-# Refresh cached data and set language
-uv run briefing --force --language Italian
-
-# Custom watchlist file
-uv run briefing --watchlist path/to/watchlist.yaml
+uv run briefing                              # auto session, default language
+uv run briefing --session close              # explicit Milan session
+uv run briefing --force --language Italian   # refresh cache + language
+uv run briefing --watchlist path/to.yaml     # custom watchlist
 ```
-
-### Options
 
 | Flag | Description |
 |------|-------------|
-| `--session` | Milan session: `pre_open`, `post_open`, `midday`, `close` (default: inferred from clock) |
+| `--session` | `pre_open` · `post_open` · `midday` · `close` (default: inferred from clock) |
+| `--language LANG` | Briefing language (default: English) |
 | `--force` | Refresh cached identity and market data |
-| `--language LANG` | Briefing language (default: English from settings) |
-| `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml` in the project directory) |
+| `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
 
-### Milan sessions (Europe/Rome)
-
-Four sessions per trading day, aligned with Borsa Italiana:
-
-| Session | Time | When to use |
-|---------|------|-------------|
-| `pre_open` | 08:45 | Before the opening auction |
-| `post_open` | 09:30 | After the market opens |
-| `midday` | 13:00 | Mid-session check |
-| `close` | 17:45 | End-of-day wrap-up |
-
-Schedule config: [`sessions_milan.yaml`](src/financial_researcher/config/sessions_milan.yaml)
-
-When `--session` is omitted, the CLI picks the session whose scheduled time most recently passed.
-
-Example cron (close briefing, weekdays):
+**Milan sessions** (Europe/Rome) — `pre_open` 08:45 · `post_open` 09:30 · `midday` 13:00 · `close` 17:45. When `--session` is omitted, the CLI picks the most recently passed slot ([schedule](src/financial_researcher/config/sessions_milan.yaml)).
 
 ```bash
+# Cron: close briefing every weekday
 45 17 * * 1-5 cd /path/to/financial_researcher && uv run briefing --session close
 ```
 
 ## Watchlist
 
-Instruments are defined in `config/watchlist.yaml` (user config, not in source code):
+Define instruments in `config/watchlist.yaml` — name, sector and category are resolved automatically.
 
 ```yaml
-# Optional: override default_language for this watchlist only
-# language: Italian
-
+# language: Italian          # optional per-watchlist override
 instruments:
-  - isin: IE00BK5BCD43
-    ticker: AIAI.MI
-    type: etf
-
-  - isin: US67066G1040
-    ticker: NVDA
-    type: stock
+  - { isin: IE00BK5BCD43, ticker: AIAI.MI,  type: etf }   # L&G AI
+  - { isin: IE00BMC38736, ticker: SMH.MI,   type: etf }   # VanEck Semiconductors
+  - { isin: IE00BP3QZ601, ticker: IWQU.MI,  type: etf }   # iShares World Quality
+  - { isin: NL0000226223, ticker: STMMI.MI, type: stock } # STMicroelectronics
+  - { isin: IT0003132476, ticker: ENI.MI,   type: stock } # Eni
+  - { isin: NL0011585146, ticker: RACE.MI,  type: stock } # Ferrari
+  - { isin: US0378331005, ticker: 1AAPL.MI, type: stock } # Apple (GEM)
 ```
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `isin` | Yes | 12-character ISIN |
-| `ticker` | Yes | Yahoo Finance ticker (e.g. `AIAI.MI`, `ISP.MI`, `NVDA`) |
-| `type` | No | `stock` or `etf` — helps ISIN resolution when OpenFIGI is ambiguous |
+| `isin` | ✅ | 12-character ISIN |
+| `ticker` | ✅ | Yahoo Finance ticker (e.g. `AIAI.MI`, `RACE.MI`, `1AAPL.MI`) |
+| `type` | — | `stock` or `etf` — disambiguates ISIN resolution |
 
-Name, sector and category are resolved automatically from OpenFIGI and Yahoo Finance.
-
-Default watchlist: **AIAI.MI**, **SMH.MI**, **SWDA.MI** (Milan-listed UCITS ETFs).
-
-## Briefing language
-
-Default: **English**.
-
-Configure globally in [`settings.yaml`](src/financial_researcher/config/settings.yaml) (`default_language`) or via `.env` (`REPORT_LANGUAGE=Italian`). Per-run override: `--language Italian`.
-
----
+> The bundled [`config/watchlist.yaml.example`](config/watchlist.yaml.example) covers 3 ETFs + 4 Borsa Italiana equities (including Apple on the Global Equity Market), with no banking names.
 
 ## How it works
 
-### Overview
-
-1. **Resolve** each watchlist instrument from ISIN via OpenFIGI and Yahoo Finance; cache identity locally.
-2. **Fetch** market snapshots — prices, performance, ETF profile, stock forecasts — with a 1-hour cache.
-3. **Aggregate** watchlist context, performance table, and theme map in Python (`watchlist_context`).
-4. **Run agents** — four analysts **in parallel** (market, news, outlook, calendar), then chief strategist — to produce one cited executive memo.
-
-> **Note:** Experimental software for learning and exploration, not production use. See [Disclaimer](#disclaimer).
-
-### Pipeline
-
 ```
 config/watchlist.yaml
-    │
-    ├─ WatchlistPipeline       ISIN resolve + Yahoo Finance snapshots
-    └─ watchlist_context       JSON + market_pulse_table + profiles  →  [1..N]
-            │
-            ▼
-    CrewAI (sequential process, parallel async tasks)
-    ├─ market_analyst   ─┐
-    ├─ news_analyst     ─┤
-    ├─ outlook_analyst  ─┼─ parallel (async_execution)
-    └─ calendar_analyst ─┘
-            │
-            ▼
-    chief_strategist (gpt-4o)   unified executive briefing memo
-            │
-            ▼
-    output/briefings/watchlist_{DATE}_{SESSION}.md
+   │  WatchlistPipeline ── OpenFIGI + Yahoo Finance  →  identities + snapshots ([1..N])
+   ▼
+CrewAI  ├─ market_analyst ─┐
+        ├─ news_analyst    ├─ parallel analysts
+        ├─ outlook_analyst │
+        └─ calendar_analyst┘
+                 ▼
+        chief_strategist  →  output/briefings/watchlist_{DATE}_{SESSION}.md
 ```
 
-### Briefing structure
+1. **Resolve** every ISIN to an identity (OpenFIGI + Yahoo), cached locally.
+2. **Fetch** market snapshots — prices, performance, ETF profile, forecasts (1-hour cache).
+3. **Aggregate** context, performance table and theme map in Python.
+4. **Run agents** — four analysts in parallel, then the chief strategist writes one cited memo.
 
-The final memo includes (headings in the configured language):
+| Agent | Role | Model | Tools |
+|-------|------|-------|-------|
+| `market_analyst` | Relative performance across the watchlist | gpt-4o-mini | Pre-loaded context |
+| `news_analyst` | News & catalysts behind recent moves | gpt-4o | Serper · Yahoo news · scraping |
+| `outlook_analyst` | 3–12 month macro & thematic outlook | gpt-4o-mini | Serper · scraping |
+| `calendar_analyst` | Catalysts in the next 2–4 weeks | gpt-4o-mini | Serper · scraping |
+| `chief_strategist` | Synthesises the final executive memo | gpt-4o | — |
 
-1. Title block — session, date, time, market
-2. **Executive Summary** — prioritised cross-instrument narrative
-3. Watchlist Performance Snapshot
-4. What's Driving the Moves
-5. Medium-Term Outlook — themes, scenarios, macro
-6. Event Calendar — upcoming 2–4 week catalysts
-7. Correlated Themes — macro, sector, Milan/Europe links
-8. Risks & Watchpoints
-9. References — consolidated numbered citations
-10. Disclaimer
+Config: [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) · [`tasks_briefing.yaml`](src/financial_researcher/config/tasks_briefing.yaml)
 
-### Agents
+<details>
+<summary><b>Briefing structure</b></summary>
 
-Research analysts use **GPT-4o mini**; the chief strategist uses **GPT-4o** (configurable in YAML).
+Title block → Executive Summary → Performance Snapshot → What's Driving the Moves → Medium-Term Outlook → Event Calendar → Correlated Themes → Risks & Watchpoints → References → Disclaimer. Headings follow the configured language; citations are consolidated and numbered.
+</details>
 
-#### `market_analyst`
-
-| | |
-|---|---|
-| **Purpose** | Analyse relative performance across the watchlist |
-| **Tools** | None — uses pre-loaded `watchlist_context` and `market_pulse_table` |
-| **Citations** | One Yahoo Finance reference per instrument (`[1]`..`[N]`) |
-
-#### `news_analyst`
-
-| | |
-|---|---|
-| **Purpose** | Find news and catalysts explaining recent moves (24–48 h) |
-| **Tools** | [Serper](https://serper.dev) search & news, Yahoo Finance news, website scraping |
-| **Citations** | New sources from **`[N+1]`** onward |
-
-#### `outlook_analyst`
-
-| | |
-|---|---|
-| **Purpose** | Medium-term (3–12 month) macro and thematic outlook |
-| **Tools** | Serper search & news, website scraping |
-| **Focus** | ECB/Fed, sector cycles, bull/base/bear scenarios per theme |
-
-#### `calendar_analyst`
-
-| | |
-|---|---|
-| **Purpose** | Upcoming events in the next 2–4 weeks |
-| **Tools** | Serper search & news, website scraping |
-| **Focus** | Central banks, macro prints, theme-proxy earnings |
-
-#### `chief_strategist`
-
-| | |
-|---|---|
-| **Purpose** | Write the final executive briefing |
-| **Tools** | None — synthesises all four analyst outputs |
-| **LLM** | GPT-4o — stronger synthesis and prose |
-| **Style** | Senior strategy consultant memo; no buy/sell/hold advice |
-
-Agent and task configuration:
-
-- [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml)
-- [`tasks_briefing.yaml`](src/financial_researcher/config/tasks_briefing.yaml)
-
-## Output
+<details>
+<summary><b>Output & caches</b></summary>
 
 | Path | Description |
 |------|-------------|
-| `output/briefings/watchlist_{DATE}_{SESSION}.md` | Unified executive briefing (local, gitignored) |
+| `output/briefings/watchlist_{DATE}_{SESSION}.md` | Unified briefing (gitignored) |
 | `data/identity/{ISIN}.json` | Cached instrument identity |
 | `data/market/{ISIN}/latest.json` | Cached market snapshot (1 h TTL) |
+</details>
 
-Example filename: `output/briefings/watchlist_2026-06-07_close.md`
-
-## Project structure
+<details>
+<summary><b>Project structure</b></summary>
 
 ```
 financial-researcher/
-├── config/
-│   ├── watchlist.yaml.example  # Template (committed)
-│   └── watchlist.yaml          # Your instruments (gitignored)
+├── config/watchlist.yaml(.example)   # User watchlist + committed template
 ├── src/financial_researcher/
-│   ├── main.py                 # CLI entry point (briefing)
-│   ├── crew.py                 # WatchlistBriefingCrew
-│   ├── paths.py                # User config path resolution
-│   ├── settings.py             # Language and config loader
-│   ├── config/
-│   │   ├── watchlist.example.yaml  # Fallback template for first-run init
-│   │   ├── sessions_milan.yaml # Milan session times
-│   │   ├── settings.yaml       # Default language
-│   │   ├── agents_briefing.yaml
-│   │   └── tasks_briefing.yaml
-│   ├── services/
-│   │   ├── watchlist_pipeline.py   # Resolve + fetch batch
-│   │   ├── watchlist_context.py    # Crew inputs builder
-│   │   ├── isin_resolver.py        # OpenFIGI + Yahoo identity
-│   │   └── market_data.py          # Yahoo Finance snapshots
-│   ├── storage/                # Local JSON caches
-│   └── tools/                  # Serper news tool
-├── examples/briefings/         # Sample output (tracked in git)
-├── output/briefings/           # Generated briefings (gitignored)
-└── data/                       # Runtime cache (gitignored)
+│   ├── main.py · crew.py · paths.py · settings.py
+│   ├── config/    # agents, tasks, sessions, settings, fallback watchlist
+│   ├── services/  # pipeline · context · isin_resolver · market_data
+│   ├── storage/   # local JSON caches
+│   └── tools/     # Serper news tools
+├── examples/briefings/   # Sample output (tracked)
+├── output/briefings/     # Generated briefings (gitignored)
+└── data/                 # Runtime cache (gitignored)
 ```
+</details>
 
-## Sample briefing
+<details>
+<summary><b>Regenerate the sample briefing</b></summary>
 
-Static example in [`examples/briefings/`](examples/briefings/):
-
-| Session | Briefing |
-|---------|----------|
-| Close, 2026-06-07 | [watchlist_2026-06-07_close.md](examples/briefings/watchlist_2026-06-07_close.md) |
+```bash
+uv run briefing --watchlist config/watchlist.yaml.example --session close --language English --force
+cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/
+```
+</details>
 
 ## Acknowledgements
 
-Extends CrewAI patterns from **Ed Donner's** Udemy course:
-
-**[AI Engineer Agentic Track: The Complete Agent & MCP Course](https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/)**
-
-Thank you to **Ed Donner** for the excellent agentic AI engineering course. Details in [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md).
+Extends CrewAI patterns from **Ed Donner's** [AI Engineer Agentic Track](https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/). Details in [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md).
 
 ## Author
 
 **Luca Amore** — [GitHub](https://github.com/lookee) · [lucaamore.com](https://www.lucaamore.com) · [LinkedIn](https://www.linkedin.com/in/lucaamore)
 
-Free to use, copy, modify, and redistribute without restrictions.
-
 ## Disclaimer
 
-**Experimental software** — coursework extension, not audited for production.
-
-**No warranty** — provided *as is* without guarantees of correctness or fitness for purpose.
-
-**Not financial advice** — briefings are informational only; verify data against primary sources.
-
-**Your responsibility** — API costs, third-party terms, and use of generated output.
+**Experimental** coursework extension — *as is*, no warranty. **Not financial advice**: briefings are informational only; verify against primary sources. You are responsible for API costs and third-party terms.
 
 ## License
 
