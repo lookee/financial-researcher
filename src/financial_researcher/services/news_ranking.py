@@ -22,6 +22,7 @@ OFFICIAL_DOMAINS: tuple[str, ...] = (
     "bafin.de",
     "deutsche-boerse.com",
     "esma.europa.eu",
+    "nasdaq.com",
 )
 
 EXCHANGE_NEWS_PATHS: tuple[str, ...] = (
@@ -137,6 +138,8 @@ def source_tier_score(headline: dict[str, str]) -> int:
         return 18
     if "bancaditalia.it" in domain:
         return 6
+    if "nasdaq.com" in domain:
+        return 14
     if any(domain.endswith(off) or off in domain for off in OFFICIAL_DOMAINS):
         return 12
     return 0
@@ -177,6 +180,8 @@ def headline_relevance_score(item: dict[str, Any], headline: dict[str, str]) -> 
         score += 12
     if headline.get("region") == "Yahoo":
         score += 10
+    if headline.get("region") == "Serper NASDAQ":
+        score += 6
 
     return score
 

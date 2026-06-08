@@ -71,10 +71,11 @@ news_analysis_task:
     {watchlist_context}
 
     Workflow (strict order):
-    1. Read prefetched_news_digest for every ticker (Yahoo + Italy + global Serper).
-    2. Run ALL stock_news_queries and etf_news_queries using BOTH tools:
+    1. Read prefetched_news_digest for every ticker (Yahoo + Italy + global + NASDAQ Serper).
+    2. Run ALL stock_news_queries and etf_news_queries using ALL THREE tools:
        - Search Italian financial news with Serper → **Italia / locale** queries
        - Search recent financial news with Serper → **Mondo / global** queries
+       - Search NASDAQ news with Serper → **NASDAQ / US** queries
     3. Call YahooFinanceNewsTool once per ticker for supplemental headlines.
     4. Use ScrapeWebsiteTool on the best URL when the snippet is incomplete.
     5. Write the brief — include ALL material headlines (Italy AND world).

@@ -11,6 +11,7 @@ from crewai_tools import ScrapeWebsiteTool
 from langchain_community.tools.yahoo_finance_news import YahooFinanceNewsTool
 
 from financial_researcher.tools.serper_news import (
+    SerperNasdaqNewsTool,
     SerperNewsItalyTool,
     SerperNewsTool,
     SerperSearchTool,
@@ -25,6 +26,7 @@ _SEARCH_TOOLS = [
 _NEWS_TOOLS = [
     SerperNewsTool(),
     SerperNewsItalyTool(),
+    SerperNasdaqNewsTool(),
     SerperSearchTool(),
     ScrapeWebsiteTool(),
 ]

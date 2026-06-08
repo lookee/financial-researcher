@@ -66,3 +66,18 @@ class SerperNewsItalyTool(SerperNewsTool):
     country: str = "it"
     locale: str = "it"
     n_results: int = 15
+
+
+class SerperNasdaqNewsTool(SerperNewsTool):
+    """News search biased to NASDAQ.com and US market coverage."""
+
+    name: str = "Search NASDAQ news with Serper"
+    description: str = (
+        "Search recent NASDAQ.com and US market news (news mode, US locale). "
+        "Use for **NASDAQ / US** queries in stock_news_queries and etf_news_queries, "
+        "especially thematic ETFs (semiconductors, AI, biotech). "
+        "Queries often include site:nasdaq.com. Always pass search_query."
+    )
+    country: str = "us"
+    locale: str = "en"
+    n_results: int = 12

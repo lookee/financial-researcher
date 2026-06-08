@@ -20,6 +20,7 @@ from financial_researcher.services.news_ranking import (
 from financial_researcher.services.watchlist_context import (
     instrument_label,
     iter_etf_serper_query_sets,
+    iter_nasdaq_news_query_sets,
     iter_stock_issuer_event_query_sets,
     iter_stock_serper_query_sets,
 )
@@ -204,6 +205,28 @@ def _fetch_serper_dual(
     return items
 
 
+def _fetch_nasdaq_serper(
+    item: dict[str, Any],
+    *,
+    current_year: int,
+    max_queries: int = 3,
+) -> list[dict[str, str]]:
+    """NASDAQ.com news via Serper (US market coverage, especially for thematic ETFs)."""
+    queries = iter_nasdaq_news_query_sets(item, current_year=current_year)
+    items: list[dict[str, str]] = []
+    for query in queries[:max_queries]:
+        items.extend(
+            _serper_news(
+                query,
+                country="us",
+                locale="en",
+                num=6,
+                region="Serper NASDAQ",
+            )
+        )
+    return items
+
+
 def _dedupe_headlines(items: list[dict[str, str]]) -> list[dict[str, str]]:
     seen: set[str] = set()
     unique: list[dict[str, str]] = []
@@ -237,6 +260,7 @@ def collect_instrument_headlines(
     current_year: int,
     max_local_queries: int = 5,
     max_global_queries: int = 5,
+    max_nasdaq_queries: int = 3,
     max_headlines: int = 18,
 ) -> list[dict[str, str]]:
     """Fetch and rank headlines for one watchlist instrument."""
@@ -252,6 +276,13 @@ def collect_instrument_headlines(
                 current_year=current_year,
                 max_local_queries=max_local_queries,
                 max_global_queries=max_global_queries,
+            )
+        )
+        serper_items.extend(
+            _fetch_nasdaq_serper(
+                item,
+                current_year=current_year,
+                max_queries=max_nasdaq_queries,
             )
         )
 
