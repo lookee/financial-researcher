@@ -8,7 +8,7 @@
 
 A CLI that turns a list of ISINs into a single, cited strategy memo for **Borsa Italiana** instruments and **Milan trading sessions**. It pairs a deterministic data layer (Yahoo Finance + OpenFIGI) with a five-agent [CrewAI](https://crewai.com) workflow — four analysts in parallel, then a chief strategist who writes the memo.
 
-📄 **[See a sample briefing →](examples/briefings/watchlist_2026-06-09_close.md)** · ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
+📄 **[Sample briefing (English →)](examples/briefings/watchlist_2026-06-09_close.md)** · **[Italiano →](examples/briefings/watchlist_2026-06-09_close_it.md)** · ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
 
 ---
 
@@ -149,11 +149,25 @@ financial-researcher/
 </details>
 
 <details>
-<summary><b>Regenerate the sample briefing</b></summary>
+<summary><b>Sample briefings</b></summary>
+
+Generated from [`config/watchlist.yaml.example`](config/watchlist.yaml.example) (7 instruments):
+
+| Language | Session | Briefing |
+|----------|---------|----------|
+| English | Close, 2026-06-09 | [watchlist_2026-06-09_close.md](examples/briefings/watchlist_2026-06-09_close.md) |
+| Italian | Close, 2026-06-09 | [watchlist_2026-06-09_close_it.md](examples/briefings/watchlist_2026-06-09_close_it.md) |
+
+Regenerate:
 
 ```bash
+# English
 uv run briefing --watchlist config/watchlist.yaml.example --session close --language English --force
 cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/
+
+# Italian
+uv run briefing --watchlist config/watchlist.yaml.example --session close --language Italian --force
+cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/watchlist_$(date +%Y-%m-%d)_close_it.md
 ```
 </details>
 

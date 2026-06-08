@@ -67,9 +67,6 @@ news_analysis_task:
     Instrument profiles:
     {instrument_profile_table}
 
-    Full structured context (JSON):
-    {watchlist_context}
-
     Workflow (strict order):
     1. Read prefetched_news_digest for every ticker (Yahoo + Italy + global + NASDAQ Serper).
     2. Run ALL stock_news_queries and etf_news_queries using ALL THREE tools:

@@ -45,7 +45,7 @@ def _parse_yahoo_news_item(raw: dict[str, Any]) -> dict[str, str] | None:
         "title": title,
         "source": source,
         "url": url,
-        "summary": summary[:280],
+        "summary": summary[:120],
         "region": "Yahoo",
     }
 
@@ -119,7 +119,7 @@ def _serper_news(
                 "title": title,
                 "source": (item.get("source") or label).strip(),
                 "url": (item.get("link") or "").strip(),
-                "summary": (item.get("snippet") or "").strip()[:280],
+                "summary": (item.get("snippet") or "").strip()[:120],
                 "query": query,
                 "region": label,
                 "issuer_event": "1" if issuer_event else "",
@@ -489,6 +489,30 @@ def build_material_news_brief(
     return "\n".join(lines).rstrip()
 
 
+def _prefetch_limits(instrument_count: int) -> dict[str, int]:
+    """Scale Serper prefetch down for larger watchlists to stay within LLM context."""
+    if instrument_count >= 7:
+        return {
+            "max_local_queries": 2,
+            "max_global_queries": 2,
+            "max_nasdaq_queries": 2,
+            "max_headlines_per_ticker": 8,
+        }
+    if instrument_count >= 5:
+        return {
+            "max_local_queries": 3,
+            "max_global_queries": 3,
+            "max_nasdaq_queries": 2,
+            "max_headlines_per_ticker": 10,
+        }
+    return {
+        "max_local_queries": 5,
+        "max_global_queries": 5,
+        "max_nasdaq_queries": 3,
+        "max_headlines_per_ticker": 18,
+    }
+
+
 def prefetch_watchlist_news_bundle(
     instruments: list[dict[str, Any]],
     *,
@@ -502,6 +526,11 @@ def prefetch_watchlist_news_bundle(
     """Return digest, material brief, reference seed markdown, and seed entries."""
     year = current_year or datetime.now(MILAN_TZ).year
     has_serper = bool(os.getenv("SERPER_API_KEY", "").strip())
+    limits = _prefetch_limits(len(instruments))
+    max_local_queries = limits["max_local_queries"]
+    max_global_queries = limits["max_global_queries"]
+    max_nasdaq_queries = limits["max_nasdaq_queries"]
+    max_headlines_per_ticker = limits["max_headlines_per_ticker"]
 
     digest_lines = [
         "Pre-fetched headlines (deterministic). Ranked by structural relevance:",
@@ -517,6 +546,7 @@ def prefetch_watchlist_news_bundle(
         ticker = item["ticker"]
         name = item["name"]
         digest_lines.append(f"### {name} ({ticker})")
+        print(f"  Prefetch news: {ticker}...", flush=True)
 
         if not has_serper:
             digest_lines.append("- _Serper prefetch skipped (SERPER_API_KEY not set)._")
@@ -526,6 +556,7 @@ def prefetch_watchlist_news_bundle(
             current_year=year,
             max_local_queries=max_local_queries,
             max_global_queries=max_global_queries,
+            max_nasdaq_queries=max_nasdaq_queries,
             max_headlines=max_headlines_per_ticker,
         )
         headlines_by_ticker[ticker] = combined

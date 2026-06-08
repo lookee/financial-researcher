@@ -7,15 +7,16 @@ Static samples for the **example watchlist** (`config/watchlist.yaml.example`):
 | ETFs | AIAI.MI, SMH.MI, IWQU.MI |
 | Italian stocks | STMMI.MI, ENI.MI, RACE.MI, 1AAPL.MI (Apple, GEM) |
 
-## Briefing
+## Briefings
 
-| Session | File |
-|---------|------|
-| Close, 2026-06-09 (English) | [watchlist_2026-06-09_close.md](briefings/watchlist_2026-06-09_close.md) |
+| Language | Session | File |
+|----------|---------|------|
+| English | Close, 2026-06-09 | [watchlist_2026-06-09_close.md](briefings/watchlist_2026-06-09_close.md) |
+| Italian | Close, 2026-06-09 | [watchlist_2026-06-09_close_it.md](briefings/watchlist_2026-06-09_close_it.md) |
 
 The CLI writes new briefings to `output/briefings/`, which is not tracked by git.
 
-See the [Sample briefing](../README.md#sample-briefing) section in the project README.
+See the [Sample briefings](../README.md) section in the project README.
 
 ## Watchlist
 
@@ -26,4 +27,7 @@ See the [Sample briefing](../README.md#sample-briefing) section in the project R
 ```bash
 uv run briefing --watchlist config/watchlist.yaml.example --session close --language English --force
 cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/
+
+uv run briefing --watchlist config/watchlist.yaml.example --session close --language Italian --force
+cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/watchlist_$(date +%Y-%m-%d)_close_it.md
 ```

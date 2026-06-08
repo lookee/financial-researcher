@@ -338,12 +338,9 @@ def build_stock_news_queries(
         return "No individual stocks in watchlist — skip stock-specific searches."
 
     blocks: list[str] = [
-        "Run EVERY query below before writing. Use BOTH Italy/local AND global/world coverage.",
-        "For stocks: run **Eventi emittente / fonti istituzionali** queries FIRST — "
-        "notizie recenti su portali ufficiali (Borsa Italiana, CONSOB, …).",
-        "Italia → Search Italian financial news with Serper (gl=it).",
-        "Mondo → Search recent financial news with Serper (international sources).",
-        "NASDAQ → Search NASDAQ news with Serper (US market, nasdaq.com).",
+        "Run EVERY query below. Italia → Search Italian financial news with Serper.",
+        "Mondo → Search recent financial news with Serper.",
+        "NASDAQ → Search NASDAQ news with Serper.",
         "",
     ]
     for item in stocks:
@@ -518,10 +515,9 @@ def build_etf_news_queries(
         return "No ETFs in watchlist — skip ETF-specific searches."
 
     blocks: list[str] = [
-        "Run EVERY query below before writing. Use BOTH Italy/local AND global/world coverage.",
-        "Italia → Search Italian financial news with Serper. Mondo → Search recent financial news with Serper.",
-        "NASDAQ → Search NASDAQ news with Serper (US market, nasdaq.com).",
-        "ETF moves often follow global sector/theme news — always run global and NASDAQ queries.",
+        "Run EVERY query below. Italia → Search Italian financial news with Serper.",
+        "Mondo → Search recent financial news with Serper.",
+        "NASDAQ → Search NASDAQ news with Serper.",
         "",
     ]
     for item in etfs:

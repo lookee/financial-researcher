@@ -1,6 +1,6 @@
 # Milan Market Session Close: June 9, 2026, 17:45 - Watchlist Briefing
 
-> **Sample output** for the example watchlist in [`config/watchlist.yaml.example`](../../config/watchlist.yaml.example) (AIAI.MI, SMH.MI, IWQU.MI, STMMI.MI, ENI.MI, RACE.MI, 1AAPL.MI). Regenerate after watchlist changes — see [`examples/README.md`](../README.md).
+> **Sample output (English)** for the example watchlist in [`config/watchlist.yaml.example`](../../config/watchlist.yaml.example) (AIAI.MI, SMH.MI, IWQU.MI, STMMI.MI, ENI.MI, RACE.MI, 1AAPL.MI). Italian version: [`watchlist_2026-06-09_close_it.md`](watchlist_2026-06-09_close_it.md).
 
 ## Executive Summary
 
