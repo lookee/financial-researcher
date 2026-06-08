@@ -1,7 +1,11 @@
 """Serper search tools with flexible argument parsing for LLM tool calls."""
 
-from typing import Type
+from __future__ import annotations
 
+import json
+from typing import Any, Type
+
+import requests
 from crewai_tools import SerperDevTool
 from pydantic import BaseModel, Field, model_validator
 
@@ -31,14 +35,63 @@ class FlexibleSerperArgs(BaseModel):
         return self
 
 
-class SerperSearchTool(SerperDevTool):
-    """General web search via Serper."""
+def resolve_serper_search_query(kwargs: dict[str, Any]) -> str:
+    """Resolve a Serper query from common LLM argument shapes."""
+    for key in ("search_query", "query", "description"):
+        raw = kwargs.get(key)
+        if not isinstance(raw, str):
+            continue
+        cleaned = raw.strip()
+        if not cleaned:
+            continue
+        if cleaned.startswith("{") and cleaned.endswith("}"):
+            try:
+                parsed = json.loads(cleaned)
+            except json.JSONDecodeError:
+                return cleaned
+            if isinstance(parsed, dict):
+                nested = resolve_serper_search_query(parsed)
+                if nested:
+                    return nested
+            return cleaned
+        return cleaned
+    return ""
+
+
+class FlexibleSerperTool(SerperDevTool):
+    """SerperDevTool wrapper that tolerates LLM argument mistakes."""
 
     args_schema: Type[BaseModel] = FlexibleSerperArgs
+
+    def _run(self, **kwargs: Any) -> Any:
+        search_query = resolve_serper_search_query(kwargs)
+        if not search_query:
+            return (
+                "Serper search skipped: missing or empty search_query. "
+                "Pass one plain query string (company name, ticker, or site: filter) "
+                "as search_query."
+            )
+        try:
+            return super()._run(search_query=search_query)
+        except requests.exceptions.HTTPError as exc:
+            response = getattr(exc, "response", None)
+            if response is not None and response.status_code == 400:
+                detail = (response.text or "").strip()[:500]
+                return (
+                    f"Serper news search failed (400 Bad Request) for query: "
+                    f"{search_query!r}. API message: {detail or 'Missing query parameter'}. "
+                    "Retry with a shorter plain-text query."
+                )
+            raise
+
+
+class SerperSearchTool(FlexibleSerperTool):
+    """General web search via Serper."""
+
     n_results: int = 12
 
 
-class SerperNewsTool(SerperDevTool):
+class SerperNewsTool(FlexibleSerperTool):
     """News search via Serper (news mode) — global/international coverage."""
 
     name: str = "Search recent financial news with Serper"
@@ -48,7 +101,6 @@ class SerperNewsTool(SerperDevTool):
         "Financial Times, sector and macro news. Complement Italian/local searches. "
         "Always pass the query as search_query."
     )
-    args_schema: Type[BaseModel] = FlexibleSerperArgs
     search_type: str = "news"
     n_results: int = 15
 
