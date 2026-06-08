@@ -13,7 +13,7 @@ market_analysis_task:
     {watchlist_context}
 
     Requirements:
-    - Compare instruments on 1D, 1W, 1M and YTD performance.
+    - Compare instruments on 1D, 1W, 1M, 1Y and YTD performance.
     - Identify leaders, laggards, and divergences within the watchlist.
     - For stocks with forecasts in the JSON, summarise street view (targets, ratings).
     - For ETFs, note AUM/category context when relevant to performance.
@@ -24,7 +24,8 @@ market_analysis_task:
     A market analysis brief with:
     - Session headline (2-3 lines) with citations
     - Watchlist performance overview (relative ranking, key moves) with citations
-    - Per-instrument highlights (price, performance, forecasts if available) with citations
+    - Per-instrument highlights for EVERY ticker in {watchlist_tickers} ({instrument_count}
+      instruments) — none omitted — with price, performance, forecasts if available
     - Cross-instrument observations (sector/theme links) with citations
     - Data limitations if any field is missing from watchlist_context
 
@@ -73,8 +74,11 @@ news_analysis_task:
 
   expected_output: >
     A news brief with:
-    - Recent headlines per instrument (title, date, summary) each with [N]
-      Cover stocks and ETFs; include corporate actions if reported in news.
+    - MANDATORY subsection for EVERY ticker in {watchlist_tickers} ({instrument_count}
+      instruments) — none may be omitted. Use heading format: ### TICKER (Name).
+      For each: recent headlines (title, date, summary) with [N], OR explicitly
+      "No material instrument-specific headline in window" plus sector/theme driver
+      with [N]. Cover stocks and ETFs; include corporate actions if reported in news.
     - Correlated macro or sector news affecting multiple watchlist names with [N]
     - Risks or events to watch in the next session with [N]
     - Additional references: [N] Source name, date, URL for N >= {next_citation}
@@ -183,9 +187,20 @@ executive_briefing_task:
     2. Executive Summary — prioritised insights across all time horizons.
        Lead with the most material instrument-specific headlines from news research
        (including corporate actions when reported) — before generic macro.
-    3. Watchlist Performance Snapshot — table or bullets from market data with [N]
+       MANDATORY: mention every instrument — none skipped:
+       {watchlist_summary_checklist}
+       You may group related themes, but each ticker must appear by name with [N].
+    3. Watchlist Performance Snapshot — reproduce this table verbatim (do not
+       omit columns; do not replace with bullets):
+       {watchlist_performance_table}
+       Columns are daily (1D), weekly (1W), monthly (1M), year-to-date (YTD / annuale).
+       In Italian use the pre-localised column headers from the table.
     4. What's Driving the Moves — news-linked explanation with [N].
+       MANDATORY full coverage checklist (one entry per instrument, none skipped):
+       {watchlist_driver_checklist}
        For each stock, cite specific issuer events before sector generalities.
+       If news research found no headline for an instrument, still include it and
+       explain the move using performance data and sector/theme context with [N].
     5. Medium-Term Outlook — themes, scenarios, macro from outlook analysis with [N]
     6. Event Calendar — markdown table copied from calendar analysis with columns:
        Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N]
@@ -204,7 +219,12 @@ executive_briefing_task:
   expected_output: >
     A polished Markdown executive briefing for the entire watchlist.
     Single cohesive memo (not separate per-instrument reports).
-    Executive Summary must weave performance, news, outlook and calendar.
+    Executive Summary must weave performance, news, outlook and calendar AND mention
+    every ticker in {watchlist_tickers} ({instrument_count} instruments) — verify
+    against watchlist_summary_checklist before finishing.
+    Section 4 (What's Driving the Moves) MUST contain exactly {instrument_count}
+    entries — one per ticker in {watchlist_tickers}, including stocks (e.g. ISP.MI)
+    and every ETF. Verify against watchlist_driver_checklist before finishing.
     Event Calendar section must preserve exact YYYY-MM-DD dates from calendar analysis.
     References section must be deduplicated and sequentially numbered.
 

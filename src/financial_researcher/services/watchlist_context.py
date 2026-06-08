@@ -239,11 +239,41 @@ def build_instrument_profile_table(instruments: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+def build_watchlist_performance_table(
+    instruments: list[dict[str, Any]],
+    *,
+    language: str = "English",
+) -> str:
+    """Markdown performance snapshot: daily, weekly, monthly, YTD (annual)."""
+    italian = language.lower().startswith("ital")
+    if italian:
+        header = (
+            "| Ref | Strumento | Ticker | Giornaliera | Settimanale | Mensile | Annuale (YTD) |"
+        )
+        sep = "|-----|-----------|--------|-------------|-------------|---------|---------------|"
+    else:
+        header = "| Ref | Instrument | Ticker | 1D | 1W | 1M | YTD |"
+        sep = "|-----|------------|--------|----|----|----|-----|"
+
+    lines = [header, sep]
+    for item in instruments:
+        perf = item.get("performance", {})
+        ref = f"[{item['citation']}]"
+        lines.append(
+            f"| {ref} | {item['name']} | {item['ticker']} "
+            f"| {_fmt_pct(perf.get('1d'))} {ref} "
+            f"| {_fmt_pct(perf.get('1w'))} {ref} "
+            f"| {_fmt_pct(perf.get('1m'))} {ref} "
+            f"| {_fmt_pct(perf.get('ytd'))} {ref} |"
+        )
+    return "\n".join(lines)
+
+
 def build_market_pulse_table(instruments: list[dict[str, Any]]) -> str:
     """Markdown table of watchlist performance for agent context."""
     lines = [
-        "| Ref | Instrument | Ticker | Type | Last | 1D | 1W | 1M | YTD |",
-        "|-----|------------|--------|------|------|----|----|----|-----|",
+        "| Ref | Instrument | Ticker | Type | Last | 1D | 1W | 1M | 1Y | YTD |",
+        "|-----|------------|--------|------|------|----|----|----|----|-----|",
     ]
     for item in instruments:
         perf = item.get("performance", {})
@@ -258,7 +288,44 @@ def build_market_pulse_table(instruments: list[dict[str, Any]]) -> str:
             f"| {_fmt_pct(perf.get('1d'))} {ref} "
             f"| {_fmt_pct(perf.get('1w'))} {ref} "
             f"| {_fmt_pct(perf.get('1m'))} {ref} "
+            f"| {_fmt_pct(perf.get('1y'))} {ref} "
             f"| {_fmt_pct(perf.get('ytd'))} {ref} |"
+        )
+    return "\n".join(lines)
+
+
+def build_watchlist_summary_checklist(instruments: list[dict[str, Any]]) -> str:
+    """Explicit per-instrument checklist for mandatory Executive Summary coverage."""
+    lines = [
+        f"MANDATORY: Executive Summary / Sommario Esecutivo MUST mention ALL "
+        f"{len(instruments)} instruments below — at least one sentence each with [N]:",
+        "",
+    ]
+    for item in instruments:
+        ref = f"[{item['citation']}]"
+        perf = item.get("performance", {})
+        d1 = _fmt_pct(perf.get("1d"))
+        ytd = _fmt_pct(perf.get("ytd"))
+        lines.append(
+            f"- {ref} **{item['ticker']}** ({item['name']}): "
+            f"cite key move (1D {d1} or YTD {ytd}) and top news or driver {ref}"
+        )
+    return "\n".join(lines)
+
+
+def build_watchlist_driver_checklist(instruments: list[dict[str, Any]]) -> str:
+    """Explicit per-instrument checklist for mandatory briefing coverage."""
+    lines = [
+        f"MANDATORY: cover ALL {len(instruments)} instruments below — one entry each, "
+        "in this order, in 'What's Driving the Moves' / 'Cosa Guida i Movimenti':",
+        "",
+    ]
+    for item in instruments:
+        ref = f"[{item['citation']}]"
+        lines.append(
+            f"- {ref} **{item['ticker']}** ({item['name']}): "
+            f"news-linked catalyst with citation, OR if no specific headline was found, "
+            f"explain the move via sector/theme/performance from market data {ref}"
         )
     return "\n".join(lines)
 
@@ -323,7 +390,12 @@ def build_watchlist_context(
         "watchlist_etfs": etf_names,
         "watchlist_context": json.dumps(context, indent=2, ensure_ascii=False),
         "market_pulse_table": build_market_pulse_table(instruments),
+        "watchlist_performance_table": build_watchlist_performance_table(
+            instruments, language=briefing_language
+        ),
         "instrument_profile_table": build_instrument_profile_table(instruments),
+        "watchlist_summary_checklist": build_watchlist_summary_checklist(instruments),
+        "watchlist_driver_checklist": build_watchlist_driver_checklist(instruments),
         "stock_news_queries": build_stock_news_queries(
             instruments, current_year=today.year
         ),
