@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 
 from financial_researcher.crew import WatchlistBriefingCrew
+from financial_researcher.services.briefing_postprocess import postprocess_briefing
 from financial_researcher.services.watchlist_context import (
     briefing_output_path,
     infer_milan_session,
@@ -60,8 +61,16 @@ def run_briefing(
     briefing_crew.executive_briefing_task().output_file = output_file
     result = briefing_crew.crew().kickoff(inputs=inputs)
 
+    output_path = Path(output_file)
+    raw_markdown = output_path.read_text(encoding="utf-8") if output_path.exists() else (result.raw or "")
+    processed, warnings = postprocess_briefing(raw_markdown, inputs)
+    output_path.write_text(processed, encoding="utf-8")
+
+    for warning in warnings:
+        print(f"Post-process warning: {warning}")
+
     print(f"\n\n=== WATCHLIST BRIEFING ({chosen_session}) ===\n\n")
-    print(result.raw)
+    print(processed)
     print(f"\n\nBriefing saved to {output_file}")
     return output_file
 

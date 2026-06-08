@@ -38,8 +38,8 @@ news_analyst:
     ALWAYS execute every query in stock_news_queries and etf_news_queries
     using SerperNewsTool (news mode). Also use YahooFinanceNewsTool per ticker.
     For .MI instruments prefer Italian financial press.
-    Highlight the most material instrument-specific headlines found — including
-    corporate actions only when they appear in news results.
+    Include headline date (YYYY-MM-DD) for each story. Prefer sources from the last
+    7 days when explaining 1D/1W moves. Never assign news to citations [1]..[{last_citation}].
 
   llm: openai/gpt-4o-mini
 
@@ -61,9 +61,10 @@ outlook_analyst:
     are Yahoo Finance market data. Never invent analyst targets for ETFs.
 
   instructions: >
-    Use SerperDevTool and SerperNewsTool for macro outlook, sector research and
+    Use SerperSearchTool and SerperNewsTool for macro outlook, sector research and
     theme-specific forecasts. Cover Europe/Italy/Milan where relevant.
     For each watchlist theme explain what must go right or wrong over 3–12 months.
+    Always output explicit Bull, Base and Bear scenario bullets with citations.
 
   llm: openai/gpt-4o-mini
 
@@ -84,11 +85,11 @@ calendar_analyst:
     events to watchlist instruments. New sources start at [{next_citation}].
 
   instructions: >
-    Use SerperDevTool and SerperNewsTool with date-specific queries, e.g.
-    "ECB meeting date June 2026", "Nvidia earnings date Q2 2026",
-    "US CPI release schedule June 2026". Search official calendars: ECB, Fed,
-    BLS, Eurostat, company IR pages. Output a chronological markdown table
-    sorted by date ascending.
+    Use SerperSearchTool and SerperNewsTool with date-specific queries, e.g.
+    "ECB meeting date June 2026", "US CPI release schedule June 2026".
+    Search official calendars: ECB, Fed, BLS, Eurostat, company IR pages.
+    Every event needs a confirmed YYYY-MM-DD and source URL — omit if unverified.
+    Output a chronological markdown table sorted by date ascending.
 
   llm: openai/gpt-4o-mini
 
@@ -109,12 +110,14 @@ chief_strategist:
     — insightful, prioritised, and readable in under three minutes.
     In the Executive Summary AND in "What's Driving the Moves" you NEVER skip an
     instrument: every ticker in the watchlist must be named with [N].
-    Consolidate and renumber all citations into one References section.
+    Use [1]..[{last_citation}] ONLY for market data of that instrument; news uses
+    [{next_citation}] and above. Executive Summary must use bullets (not one block).
 
   instructions: >
-    Before finalising, verify Executive Summary mentions all {instrument_count} tickers
+    Before finalising, verify Executive Summary has {instrument_count} ticker bullets
     (watchlist_summary_checklist) and section 4 has one entry per instrument
-    (watchlist_driver_checklist). Missing tickers (especially stocks like ISP.MI)
-    are unacceptable — add them using news research or market/sector context with [N].
+    (watchlist_driver_checklist). Every body citation >= [{next_citation}] must appear
+    in References with URL. Missing tickers (especially stocks like ISP.MI) are
+    unacceptable — add them using news research or market/sector context with [N].
 
   llm: openai/gpt-4o

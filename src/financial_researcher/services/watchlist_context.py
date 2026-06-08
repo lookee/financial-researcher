@@ -305,10 +305,11 @@ def build_watchlist_summary_checklist(instruments: list[dict[str, Any]]) -> str:
         ref = f"[{item['citation']}]"
         perf = item.get("performance", {})
         d1 = _fmt_pct(perf.get("1d"))
+        w1 = _fmt_pct(perf.get("1w"))
         ytd = _fmt_pct(perf.get("ytd"))
         lines.append(
             f"- {ref} **{item['ticker']}** ({item['name']}): "
-            f"cite key move (1D {d1} or YTD {ytd}) and top news or driver {ref}"
+            f"cite 1D {d1}, 1W {w1}, YTD {ytd} and top news or driver {ref}"
         )
     return "\n".join(lines)
 
@@ -324,8 +325,8 @@ def build_watchlist_driver_checklist(instruments: list[dict[str, Any]]) -> str:
         ref = f"[{item['citation']}]"
         lines.append(
             f"- {ref} **{item['ticker']}** ({item['name']}): "
-            f"news-linked catalyst with citation, OR if no specific headline was found, "
-            f"explain the move via sector/theme/performance from market data {ref}"
+            f"recent headline with a research citation (not Yahoo [1]-[N]); "
+            f"if none found, explain 1D/1W move using market data {ref}"
         )
     return "\n".join(lines)
 
@@ -354,7 +355,7 @@ def build_watchlist_context(
         "timezone": "Europe/Rome",
         "language": briefing_language,
         "current_date": now.date().isoformat(),
-        "current_time": now.strftime("%H:%M"),
+        "current_time": load_milan_sessions().get(session, "17:45"),
         "instrument_count": len(instruments),
         "instruments": instruments,
     }
@@ -371,13 +372,14 @@ def build_watchlist_context(
     count = len(instruments)
     today = now.date()
     window_end = today + timedelta(days=28)
+    session_time = load_milan_sessions().get(session, "17:45")
 
     return {
         "language": briefing_language,
         "session": session,
         "session_label": SESSION_LABELS.get(session, session),
         "current_date": today.isoformat(),
-        "current_time": now.strftime("%H:%M"),
+        "current_time": session_time,
         "calendar_window_start": today.isoformat(),
         "calendar_window_end": window_end.isoformat(),
         "market": "Borsa Italiana (Milan)",
