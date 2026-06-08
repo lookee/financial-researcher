@@ -10,20 +10,69 @@ HEADING_RE = re.compile(r"^(#{1,3})\s+(.+?)\s*$", re.MULTILINE)
 CITATION_RE = re.compile(r"\[(\d+)\]")
 NUMBERED_REF_RE = re.compile(r"^(\d+)\.\s+(.+)$", re.MULTILINE)
 
-PERFORMANCE_SECTION_TITLES = {
-    "prestazioni della watchlist",
-    "watchlist performance snapshot",
-    "scatto della performance della watchlist",
+from financial_researcher.services.watchlist_context import instrument_label
+
+# Canonical English headings (prompt template). Post-process matches EN + IT aliases.
+SECTION_HEADINGS: dict[str, str] = {
+    "executive_summary": "Executive Summary",
+    "performance": "Watchlist Performance Snapshot",
+    "drivers": "What's Driving the Moves",
+    "outlook": "Medium-Term Outlook",
+    "calendar": "Event Calendar",
+    "themes": "Correlated Themes",
+    "risks": "Risks & Watchpoints",
+    "references": "References",
+    "disclaimer": "Disclaimer",
 }
 
-REFERENCES_SECTION_TITLES = {
-    "riferimenti",
-    "references",
+SECTION_ALIASES: dict[str, str] = {
+    "executive summary": "executive_summary",
+    "sommario esecutivo": "executive_summary",
+    "watchlist performance snapshot": "performance",
+    "scatto della performance della watchlist": "performance",
+    "prestazioni della watchlist": "performance",
+    "what's driving the moves": "drivers",
+    "whats driving the moves": "drivers",
+    "cosa guida i movimenti": "drivers",
+    "medium-term outlook": "outlook",
+    "outlook a medio termine": "outlook",
+    "prospettive a medio termine": "outlook",
+    "event calendar": "calendar",
+    "calendario degli eventi": "calendar",
+    "correlated themes": "themes",
+    "temi correlati": "themes",
+    "risks & watchpoints": "risks",
+    "risks and watchpoints": "risks",
+    "rischi e punti di attenzione": "risks",
+    "references": "references",
+    "riferimenti": "references",
+    "disclaimer": "disclaimer",
+    "note legali": "disclaimer",
 }
 
-DISCLAIMER_SECTION_TITLES = {
-    "disclaimer",
-}
+
+def section_title(section_key: str) -> str:
+    return SECTION_HEADINGS[section_key]
+
+
+def _section_title_keys(section_key: str) -> set[str]:
+    keys = {SECTION_HEADINGS[section_key].lower()}
+    for alias, key in SECTION_ALIASES.items():
+        if key == section_key:
+            keys.add(alias)
+    return keys
+
+
+def performance_section_titles() -> set[str]:
+    return _section_title_keys("performance")
+
+
+def references_section_titles() -> set[str]:
+    return _section_title_keys("references")
+
+
+def disclaimer_section_titles() -> set[str]:
+    return {"disclaimer", "note legali"}
 
 
 def _normalize_title(title: str) -> str:
@@ -123,22 +172,25 @@ def build_performance_highlights(
         return ""
 
     ranked.sort(key=lambda pair: pair[1], reverse=True)
-    leader_ticker = ranked[0][0]["ticker"]
+    leader = ranked[0][0]
+    laggard = ranked[-1][0]
     leader_pct = ranked[0][1]
-    laggard_ticker = ranked[-1][0]["ticker"]
     laggard_pct = ranked[-1][1]
 
     def fmt_pct(value: float) -> str:
         return f"{value:,.2f}%"
 
+    def _label(item: dict[str, Any]) -> str:
+        return instrument_label(item)
+
     if language.lower().startswith("ital"):
         return (
-            f"**Leader 1D:** {leader_ticker} ({fmt_pct(leader_pct)}) · "
-            f"**Laggard 1D:** {laggard_ticker} ({fmt_pct(laggard_pct)})"
+            f"**Leader 1D:** {_label(leader)} ({fmt_pct(leader_pct)}) · "
+            f"**Laggard 1D:** {_label(laggard)} ({fmt_pct(laggard_pct)})"
         )
     return (
-        f"**1D leader:** {leader_ticker} ({fmt_pct(leader_pct)}) · "
-        f"**1D laggard:** {laggard_ticker} ({fmt_pct(laggard_pct)})"
+        f"**1D leader:** {_label(leader)} ({fmt_pct(leader_pct)}) · "
+        f"**1D laggard:** {_label(laggard)} ({fmt_pct(laggard_pct)})"
     )
 
 
@@ -160,20 +212,21 @@ def _merge_references_section(
     *,
     yahoo_refs: list[str],
     instrument_count: int,
-    language: str,
 ) -> str:
-    before, refs_block, after = _split_before_section(content, REFERENCES_SECTION_TITLES)
+    before, refs_block, after = _split_before_section(
+        content, references_section_titles()
+    )
     if refs_block is None:
-        heading = "### Riferimenti" if language.lower().startswith("ital") else "### References"
+        heading = f"## {section_title('references')}"
         research_lines = []
         tail = after
     else:
         heading_match = HEADING_RE.search(refs_block)
-        heading = heading_match.group(0) if heading_match else "### References"
+        heading = heading_match.group(0) if heading_match else f"## {section_title('references')}"
         disclaimer_block = ""
         tail = after
         refs_body = refs_block
-        for title in DISCLAIMER_SECTION_TITLES:
+        for title in disclaimer_section_titles():
             disc_before, disc_section, disc_after = _split_before_section(refs_body, {title})
             if disc_section is not None:
                 refs_body = disc_before
@@ -216,9 +269,11 @@ def validate_citations(content: str, *, reference_count: int) -> list[str]:
 
 def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, list[str]]:
     """Apply deterministic fixes to a generated briefing markdown document."""
+    updated = content
+
     context = json.loads(inputs["watchlist_context"])
     instruments: list[dict[str, Any]] = context["instruments"]
-    language = inputs.get("language", "English")
+    language = inputs.get("language", context.get("language", "English"))
     date_str = inputs.get("current_date", context.get("current_date", ""))
     instrument_count = len(instruments)
 
@@ -228,25 +283,21 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
     if highlights:
         performance_body = f"{highlights}\n\n{performance_table}"
 
+    before_perf = updated
     updated = _replace_section_body(
-        content,
-        title_keys=PERFORMANCE_SECTION_TITLES,
+        updated,
+        title_keys=performance_section_titles(),
         new_body=performance_body,
     )
-    if updated == content and performance_table:
-        # Section missing — insert after executive summary if possible.
-        exec_titles = {"sommario esecutivo", "executive summary"}
-        sections = _find_sections(content)
+    if updated == before_perf and performance_table:
+        exec_keys = _section_title_keys("executive_summary")
+        sections = _find_sections(updated)
         for start, end, level, title in sections:
-            if _normalize_title(title) not in exec_titles:
+            if _normalize_title(title) not in exec_keys:
                 continue
-            perf_heading = (
-                "### Prestazioni della Watchlist"
-                if language.lower().startswith("ital")
-                else "### Watchlist Performance Snapshot"
-            )
+            perf_heading = f"## {section_title('performance')}"
             insert = f"\n\n{perf_heading}\n\n{performance_body.strip()}\n\n"
-            updated = content[:end].rstrip() + insert + content[end:].lstrip("\n")
+            updated = updated[:end].rstrip() + insert + updated[end:].lstrip("\n")
             break
 
     yahoo_refs = build_market_data_references(instruments, date_str=date_str)
@@ -254,10 +305,9 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
         updated,
         yahoo_refs=yahoo_refs,
         instrument_count=instrument_count,
-        language=language,
     )
 
-    body, refs_block, _ = _split_before_section(updated, REFERENCES_SECTION_TITLES)
+    body, refs_block, _ = _split_before_section(updated, references_section_titles())
     reference_count = len(NUMBERED_REF_RE.findall(refs_block or ""))
     warnings = validate_citations(body or updated, reference_count=reference_count)
     return updated, warnings

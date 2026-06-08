@@ -24,8 +24,8 @@ market_analysis_task:
     A market analysis brief with:
     - Session headline (2-3 lines) with citations
     - Watchlist performance overview (relative ranking, key moves) with citations
-    - Per-instrument highlights for EVERY ticker in {watchlist_tickers} ({instrument_count}
-      instruments) — none omitted — with price, performance, forecasts if available
+    - Per-instrument highlights for EVERY instrument ({instrument_count}) — use Name (TICKER),
+      none omitted — with price, performance, forecasts if available
     - Cross-instrument observations (sector/theme links) with citations
     - Data limitations if any field is missing from watchlist_context
 
@@ -43,10 +43,13 @@ news_analysis_task:
 
     Session: {session_label} · {current_date} · Milan market focus.
 
-    MANDATORY stock searches — run ALL queries below before writing:
+    PRE-FETCHED HEADLINES (review FIRST — do not ignore):
+    {prefetched_news_digest}
+
+    MANDATORY stock searches — run ALL queries below (in addition to prefetch):
     {stock_news_queries}
 
-    MANDATORY ETF searches — run ALL queries below before writing:
+    MANDATORY ETF searches — run ALL queries below (in addition to prefetch):
     {etf_news_queries}
 
     Use pre-loaded performance data to prioritise stories that explain recent moves:
@@ -58,16 +61,23 @@ news_analysis_task:
     Full structured context (JSON):
     {watchlist_context}
 
+    Workflow (strict order):
+    1. Read prefetched_news_digest for every ticker (Yahoo + Italy + global Serper).
+    2. Run ALL stock_news_queries and etf_news_queries using BOTH tools:
+       - Search Italian financial news with Serper → **Italia / locale** queries
+       - Search recent financial news with Serper → **Mondo / global** queries
+    3. Call YahooFinanceNewsTool once per ticker for supplemental headlines.
+    4. Use ScrapeWebsiteTool on the best URL when the snippet is incomplete.
+    5. Write the brief — include ALL material headlines (Italy AND world).
+
     Priority rules:
-    1. Run all mandatory news queries (stocks + ETFs) before writing.
+    1. Include every material headline from prefetched_news_digest with citation.
     2. Prioritise recent headlines that explain 1D/1W moves in market_pulse_table.
     3. Material instrument-specific news MUST lead over generic macro/sector talk.
-    4. Include corporate actions (OPS, OPA, etc.) only when found in news results —
-       do not omit other relevant headlines to focus on capital operations alone.
-    5. To explain 1D/1W moves, prefer headlines dated within the last 7 calendar days.
-       Do not use sources older than 30 days for move explanations unless nothing
-       recent exists — then state that explicitly.
-    6. Never cite [1]..[{last_citation}] for news — those numbers are Yahoo market data only.
+    4. For ETFs, include fund-specific AND global theme/sector news (e.g. Nvidia for SMH).
+    5. For .MI stocks, include Italian press AND global wire stories (Reuters, Bloomberg).
+    6. To explain 1D/1W moves, prefer headlines dated within the last 7 calendar days.
+    7. Never cite [1]..[{last_citation}] for news — those numbers are Yahoo market data only.
 
     Citation rules:
     - [1]..[{last_citation}] are reserved for Yahoo Finance data per instrument.
@@ -75,15 +85,17 @@ news_analysis_task:
     - Every news fact must use [{next_citation}] or higher with Source, date, URL in References.
     - Cite every fact with [N]. Omit unsupported claims.
 
-    Search window: last 72 hours.
+    Search window: last 7 days (primary), up to 14 days if nothing recent.
 
   expected_output: >
     A news brief with:
-    - MANDATORY subsection for EVERY ticker in {watchlist_tickers} ({instrument_count}
-      instruments) — none may be omitted. Use heading format: ### TICKER (Name).
-      For each: recent headlines (title, **exact date YYYY-MM-DD**, summary) with [N], OR
-      explicitly "No material instrument-specific headline in window" plus sector/theme
-      driver with [N]. Cover stocks and ETFs; include corporate actions if reported.
+    - MANDATORY subsection for EVERY instrument ({instrument_count}) — none omitted.
+      Heading format: ### Name (TICKER). In prose always write Name (TICKER), not ticker alone.
+      For each instrument list at least 2 headlines when available (from prefetch and/or
+      tools); if only one exists, include it and state that no further headline was found.
+      Format per headline: title, **exact date YYYY-MM-DD**, 1-line summary, [N].
+      If no instrument-specific headline exists, state that explicitly and give the best
+      sector/theme driver with [N].
     - Correlated macro or sector news affecting multiple watchlist names with [N]
     - Risks or events to watch in the next session with [N]
     - Additional references: [N] Source name, YYYY-MM-DD, URL for N >= {next_citation}
@@ -186,41 +198,45 @@ executive_briefing_task:
 
     Do not give buy/sell/hold advice.
 
+    Instrument naming in all narrative text:
+    {instrument_naming_guide}
+
     Style: senior strategy consultant memo — authoritative, concise, accessible.
     The Executive Summary is the centrepiece (read in under 3 minutes).
 
-    Required sections (headings in {language}):
-    1. Title block — session, date, time, market, instrument count
-    2. Executive Summary — prioritised insights across all time horizons.
+    Required sections — use EXACTLY these headings (translate when writing in Italian):
+    {briefing_section_headings}
+
+    Section content rules:
+    1. Title block (# level) — session, date, time, market, instrument count
+    2. Executive Summary / Sommario Esecutivo — prioritised insights across all time horizons.
        Structure (do NOT use one long paragraph):
        - Opening (2-3 sentences): leader/laggard 1D, dominant theme, nearest catalyst.
-       - Then {instrument_count} bullets — one per ticker with 1D or 1W move + headline.
+       - Then {instrument_count} bullets — one per instrument as **Name (TICKER)** with 1D or 1W move + headline.
        Lead with the most material instrument-specific headlines from news research
        (including corporate actions when reported) — before generic macro.
        MANDATORY: mention every instrument — none skipped:
        {watchlist_summary_checklist}
        Reserve [1]..[{last_citation}] for that instrument's market figures only.
-       Use [{next_citation}]+ for news facts. Each ticker must appear by name.
-    3. Watchlist Performance Snapshot — leave this section heading in place; the
+       Use [{next_citation}]+ for news facts. Never use ticker alone without the full name.
+    3. Performance section — leave this section heading in place; the
        performance table is injected automatically after generation. You may add
        one sentence on leaders/laggards above where the table will appear.
-       Reference columns: daily (1D), weekly (1W), monthly (1M), YTD.
-    4. What's Driving the Moves — news-linked explanation with [N].
+    4. Drivers section — one entry per instrument as **Name (TICKER)** with news-linked explanation [N]:
        MANDATORY full coverage checklist (one entry per instrument, none skipped):
        {watchlist_driver_checklist}
        For each stock, cite specific issuer events before sector generalities.
        If news research found no headline for an instrument, still include it and
        explain the move using performance data and sector/theme context with [N].
-    5. Medium-Term Outlook — themes, scenarios, macro from outlook analysis with [N].
+    5. Outlook section — themes, scenarios, macro from outlook analysis with [N].
        MUST include Bull / Base / Bear bullets with citations.
-    6. Event Calendar — markdown table copied from calendar analysis with columns:
-       Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N]
+    6. Calendar section — markdown table copied from calendar analysis.
        NEVER list an event without a confirmed YYYY-MM-DD date and source URL in References.
        If calendar analysis has no dated events, write that explicitly.
-    7. Correlated Themes — cross-instrument links with [N]; cover tech cluster and
+    7. Correlated themes section — cross-instrument links with [N]; cover tech cluster and
        non-tech names (e.g. banks) where relevant.
-    8. Risks & Watchpoints — at least 3 cited bullets spanning macro and watchlist names
-    9. References — list research sources [{next_citation}] and above ONLY here
+    8. Risks section — at least 3 cited bullets spanning macro and watchlist names
+    9. References section — list research sources [{next_citation}] and above ONLY here
        (format: N. Source — title — YYYY-MM-DD — URL). Yahoo Finance [1]..[{last_citation}]
        are added automatically — do not omit research entries you cited in the body.
     10. Disclaimer — informational only, not investment advice
@@ -235,10 +251,10 @@ executive_briefing_task:
     A polished Markdown executive briefing for the entire watchlist.
     Single cohesive memo (not separate per-instrument reports).
     Executive Summary must weave performance, news, outlook and calendar AND mention
-    every ticker in {watchlist_tickers} ({instrument_count} instruments) — verify
+    every instrument by Name (TICKER) ({instrument_count} instruments) — verify
     against watchlist_summary_checklist before finishing.
     Section 4 (What's Driving the Moves) MUST contain exactly {instrument_count}
-    entries — one per ticker in {watchlist_tickers}, including stocks (e.g. ISP.MI)
+    entries — one per instrument as Name (TICKER), including stocks (e.g. Intesa Sanpaolo (ISP.MI))
     and every ETF. Verify against watchlist_driver_checklist before finishing.
     Event Calendar section must preserve exact YYYY-MM-DD dates from calendar analysis.
     References: Yahoo [1]..[{last_citation}] are injected automatically; include every

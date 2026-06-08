@@ -11,6 +11,30 @@ import yaml
 from financial_researcher.models.instrument import InstrumentIdentity
 from financial_researcher.settings import get_default_language
 
+BRIEFING_SECTION_ORDER = [
+    "executive_summary",
+    "performance",
+    "drivers",
+    "outlook",
+    "calendar",
+    "themes",
+    "risks",
+    "references",
+    "disclaimer",
+]
+
+BRIEFING_SECTION_HEADINGS_EN: dict[str, str] = {
+    "executive_summary": "Executive Summary",
+    "performance": "Watchlist Performance Snapshot",
+    "drivers": "What's Driving the Moves",
+    "outlook": "Medium-Term Outlook",
+    "calendar": "Event Calendar",
+    "themes": "Correlated Themes",
+    "risks": "Risks & Watchpoints",
+    "references": "References",
+    "disclaimer": "Disclaimer",
+}
+
 MILAN_TZ = ZoneInfo("Europe/Rome")
 SESSIONS_PATH = Path(__file__).parent.parent / "config" / "sessions_milan.yaml"
 
@@ -32,6 +56,23 @@ def _fmt_pct(value: float | None) -> str:
     if value is None:
         return "n/a"
     return f"{_fmt_num(value)}%"
+
+
+def instrument_label(item: dict[str, Any]) -> str:
+    """Preferred prose reference: full name plus ticker."""
+    return f"{item['name']} ({item['ticker']})"
+
+
+def build_instrument_naming_guide(instruments: list[dict[str, Any]]) -> str:
+    """Tell agents to cite instruments as Name (TICKER), never ticker alone in prose."""
+    lines = [
+        "Instrument naming in narrative text — use Name (TICKER) every time:",
+        "Do NOT refer to an instrument by ticker alone in sentences or bullets.",
+        "",
+    ]
+    for item in instruments:
+        lines.append(f"- {instrument_label(item)}")
+    return "\n".join(lines)
 
 
 def _profile_label(
@@ -113,6 +154,76 @@ def _search_name(company_name: str) -> str:
     return company_name
 
 
+def _global_press_suffix() -> str:
+    return "Reuters OR Bloomberg OR CNBC OR MarketWatch OR Financial Times"
+
+
+def _stock_serper_query_sets(
+    item: dict[str, Any], *, current_year: int
+) -> tuple[list[str], list[str]]:
+    """Return (local/Italy queries, global/world queries) for a stock."""
+    name = item["name"]
+    query_name = _search_name(name)
+    ticker = item["ticker"]
+    sector = item.get("sector") or item.get("industry") or ""
+
+    global_queries = [
+        f'"{query_name}" OR {ticker} stock news {current_year}',
+        f'"{query_name}" OR {ticker} {_global_press_suffix()} {current_year}',
+        f"{ticker} earnings OR results OR outlook {current_year}",
+    ]
+    if sector:
+        global_queries.append(f'"{sector}" sector stocks news {current_year}')
+
+    local_queries: list[str] = []
+    if _is_milan_ticker(ticker):
+        local_queries = [
+            f'"{query_name}" notizie {current_year}',
+            f'"{query_name}" ultime notizie',
+            f'"{query_name}" OR {ticker} notizie Italia {current_year}',
+            f"{ticker} borsa italiana notizie {current_year}",
+            f'"{query_name}" site:ilsole24ore.com',
+            f'"{query_name}" site:ansa.it OR site:milanofinanza.it',
+            f"{ticker} site:borsaitaliana.it OR site:repubblica.it/economia",
+            f'"{query_name}" utili risultati trimestre {current_year}',
+            f'"{query_name}" banca Italia mercato {current_year}',
+        ]
+    return local_queries, global_queries
+
+
+def _stock_serper_queries(item: dict[str, Any], *, current_year: int) -> list[str]:
+    local, global_q = _stock_serper_query_sets(item, current_year=current_year)
+    return local + global_q
+
+
+def iter_stock_serper_queries(item: dict[str, Any], *, current_year: int) -> list[str]:
+    """Public iterator for stock Serper queries (prefetch + agent checklist)."""
+    return _stock_serper_queries(item, current_year=current_year)
+
+
+def iter_stock_serper_query_sets(
+    item: dict[str, Any], *, current_year: int
+) -> tuple[list[str], list[str]]:
+    return _stock_serper_query_sets(item, current_year=current_year)
+
+
+def _format_dual_query_block(
+    local_queries: list[str],
+    global_queries: list[str],
+) -> list[str]:
+    lines: list[str] = []
+    if local_queries:
+        lines.append("**Italia / locale** (Search Italian financial news with Serper):")
+        for index, query in enumerate(local_queries, start=1):
+            lines.append(f"{index}. {query}")
+    if global_queries:
+        lines.append("**Mondo / global** (Search recent financial news with Serper):")
+        offset = 0 if not local_queries else len(local_queries)
+        for index, query in enumerate(global_queries, start=1):
+            lines.append(f"{index + offset}. {query}")
+    return lines
+
+
 def build_stock_news_queries(
     instruments: list[dict[str, Any]],
     *,
@@ -124,29 +235,17 @@ def build_stock_news_queries(
         return "No individual stocks in watchlist — skip stock-specific searches."
 
     blocks: list[str] = [
-        "Run EVERY query below with SerperNewsTool (news search) before writing.",
-        "Use Italian for .MI tickers. Do not narrow to OPS/OPA/capital operations only.",
+        "Run EVERY query below before writing. Use BOTH Italy/local AND global/world coverage.",
+        "Italia → Search Italian financial news with Serper (gl=it).",
+        "Mondo → Search recent financial news with Serper (international sources).",
         "",
     ]
     for item in stocks:
         name = item["name"]
-        query_name = _search_name(name)
         ticker = item["ticker"]
-        sector = item.get("sector") or item.get("industry") or ""
+        local, global_q = _stock_serper_query_sets(item, current_year=current_year)
         blocks.append(f"### {name} ({ticker})")
-        blocks.append(f'1. "{query_name}" notizie {current_year}')
-        blocks.append(f'2. "{query_name}" OR {ticker} news {current_year}')
-        if sector:
-            blocks.append(f'3. "{query_name}" {sector} notizie {current_year}')
-        if _is_milan_ticker(ticker):
-            blocks.append(
-                f'4. "{query_name}" site:ilsole24ore.com OR site:ansa.it OR site:milanofinanza.it'
-            )
-            blocks.append(
-                f'5. {ticker} site:borsaitaliana.it OR site:repubblica.it/economia'
-            )
-        else:
-            blocks.append(f'4. {ticker} financial news {current_year}')
+        blocks.extend(_format_dual_query_block(local, global_q))
         blocks.append("")
     return "\n".join(blocks).rstrip()
 
@@ -166,23 +265,127 @@ def _etf_short_name(name: str) -> str:
     return name.strip()
 
 
-def _etf_theme_query(name: str, category: str, *, current_year: int) -> str | None:
-    """Optional thematic query inferred from ETF name or category."""
+def _etf_theme_search_queries(
+    name: str, category: str, *, current_year: int
+) -> tuple[list[str], list[str]]:
+    """Theme queries split into local (Italian) and global (world) variants."""
     text = f"{name} {category}".lower()
-    themes: list[tuple[str, str]] = [
-        ("semiconductor", f'"semiconductor" OR "semiconduttori" ETF notizie {current_year}'),
-        ("artificial intelligence", f'"artificial intelligence" OR "intelligenza artificiale" ETF notizie {current_year}'),
-        ("quantum", f'"quantum computing" OR "computazione quantistica" ETF notizie {current_year}'),
-        ("china", f'"China" OR "Cina" ETF notizie mercati {current_year}'),
-        ("quality factor", f'"quality factor" OR fattore qualità ETF notizie {current_year}'),
-        ("msci world", f'"MSCI World" ETF notizie {current_year}'),
+    local: list[str] = []
+    global_q: list[str] = []
+    theme_map: list[tuple[str, list[str], list[str]]] = [
+        (
+            "semiconductor",
+            [
+                f'"semiconduttori" notizie {current_year}',
+                f"semiconduttori Borsa Italiana notizie {current_year}",
+            ],
+            [
+                f'"semiconductor" stocks news {current_year}',
+                f"Nvidia OR Broadcom OR ASML semiconductor news {current_year}",
+            ],
+        ),
+        (
+            "artificial intelligence",
+            [f'"intelligenza artificiale" ETF notizie {current_year}'],
+            [
+                f'"artificial intelligence" ETF OR stocks news {current_year}',
+                f"Nvidia OR OpenAI AI market news {current_year}",
+            ],
+        ),
+        (
+            "quantum",
+            [f'"computazione quantistica" notizie {current_year}'],
+            [f'"quantum computing" stocks OR ETF news {current_year}'],
+        ),
+        (
+            "china",
+            [f'"Cina" mercati azionari notizie {current_year}'],
+            [
+                f'"China" stock market OR ETF news {current_year}',
+                f"MSCI China A shares news {current_year}",
+            ],
+        ),
+        (
+            "quality factor",
+            [f'"fattore qualità" azioni notizie {current_year}'],
+            [f'"quality factor" stocks ETF news {current_year}'],
+        ),
+        (
+            "msci world",
+            [f'"MSCI World" mercati globali notizie {current_year}'],
+            [f'"MSCI World" global equities news {current_year}'],
+        ),
     ]
-    for keyword, query in themes:
+    for keyword, local_queries, global_queries in theme_map:
         if keyword in text:
-            return query
-    if category:
-        return f'"{category}" ETF notizie {current_year}'
-    return None
+            local.extend(local_queries)
+            global_q.extend(global_queries)
+    if not global_q and category:
+        global_q.append(f'"{category}" ETF news {current_year}')
+        local.append(f'"{category}" ETF notizie {current_year}')
+    return local, global_q
+
+
+def _etf_serper_query_sets(
+    item: dict[str, Any], *, current_year: int
+) -> tuple[list[str], list[str]]:
+    """Return (local queries, global queries) for an ETF."""
+    name = item["name"]
+    short_name = _etf_short_name(name)
+    ticker = item["ticker"]
+    etf_data = item.get("etf") or {}
+    category = str(etf_data.get("category") or item.get("profile") or "")
+
+    global_queries = [
+        f'"{short_name}" OR {ticker} ETF news {current_year}',
+        f"{ticker} ETF {_global_press_suffix()} {current_year}",
+        f'"{short_name}" UCITS ETF global news {current_year}',
+    ]
+    if category and category != name:
+        global_queries.append(f'"{category}" ETF news {current_year}')
+
+    theme_local, theme_global = _etf_theme_search_queries(
+        name, category, current_year=current_year
+    )
+    local_queries: list[str] = list(theme_local)
+    global_queries.extend(theme_global)
+
+    if _is_milan_ticker(ticker):
+        local_queries.extend(
+            [
+                f'"{short_name}" OR {ticker} ETF notizie {current_year}',
+                f'"{short_name}" ultime notizie ETF',
+                f"{ticker} site:ilsole24ore.com OR site:etf.it OR site:borsaitaliana.it",
+                f'"{short_name}" site:milanofinanza.it OR site:ansa.it',
+            ]
+        )
+    elif ticker.upper().endswith(".DE"):
+        local_queries.extend(
+            [
+                f'"{short_name}" site:justetf.com OR site:finanzen.net {current_year}',
+                f"{ticker} XETRA ETF news {current_year}",
+            ]
+        )
+    else:
+        local_queries.append(f'"{short_name}" OR {ticker} ETF notizie {current_year}')
+
+    return local_queries, global_queries
+
+
+def _etf_serper_queries(item: dict[str, Any], *, current_year: int) -> list[str]:
+    local, global_q = _etf_serper_query_sets(item, current_year=current_year)
+    return local + global_q
+
+
+def iter_etf_serper_queries(item: dict[str, Any], *, current_year: int) -> list[str]:
+    """Public iterator for ETF Serper queries (prefetch + agent checklist)."""
+    return _etf_serper_queries(item, current_year=current_year)
+
+
+def iter_etf_serper_query_sets(
+    item: dict[str, Any], *, current_year: int
+) -> tuple[list[str], list[str]]:
+    return _etf_serper_query_sets(item, current_year=current_year)
 
 
 def build_etf_news_queries(
@@ -196,32 +399,17 @@ def build_etf_news_queries(
         return "No ETFs in watchlist — skip ETF-specific searches."
 
     blocks: list[str] = [
-        "Run EVERY query below with SerperNewsTool (news search) before writing.",
-        "Use Italian for .MI ETFs where relevant.",
+        "Run EVERY query below before writing. Use BOTH Italy/local AND global/world coverage.",
+        "Italia → Search Italian financial news with Serper. Mondo → Search recent financial news with Serper.",
+        "ETF moves often follow global sector/theme news — always run global queries.",
         "",
     ]
     for item in etfs:
         name = item["name"]
-        short_name = _etf_short_name(name)
         ticker = item["ticker"]
-        etf_data = item.get("etf") or {}
-        category = etf_data.get("category") or item.get("profile") or ""
+        local, global_q = _etf_serper_query_sets(item, current_year=current_year)
         blocks.append(f"### {name} ({ticker})")
-        blocks.append(f'1. "{short_name}" OR {ticker} ETF notizie {current_year}')
-        blocks.append(f'2. {ticker} ETF news {current_year}')
-        if category and category != name:
-            blocks.append(f'3. "{category}" ETF notizie {current_year}')
-        theme_query = _etf_theme_query(name, str(category), current_year=current_year)
-        if theme_query:
-            blocks.append(f"4. {theme_query}")
-        if _is_milan_ticker(ticker):
-            blocks.append(
-                f'5. {ticker} site:ilsole24ore.com OR site:etf.it OR site:borsaitaliana.it'
-            )
-        elif ticker.upper().endswith(".DE"):
-            blocks.append(
-                f'5. "{short_name}" site:justetf.com OR site:finanzen.net {current_year}'
-            )
+        blocks.extend(_format_dual_query_block(local, global_q))
         blocks.append("")
     return "\n".join(blocks).rstrip()
 
@@ -308,23 +496,55 @@ def build_watchlist_summary_checklist(instruments: list[dict[str, Any]]) -> str:
         w1 = _fmt_pct(perf.get("1w"))
         ytd = _fmt_pct(perf.get("ytd"))
         lines.append(
-            f"- {ref} **{item['ticker']}** ({item['name']}): "
+            f"- {ref} **{instrument_label(item)}**: "
             f"cite 1D {d1}, 1W {w1}, YTD {ytd} and top news or driver {ref}"
         )
     return "\n".join(lines)
 
 
-def build_watchlist_driver_checklist(instruments: list[dict[str, Any]]) -> str:
+def build_briefing_section_headings(language: str) -> str:
+    """Markdown checklist of ## headings for the chief strategist."""
+    lines = [
+        "Use EXACTLY these ## section headings in this order (English canonical titles):",
+        "",
+    ]
+    for index, key in enumerate(BRIEFING_SECTION_ORDER, start=2):
+        lines.append(f"{index}. ## {BRIEFING_SECTION_HEADINGS_EN[key]}")
+    if language.lower().startswith("ital"):
+        lines.extend(
+            [
+                "",
+                "Write the briefing body in Italian. Translate each section heading into "
+                "natural Italian (e.g. Sommario Esecutivo, Cosa Guida i Movimenti). "
+                "Do not mix English and Italian headings in the same briefing.",
+            ]
+        )
+    else:
+        lines.append("")
+        lines.append("Keep all section headings in English.")
+    return "\n".join(lines)
+
+
+def build_watchlist_driver_checklist(
+    instruments: list[dict[str, Any]],
+    *,
+    language: str = "English",
+) -> str:
     """Explicit per-instrument checklist for mandatory briefing coverage."""
+    drivers_heading = (
+        "Cosa Guida i Movimenti"
+        if language.lower().startswith("ital")
+        else "What's Driving the Moves"
+    )
     lines = [
         f"MANDATORY: cover ALL {len(instruments)} instruments below — one entry each, "
-        "in this order, in 'What's Driving the Moves' / 'Cosa Guida i Movimenti':",
+        f"in this order, in '{drivers_heading}':",
         "",
     ]
     for item in instruments:
         ref = f"[{item['citation']}]"
         lines.append(
-            f"- {ref} **{item['ticker']}** ({item['name']}): "
+            f"- {ref} **{instrument_label(item)}**: "
             f"recent headline with a research citation (not Yahoo [1]-[N]); "
             f"if none found, explain 1D/1W move using market data {ref}"
         )
@@ -397,7 +617,11 @@ def build_watchlist_context(
         ),
         "instrument_profile_table": build_instrument_profile_table(instruments),
         "watchlist_summary_checklist": build_watchlist_summary_checklist(instruments),
-        "watchlist_driver_checklist": build_watchlist_driver_checklist(instruments),
+        "watchlist_driver_checklist": build_watchlist_driver_checklist(
+            instruments, language=briefing_language
+        ),
+        "briefing_section_headings": build_briefing_section_headings(briefing_language),
+        "instrument_naming_guide": build_instrument_naming_guide(instruments),
         "stock_news_queries": build_stock_news_queries(
             instruments, current_year=today.year
         ),
@@ -405,6 +629,22 @@ def build_watchlist_context(
             instruments, current_year=today.year
         ),
     }
+
+
+def attach_prefetched_news(context: dict[str, str]) -> dict[str, str]:
+    """Add deterministic news digest to crew inputs."""
+    from financial_researcher.services.news_prefetch import prefetch_watchlist_news
+
+    payload = json.loads(context["watchlist_context"])
+    instruments = payload["instruments"]
+    today = payload.get("current_date") or context.get("current_date", "")
+    year = int(str(today)[:4]) if today else datetime.now(MILAN_TZ).year
+    print("Prefetching Yahoo + Serper news...")
+    context = dict(context)
+    context["prefetched_news_digest"] = prefetch_watchlist_news(
+        instruments, current_year=year
+    )
+    return context
 
 
 def load_milan_sessions() -> dict[str, str]:

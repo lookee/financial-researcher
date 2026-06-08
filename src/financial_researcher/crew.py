@@ -10,11 +10,22 @@ from crewai.tools.base_tool import Tool
 from crewai_tools import ScrapeWebsiteTool
 from langchain_community.tools.yahoo_finance_news import YahooFinanceNewsTool
 
-from financial_researcher.tools.serper_news import SerperNewsTool, SerperSearchTool
+from financial_researcher.tools.serper_news import (
+    SerperNewsItalyTool,
+    SerperNewsTool,
+    SerperSearchTool,
+)
 
 _SEARCH_TOOLS = [
     SerperSearchTool(),
     SerperNewsTool(),
+    ScrapeWebsiteTool(),
+]
+
+_NEWS_TOOLS = [
+    SerperNewsTool(),
+    SerperNewsItalyTool(),
+    SerperSearchTool(),
     ScrapeWebsiteTool(),
 ]
 
@@ -41,7 +52,7 @@ class WatchlistBriefingCrew:
             config=self.agents_config["news_analyst"],
             verbose=True,
             tools=[
-                *_SEARCH_TOOLS,
+                *_NEWS_TOOLS,
                 Tool.from_langchain(YahooFinanceNewsTool().as_tool()),
             ],
         )

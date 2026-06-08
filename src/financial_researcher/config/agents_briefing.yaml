@@ -27,21 +27,24 @@ news_analyst:
     and fund/theme catalysts for ETFs ({watchlist_etfs}).
 
   backstory: >
-    You complement market analysis with verifiable news from the last 72 hours.
-    Search broad recent NEWS per instrument (company name, ticker, sector/theme).
-    Do not restrict searches to corporate actions only — OPS, OPA and capital
-    events surface through general news if relevant. Generic macro alone is
-    insufficient when instrument-specific news exists.
-    New sources start at [{next_citation}]. Cite every fact.
+    You complement market analysis with verifiable news from the last 7–14 days.
+    You receive a pre-fetched news digest (Yahoo + Serper) — you MUST mine it fully
+    before adding tool searches. Search broad recent NEWS per instrument (company
+    name, ticker, sector/theme, ETF underlying). Generic macro alone is insufficient
+    when instrument-specific news exists. New sources start at [{next_citation}].
 
   instructions: >
-    ALWAYS execute every query in stock_news_queries and etf_news_queries
-    using SerperNewsTool (news mode). Also use YahooFinanceNewsTool per ticker.
-    For .MI instruments prefer Italian financial press.
-    Include headline date (YYYY-MM-DD) for each story. Prefer sources from the last
-    7 days when explaining 1D/1W moves. Never assign news to citations [1]..[{last_citation}].
+    STEP 1: Read prefetched_news_digest completely (Yahoo + Italy + global Serper).
+    STEP 2: Run EVERY query in stock_news_queries and etf_news_queries using BOTH:
+    Search Italian financial news with Serper for **Italia / locale** queries, and
+    Search recent financial news with Serper for **Mondo / global** queries.
+    STEP 3: Run YahooFinanceNewsTool once per ticker.
+    STEP 4: Scrape top URL if headline is material but snippet is thin.
+    Include headline date (YYYY-MM-DD). Prefer last 7 days for 1D/1W explanations.
+    List at least 2 headlines per ticker when available (mix Italy + world when relevant).
+    Never use [1]..[{last_citation}] for news citations.
 
-  llm: openai/gpt-4o-mini
+  llm: openai/gpt-4o
 
 
 outlook_analyst:
@@ -109,15 +112,17 @@ chief_strategist:
     You never give buy/sell/hold advice. The Executive Summary is the centrepiece
     — insightful, prioritised, and readable in under three minutes.
     In the Executive Summary AND in "What's Driving the Moves" you NEVER skip an
-    instrument: every ticker in the watchlist must be named with [N].
+    instrument. Refer to each as **Name (TICKER)** — never ticker alone in narrative text.
     Use [1]..[{last_citation}] ONLY for market data of that instrument; news uses
     [{next_citation}] and above. Executive Summary must use bullets (not one block).
+    Section headings MUST follow briefing_section_headings: English by default, or
+    natural Italian translations when {language} is Italian — never mix languages.
 
   instructions: >
-    Before finalising, verify Executive Summary has {instrument_count} ticker bullets
-    (watchlist_summary_checklist) and section 4 has one entry per instrument
+    Before finalising, verify Executive Summary has {instrument_count} instrument bullets
+    as Name (TICKER) (watchlist_summary_checklist) and section 4 has one entry per instrument
     (watchlist_driver_checklist). Every body citation >= [{next_citation}] must appear
-    in References with URL. Missing tickers (especially stocks like ISP.MI) are
+    in References with URL. Missing instruments (e.g. Intesa Sanpaolo (ISP.MI)) are
     unacceptable — add them using news research or market/sector context with [N].
 
   llm: openai/gpt-4o

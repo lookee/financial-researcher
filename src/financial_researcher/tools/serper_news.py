@@ -35,21 +35,34 @@ class SerperSearchTool(SerperDevTool):
     """General web search via Serper."""
 
     args_schema: Type[BaseModel] = FlexibleSerperArgs
+    n_results: int = 12
 
 
 class SerperNewsTool(SerperDevTool):
-    """News search via Serper (news mode)."""
+    """News search via Serper (news mode) — global/international coverage."""
 
     name: str = "Search recent financial news with Serper"
     description: str = (
-        "Search recent news articles on the internet (news mode). "
-        "Use for company and ETF headlines, sector news, earnings, M&A, "
-        "and market updates. "
-        "For Italian instruments (.MI) use Italian queries and sources "
-        "(Il Sole 24 Ore, ANSA, Milano Finanza, Borsa Italiana). "
-        "Prefer broad news searches over narrow corporate-action-only queries. "
-        "Include the current year in the query when possible. "
+        "Search recent news articles worldwide (news mode, no country filter). "
+        "Use for international headlines: Reuters, Bloomberg, CNBC, MarketWatch, "
+        "Financial Times, sector and macro news. Complement Italian/local searches. "
         "Always pass the query as search_query."
     )
     args_schema: Type[BaseModel] = FlexibleSerperArgs
     search_type: str = "news"
+    n_results: int = 15
+
+
+class SerperNewsItalyTool(SerperNewsTool):
+    """News search biased to Italian sources (gl=it, hl=it)."""
+
+    name: str = "Search Italian financial news with Serper"
+    description: str = (
+        "Search recent Italian/local financial news (news mode, Italy locale). "
+        "Use for .MI stocks and ETFs, Borsa Italiana, Il Sole 24 Ore, ANSA, "
+        "Milano Finanza. Pair with global Serper searches for full coverage. "
+        "Always pass search_query."
+    )
+    country: str = "it"
+    locale: str = "it"
+    n_results: int = 15

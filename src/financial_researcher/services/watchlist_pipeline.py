@@ -8,7 +8,10 @@ import yaml
 from financial_researcher.models.instrument import InstrumentIdentity
 from financial_researcher.services.isin_resolver import IsinResolver
 from financial_researcher.services.market_data import MarketDataService
-from financial_researcher.services.watchlist_context import build_watchlist_context
+from financial_researcher.services.watchlist_context import (
+    attach_prefetched_news,
+    build_watchlist_context,
+)
 from financial_researcher.settings import get_default_language
 
 DEFAULT_WATCHLIST = Path("src/financial_researcher/config/watchlist.yaml")
@@ -75,9 +78,10 @@ class WatchlistPipeline:
         if not identities:
             raise ValueError("Watchlist contains no instruments.")
 
-        return build_watchlist_context(
+        context = build_watchlist_context(
             identities,
             snapshots,
             session=session,
             language=briefing_language,
         )
+        return attach_prefetched_news(context)
