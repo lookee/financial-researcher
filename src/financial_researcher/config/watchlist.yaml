@@ -3,31 +3,27 @@
 
 instruments:
   - isin: IE00BK5BCD43
-    name: L&G Artificial Intelligence UCITS ETF
     ticker: AIAI.MI
     type: etf
-    theme: Artificial Intelligence
-    drivers:
-      - AI capex and hyperscaler spending
-      - US mega-cap tech earnings
-      - AI regulation and platform competition
 
   - isin: IE00BMC38736
-    name: VanEck Semiconductor UCITS ETF
     ticker: SMH.MI
     type: etf
-    theme: Semiconductors
-    drivers:
-      - Semiconductor cycle and inventory normalisation
-      - NVDA and equipment-maker guidance
-      - Geopolitics and supply-chain constraints
-
-  - isin: IE00B4L5Y983
-    name: iShares Core MSCI World UCITS ETF
-    ticker: SWDA.MI
+  
+  - isin: IE00BP3QZ601
+    ticker: IWQU.MI
     type: etf
-    theme: Global Equities
-    drivers:
-      - Global growth and corporate earnings
-      - US and EU interest-rate path
-      - USD/EUR and geopolitical risk
+  
+  - isin: IE000C6ITGC8
+    ticker: QOMP.DE
+    type: etf
+  
+  - isin: IE00BQT3WG13
+    ticker: 36BZ.DE
+    type: etf
+
+  - isin: IT0000072618
+    ticker: ISP.MI
+    type: stock
+
+

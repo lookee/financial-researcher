@@ -87,7 +87,7 @@ Example cron (close briefing, weekdays):
 
 ## Watchlist
 
-Instruments are defined in [`watchlist.yaml`](src/financial_researcher/config/watchlist.yaml). Each entry needs an ISIN; ticker and type help resolution on Milan-listed ETFs and stocks:
+Instruments are defined in [`watchlist.yaml`](src/financial_researcher/config/watchlist.yaml):
 
 ```yaml
 # Optional: override default_language for this watchlist only
@@ -95,26 +95,23 @@ Instruments are defined in [`watchlist.yaml`](src/financial_researcher/config/wa
 
 instruments:
   - isin: IE00BK5BCD43
-    name: L&G Artificial Intelligence UCITS ETF
     ticker: AIAI.MI
     type: etf
 
-  - isin: IE00BMC38736
-    name: VanEck Semiconductor UCITS ETF
-    ticker: SMH.MI
-    type: etf
+  - isin: US67066G1040
+    ticker: NVDA
+    type: stock
 ```
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `isin` | Yes | 12-character ISIN |
-| `ticker` | Recommended | Yahoo Finance ticker (prefer `.MI` for Milan) |
-| `type` | Recommended | `stock` or `etf` |
-| `name` | Optional | Display label (resolved name used if omitted) |
-| `theme` | Optional | Thematic bucket (e.g. Semiconductors, AI) — used by outlook/calendar agents |
-| `drivers` | Optional | List of key drivers for the theme |
+| `ticker` | Yes | Yahoo Finance ticker (e.g. `AIAI.MI`, `ISP.MI`, `NVDA`) |
+| `type` | No | `stock` or `etf` — helps ISIN resolution when OpenFIGI is ambiguous |
 
-Default watchlist: three Milan-listed UCITS ETFs — **AIAI.MI** (AI), **SMH.MI** (semiconductors), **SWDA.MI** (global equities).
+Name, sector and category are resolved automatically from OpenFIGI and Yahoo Finance.
+
+Default watchlist: **AIAI.MI**, **SMH.MI**, **SWDA.MI** (Milan-listed UCITS ETFs).
 
 ## Briefing language
 
@@ -141,7 +138,7 @@ Configure globally in [`settings.yaml`](src/financial_researcher/config/settings
 watchlist.yaml
     │
     ├─ WatchlistPipeline       ISIN resolve + Yahoo Finance snapshots
-    └─ watchlist_context       JSON + market_pulse_table + theme_map  →  [1..N]
+    └─ watchlist_context       JSON + market_pulse_table + profiles  →  [1..N]
             │
             ▼
     CrewAI (sequential process, parallel async tasks)

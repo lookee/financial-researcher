@@ -37,28 +37,44 @@ news_analysis_task:
     Research news and catalysts for the watchlist: {watchlist_names}
     (tickers: {watchlist_tickers}).
 
+    Watchlist stocks (issuer-specific priority): {watchlist_stocks}
+    Watchlist ETFs (fund/theme priority): {watchlist_etfs}
+
     Session: {session_label} · {current_date} · Milan market focus.
+
+    MANDATORY stock searches — run ALL queries below before writing:
+    {stock_news_queries}
+
+    MANDATORY ETF searches — run ALL queries below before writing:
+    {etf_news_queries}
 
     Use pre-loaded performance data to prioritise stories that explain recent moves:
     {market_pulse_table}
 
-    Thematic drivers per instrument:
-    {theme_map_table}
+    Instrument profiles:
+    {instrument_profile_table}
 
     Full structured context (JSON):
     {watchlist_context}
+
+    Priority rules:
+    1. Run all mandatory news queries (stocks + ETFs) before writing.
+    2. Prioritise recent headlines that explain 1D/1W moves in market_pulse_table.
+    3. Material instrument-specific news MUST lead over generic macro/sector talk.
+    4. Include corporate actions (OPS, OPA, etc.) only when found in news results —
+       do not omit other relevant headlines to focus on capital operations alone.
 
     Citation rules:
     - [1]..[{last_citation}] are reserved for Yahoo Finance data per instrument.
     - Start new sources at [{next_citation}].
     - Cite every fact with [N]. Omit unsupported claims.
 
-    Search window: last 24–48 hours. Include macro/Europe/Milan context when
-    it correlates with watchlist moves.
+    Search window: last 72 hours.
 
   expected_output: >
     A news brief with:
-    - Top catalysts per instrument (title, date, summary) each with [N]
+    - Recent headlines per instrument (title, date, summary) each with [N]
+      Cover stocks and ETFs; include corporate actions if reported in news.
     - Correlated macro or sector news affecting multiple watchlist names with [N]
     - Risks or events to watch in the next session with [N]
     - Additional references: [N] Source name, date, URL for N >= {next_citation}
@@ -74,8 +90,8 @@ outlook_analysis_task:
 
     Watchlist: {watchlist_names} (tickers: {watchlist_tickers}).
 
-    Thematic driver map:
-    {theme_map_table}
+    Instrument profiles (from market data):
+    {instrument_profile_table}
 
     Current performance context:
     {market_pulse_table}
@@ -107,13 +123,13 @@ outlook_analysis_task:
 calendar_analysis_task:
   async_execution: true
   description: >
-    Build an event calendar for the next 2–4 weeks from {current_date} that could
-    move the watchlist: {watchlist_tickers}.
+    Build a dated event calendar from {calendar_window_start} to
+    {calendar_window_end} (inclusive) for watchlist: {watchlist_tickers}.
 
-    Session: {session_label} · Milan market focus.
+    Today: {current_date} · Session: {session_label} · Milan market focus.
 
-    Thematic driver map (link events to instruments):
-    {theme_map_table}
+    Instrument profiles (link events to instruments):
+    {instrument_profile_table}
 
     Performance context:
     {market_pulse_table}
@@ -121,18 +137,26 @@ calendar_analysis_task:
     Full structured context (JSON):
     {watchlist_context}
 
-    Requirements:
-    - List confirmed upcoming events only (date, event, relevance to watchlist).
-    - Include: central-bank meetings, major macro releases, key earnings for
-      AI/semiconductor/global equity themes, EU/Milan market events.
-    - Map each event to affected tickers/themes.
-    - Cite every event and date. New sources from [{next_citation}].
+    MANDATORY date rules:
+    - Every event MUST have an exact date in YYYY-MM-DD format.
+    - Dates must fall within {calendar_window_start}..{calendar_window_end}.
+    - If the date is not confirmed in a source, DO NOT include the event.
+    - Never use vague timing (e.g. "soon", "next week", "in June" without day).
+    - Sort events chronologically by date ascending.
+
+    Search for confirmed dates using tools before writing. Include:
+    central-bank meetings (ECB/Fed), major macro releases (CPI, PMI, payrolls),
+    earnings dates for AI/semiconductor theme proxies, EU/Milan market events.
+
+    Cite every event and date. New sources from [{next_citation}].
 
   expected_output: >
     An event calendar brief with:
-    - Chronological table: Date | Event | Affected themes/tickers | Impact note | [N]
-    - Top 3 near-term catalysts to watch with citations
-    - Events that could correlate multiple watchlist instruments with citations
+    - Markdown table with EXACT columns:
+      | Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |
+    - Minimum 5 dated events if available in sources; fewer only if truly
+      unconfirmed — then state "No further confirmed dates in window."
+    - Top 3 near-term catalysts with full dates (YYYY-MM-DD) and citations
     - References: [N] Source name, date, URL for N >= {next_citation}
 
   agent: calendar_analyst
@@ -156,11 +180,17 @@ executive_briefing_task:
 
     Required sections (headings in {language}):
     1. Title block — session, date, time, market, instrument count
-    2. Executive Summary — prioritised insights across all time horizons
+    2. Executive Summary — prioritised insights across all time horizons.
+       Lead with the most material instrument-specific headlines from news research
+       (including corporate actions when reported) — before generic macro.
     3. Watchlist Performance Snapshot — table or bullets from market data with [N]
-    4. What's Driving the Moves — news-linked explanation with [N]
+    4. What's Driving the Moves — news-linked explanation with [N].
+       For each stock, cite specific issuer events before sector generalities.
     5. Medium-Term Outlook — themes, scenarios, macro from outlook analysis with [N]
-    6. Event Calendar — key upcoming dates from calendar analysis with [N]
+    6. Event Calendar — markdown table copied from calendar analysis with columns:
+       Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N]
+       NEVER list an event without a confirmed YYYY-MM-DD date.
+       If calendar analysis has no dated events, write that explicitly.
     7. Correlated Themes — cross-instrument links with [N]
     8. Risks & Watchpoints — cited only
     9. References — single consolidated numbered list (dedupe sources, renumber)
@@ -175,6 +205,7 @@ executive_briefing_task:
     A polished Markdown executive briefing for the entire watchlist.
     Single cohesive memo (not separate per-instrument reports).
     Executive Summary must weave performance, news, outlook and calendar.
+    Event Calendar section must preserve exact YYYY-MM-DD dates from calendar analysis.
     References section must be deduplicated and sequentially numbered.
 
   agent: chief_strategist

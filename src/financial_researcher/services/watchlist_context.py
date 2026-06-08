@@ -1,7 +1,7 @@
 """Build aggregated watchlist context for the briefing crew."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -34,26 +34,22 @@ def _fmt_pct(value: float | None) -> str:
     return f"{_fmt_num(value)}%"
 
 
-def _metadata_for_isin(
-    isin: str, watchlist_items: list[dict[str, Any]] | None
-) -> dict[str, Any]:
-    if not watchlist_items:
-        return {}
-    for item in watchlist_items:
-        if item.get("isin", "").upper() == isin.upper():
-            return {
-                key: item[key]
-                for key in ("theme", "drivers")
-                if item.get(key)
-            }
-    return {}
+def _profile_label(
+    identity: InstrumentIdentity,
+    profile: dict[str, Any],
+    fundamentals: dict[str, Any],
+) -> str:
+    """Infer a short profile label from resolved market data."""
+    if identity.instrument_type == "etf":
+        return fundamentals.get("category") or identity.name
+    parts = [profile.get("sector"), profile.get("industry")]
+    return " / ".join(part for part in parts if part) or identity.name
 
 
 def _instrument_entry(
     identity: InstrumentIdentity,
     snapshot: dict[str, Any],
     citation: int,
-    metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     price = snapshot.get("price", {})
     perf = snapshot.get("performance", {})
@@ -85,6 +81,7 @@ def _instrument_entry(
         },
         "sector": profile.get("sector"),
         "industry": profile.get("industry"),
+        "profile": _profile_label(identity, profile, fundamentals),
     }
 
     if identity.instrument_type == "etf":
@@ -101,23 +98,144 @@ def _instrument_entry(
         if forecasts:
             entry["forecasts"] = forecasts
 
-    if metadata:
-        entry.update(metadata)
-
     return entry
 
 
-def build_theme_map_table(instruments: list[dict[str, Any]]) -> str:
-    """Markdown table mapping each instrument to its thematic drivers."""
+def _is_milan_ticker(ticker: str) -> bool:
+    return ticker.upper().endswith(".MI")
+
+
+def _search_name(company_name: str) -> str:
+    """Short company name for news queries (drop legal suffixes)."""
+    for suffix in (" S.p.A.", " SpA", " S.p.a.", " plc", " Inc.", " Corp.", " N.V."):
+        if company_name.endswith(suffix):
+            return company_name[: -len(suffix)].strip()
+    return company_name
+
+
+def build_stock_news_queries(
+    instruments: list[dict[str, Any]],
+    *,
+    current_year: int,
+) -> str:
+    """Mandatory Serper queries for watchlist stocks (issuer-specific news)."""
+    stocks = [item for item in instruments if item.get("type") == "stock"]
+    if not stocks:
+        return "No individual stocks in watchlist — skip stock-specific searches."
+
+    blocks: list[str] = [
+        "Run EVERY query below with SerperNewsTool (news search) before writing.",
+        "Use Italian for .MI tickers. Do not narrow to OPS/OPA/capital operations only.",
+        "",
+    ]
+    for item in stocks:
+        name = item["name"]
+        query_name = _search_name(name)
+        ticker = item["ticker"]
+        sector = item.get("sector") or item.get("industry") or ""
+        blocks.append(f"### {name} ({ticker})")
+        blocks.append(f'1. "{query_name}" notizie {current_year}')
+        blocks.append(f'2. "{query_name}" OR {ticker} news {current_year}')
+        if sector:
+            blocks.append(f'3. "{query_name}" {sector} notizie {current_year}')
+        if _is_milan_ticker(ticker):
+            blocks.append(
+                f'4. "{query_name}" site:ilsole24ore.com OR site:ansa.it OR site:milanofinanza.it'
+            )
+            blocks.append(
+                f'5. {ticker} site:borsaitaliana.it OR site:repubblica.it/economia'
+            )
+        else:
+            blocks.append(f'4. {ticker} financial news {current_year}')
+        blocks.append("")
+    return "\n".join(blocks).rstrip()
+
+
+def _etf_short_name(name: str) -> str:
+    """Compact ETF name for search queries."""
+    for fragment in (
+        " UCITS ETF USD (Acc)",
+        " UCITS ETF EUR (Acc)",
+        " UCITS ETF USD Acc",
+        " UCITS ETF EUR Acc",
+        " UCITS ETF",
+        " ETF USD (Acc)",
+        " ETF",
+    ):
+        name = name.replace(fragment, "")
+    return name.strip()
+
+
+def _etf_theme_query(name: str, category: str, *, current_year: int) -> str | None:
+    """Optional thematic query inferred from ETF name or category."""
+    text = f"{name} {category}".lower()
+    themes: list[tuple[str, str]] = [
+        ("semiconductor", f'"semiconductor" OR "semiconduttori" ETF notizie {current_year}'),
+        ("artificial intelligence", f'"artificial intelligence" OR "intelligenza artificiale" ETF notizie {current_year}'),
+        ("quantum", f'"quantum computing" OR "computazione quantistica" ETF notizie {current_year}'),
+        ("china", f'"China" OR "Cina" ETF notizie mercati {current_year}'),
+        ("quality factor", f'"quality factor" OR fattore qualità ETF notizie {current_year}'),
+        ("msci world", f'"MSCI World" ETF notizie {current_year}'),
+    ]
+    for keyword, query in themes:
+        if keyword in text:
+            return query
+    if category:
+        return f'"{category}" ETF notizie {current_year}'
+    return None
+
+
+def build_etf_news_queries(
+    instruments: list[dict[str, Any]],
+    *,
+    current_year: int,
+) -> str:
+    """Mandatory Serper queries for watchlist ETFs (fund + theme news)."""
+    etfs = [item for item in instruments if item.get("type") == "etf"]
+    if not etfs:
+        return "No ETFs in watchlist — skip ETF-specific searches."
+
+    blocks: list[str] = [
+        "Run EVERY query below with SerperNewsTool (news search) before writing.",
+        "Use Italian for .MI ETFs where relevant.",
+        "",
+    ]
+    for item in etfs:
+        name = item["name"]
+        short_name = _etf_short_name(name)
+        ticker = item["ticker"]
+        etf_data = item.get("etf") or {}
+        category = etf_data.get("category") or item.get("profile") or ""
+        blocks.append(f"### {name} ({ticker})")
+        blocks.append(f'1. "{short_name}" OR {ticker} ETF notizie {current_year}')
+        blocks.append(f'2. {ticker} ETF news {current_year}')
+        if category and category != name:
+            blocks.append(f'3. "{category}" ETF notizie {current_year}')
+        theme_query = _etf_theme_query(name, str(category), current_year=current_year)
+        if theme_query:
+            blocks.append(f"4. {theme_query}")
+        if _is_milan_ticker(ticker):
+            blocks.append(
+                f'5. {ticker} site:ilsole24ore.com OR site:etf.it OR site:borsaitaliana.it'
+            )
+        elif ticker.upper().endswith(".DE"):
+            blocks.append(
+                f'5. "{short_name}" site:justetf.com OR site:finanzen.net {current_year}'
+            )
+        blocks.append("")
+    return "\n".join(blocks).rstrip()
+
+
+def build_instrument_profile_table(instruments: list[dict[str, Any]]) -> str:
+    """Markdown table with ticker, type and inferred profile from market data."""
     lines = [
-        "| Ticker | Theme | Key Drivers |",
-        "|--------|-------|-------------|",
+        "| Ticker | Type | Profile |",
+        "|--------|------|---------|",
     ]
     for item in instruments:
-        theme = item.get("theme") or "n/a"
-        drivers = item.get("drivers") or []
-        driver_text = "; ".join(drivers) if drivers else "n/a"
-        lines.append(f"| {item['ticker']} | {theme} | {driver_text} |")
+        lines.append(
+            f"| {item['ticker']} | {item['type']} | {item.get('profile', 'n/a')} |"
+        )
     return "\n".join(lines)
 
 
@@ -151,19 +269,13 @@ def build_watchlist_context(
     *,
     session: str,
     language: str | None = None,
-    watchlist_items: list[dict[str, Any]] | None = None,
 ) -> dict[str, str]:
     """Build crew inputs from resolved identities and market snapshots."""
     briefing_language = language or get_default_language()
     now = datetime.now(MILAN_TZ)
 
     instruments = [
-        _instrument_entry(
-            identity,
-            snapshot,
-            citation=index + 1,
-            metadata=_metadata_for_isin(identity.isin, watchlist_items),
-        )
+        _instrument_entry(identity, snapshot, citation=index + 1)
         for index, (identity, snapshot) in enumerate(zip(identities, snapshots))
     ]
 
@@ -182,24 +294,42 @@ def build_watchlist_context(
 
     tickers = ", ".join(item["ticker"] for item in instruments)
     names = ", ".join(item["name"] for item in instruments)
+    stock_names = ", ".join(
+        item["name"] for item in instruments if item.get("type") == "stock"
+    ) or "none"
+    etf_names = ", ".join(
+        item["name"] for item in instruments if item.get("type") == "etf"
+    ) or "none"
 
     count = len(instruments)
+    today = now.date()
+    window_end = today + timedelta(days=28)
 
     return {
         "language": briefing_language,
         "session": session,
         "session_label": SESSION_LABELS.get(session, session),
-        "current_date": now.date().isoformat(),
+        "current_date": today.isoformat(),
         "current_time": now.strftime("%H:%M"),
+        "calendar_window_start": today.isoformat(),
+        "calendar_window_end": window_end.isoformat(),
         "market": "Borsa Italiana (Milan)",
         "instrument_count": str(count),
         "last_citation": str(count),
         "next_citation": str(count + 1),
         "watchlist_tickers": tickers,
         "watchlist_names": names,
+        "watchlist_stocks": stock_names,
+        "watchlist_etfs": etf_names,
         "watchlist_context": json.dumps(context, indent=2, ensure_ascii=False),
         "market_pulse_table": build_market_pulse_table(instruments),
-        "theme_map_table": build_theme_map_table(instruments),
+        "instrument_profile_table": build_instrument_profile_table(instruments),
+        "stock_news_queries": build_stock_news_queries(
+            instruments, current_year=today.year
+        ),
+        "etf_news_queries": build_etf_news_queries(
+            instruments, current_year=today.year
+        ),
     }
 
 

@@ -51,9 +51,15 @@ class WatchlistPipeline:
 
         identities: list[InstrumentIdentity] = []
         snapshots: list[dict[str, Any]] = []
-        watchlist_items: list[dict[str, Any]] = []
 
         for item in config.get("instruments", []):
+            if not item.get("isin"):
+                raise ValueError("Each watchlist entry must include isin.")
+            if not item.get("ticker"):
+                raise ValueError(
+                    f"Each watchlist entry must include ticker (ISIN {item['isin']})."
+                )
+
             identity = self.resolver.resolve(
                 isin=item["isin"],
                 force_refresh=force,
@@ -64,7 +70,6 @@ class WatchlistPipeline:
             snapshot = self.market.get_snapshot(identity, use_cache=not force)
             identities.append(identity)
             snapshots.append(snapshot)
-            watchlist_items.append(item)
             print(f"  Loaded {identity.primary_ticker} ({identity.name})")
 
         if not identities:
@@ -75,5 +80,4 @@ class WatchlistPipeline:
             snapshots,
             session=session,
             language=briefing_language,
-            watchlist_items=watchlist_items,
         )
