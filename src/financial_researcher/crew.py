@@ -7,13 +7,13 @@ https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.tools.base_tool import Tool
-from crewai_tools import ScrapeWebsiteTool, SerperDevTool
+from crewai_tools import ScrapeWebsiteTool
 from langchain_community.tools.yahoo_finance_news import YahooFinanceNewsTool
 
-from financial_researcher.tools.serper_news import SerperNewsTool
+from financial_researcher.tools.serper_news import SerperNewsTool, SerperSearchTool
 
 _SEARCH_TOOLS = [
-    SerperDevTool(),
+    SerperSearchTool(),
     SerperNewsTool(),
     ScrapeWebsiteTool(),
 ]
