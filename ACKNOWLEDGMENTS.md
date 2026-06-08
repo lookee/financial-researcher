@@ -8,17 +8,17 @@ This project builds on concepts and code patterns from:
 Instructor: **[Ed Donner](https://www.udemy.com/user/ed-donner-3/)**  
 Course URL: https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
 
-The course covers CrewAI, multi-agent workflows, tools, and MCP. The upstream course repository is [ed-donner/agents](https://github.com/ed-donner/agents). The `InstrumentCrew` structure (agents, tasks, sequential process, YAML configuration) follows that teaching material, extended here with:
+The course covers CrewAI, multi-agent workflows, tools, and MCP. The upstream course repository is [ed-donner/agents](https://github.com/ed-donner/agents). The `WatchlistBriefingCrew` structure (agents, tasks, sequential process, YAML configuration) follows that teaching material, extended here with:
 
 - ISIN resolution via OpenFIGI and Yahoo Finance
-- Deterministic market data and ETF holdings pipelines
-- Stock vs ETF report templates with cited sections
+- Deterministic market data pipelines for watchlist instruments
+- Milan session scheduling (Europe/Rome)
+- Unified executive briefing output with cited sections
 - Local caching for identity and market snapshots
-- CLI commands for watchlists and report refresh
 
 ## Third-party data
 
-- **Yahoo Finance** (via `yfinance`) — market prices and fund holdings
+- **Yahoo Finance** (via `yfinance`) — market prices and fund data
 - **OpenFIGI** — ISIN to ticker mapping
-- **Serper** — news search for the news researcher agent
+- **Serper** — news search for the news analyst agent
 - **OpenAI** — LLM backend for CrewAI agents

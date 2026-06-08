@@ -4,7 +4,9 @@
 ![CrewAI](https://img.shields.io/badge/CrewAI-multi--agent-8957E5?logo=openai&logoColor=white)
 ![Status](https://img.shields.io/badge/status-experimental-red)
 
-CLI tool that generates cited Markdown research reports for **stocks and ETFs** from an **ISIN** code, using deterministic market-data pipelines and a two-agent [CrewAI](https://crewai.com) workflow.
+CLI tool that generates a **single executive briefing** for your entire **watchlist** — not one report per instrument. Output reads like a senior strategy consultant memo, with cited market data and news, focused on **Borsa Italiana** instruments and **Milan trading sessions**.
+
+Built with a deterministic data layer and a five-agent [CrewAI](https://crewai.com) workflow (four parallel analysts + chief strategist).
 
 [Article from my blog](https://www.lucaamore.com/?p=2777)
 
@@ -14,7 +16,7 @@ CLI tool that generates cited Markdown research reports for **stocks and ETFs** 
 |-------------|---------|
 | Python | 3.10 – 3.12 |
 | Package manager | [uv](https://github.com/astral-sh/uv) (recommended) |
-| API keys | `OPENAI_API_KEY`, `SERPER_API_KEY` — see Setup |
+| API keys | `OPENAI_API_KEY`, `SERPER_API_KEY` — see [Setup](#setup) |
 
 ## Setup
 
@@ -24,43 +26,101 @@ uv sync
 cp .env.sample .env
 ```
 
-Edit `.env` and set your API keys. Optional: `OPENFIGI_API_KEY` for higher OpenFIGI rate limits; `REPORT_LANGUAGE` to override the default report language.
+Edit `.env` and set your API keys:
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `OPENAI_API_KEY` | Yes | LLM backend for CrewAI agents |
+| `SERPER_API_KEY` | Yes | News and web search tools |
+| `OPENFIGI_API_KEY` | No | Higher OpenFIGI rate limits for ISIN resolution |
+| `REPORT_LANGUAGE` | No | Override briefing language (e.g. `Italian`) |
+
+On first run the CLI creates `output/briefings/`, `data/identity/`, and `data/market/` automatically.
 
 ## Usage
 
-### Commands
+### Generate a briefing
 
 ```bash
-# Stock report
-uv run report US67066G1040 NVDA
+# Infer Milan session from current Europe/Rome time
+uv run briefing
 
-# ETF report
-uv run report IE00BK5BQT80 VWCE.DE
+# Explicit session
+uv run briefing --session close
 
-# ISIN only (uses cached identity when available)
-uv run report US67066G1040
+# Refresh cached data and set language
+uv run briefing --force --language Italian
 
-# Resolve and cache instrument identity
-uv run resolve US67066G1040 NVDA
-
-# Batch run from watchlist.yaml
-uv run watchlist
-
-# Regenerate reports for ISINs already under output/reports/
-uv run refresh-reports
+# Custom watchlist file
+uv run briefing --watchlist path/to/watchlist.yaml
 ```
 
 ### Options
 
 | Flag | Description |
 |------|-------------|
+| `--session` | Milan session: `pre_open`, `post_open`, `midday`, `close` (default: inferred from clock) |
 | `--force` | Refresh cached identity and market data |
-| `--type stock\|etf` | Force instrument type when resolving |
-| `--language LANG` | Report language for a single run (default: English) |
+| `--language LANG` | Briefing language (default: English from settings) |
+| `--watchlist PATH` | Watchlist YAML path (default: [`watchlist.yaml`](src/financial_researcher/config/watchlist.yaml)) |
 
-### Report language
+### Milan sessions (Europe/Rome)
 
-Default: **English**. Configure globally in [`settings.yaml`](src/financial_researcher/config/settings.yaml) (`default_language`) or via `.env` (`REPORT_LANGUAGE=Italian`).
+Four sessions per trading day, aligned with Borsa Italiana:
+
+| Session | Time | When to use |
+|---------|------|-------------|
+| `pre_open` | 08:45 | Before the opening auction |
+| `post_open` | 09:30 | After the market opens |
+| `midday` | 13:00 | Mid-session check |
+| `close` | 17:45 | End-of-day wrap-up |
+
+Schedule config: [`sessions_milan.yaml`](src/financial_researcher/config/sessions_milan.yaml)
+
+When `--session` is omitted, the CLI picks the session whose scheduled time most recently passed.
+
+Example cron (close briefing, weekdays):
+
+```bash
+45 17 * * 1-5 cd /path/to/financial_researcher && uv run briefing --session close
+```
+
+## Watchlist
+
+Instruments are defined in [`watchlist.yaml`](src/financial_researcher/config/watchlist.yaml). Each entry needs an ISIN; ticker and type help resolution on Milan-listed ETFs and stocks:
+
+```yaml
+# Optional: override default_language for this watchlist only
+# language: Italian
+
+instruments:
+  - isin: IE00BK5BCD43
+    name: L&G Artificial Intelligence UCITS ETF
+    ticker: AIAI.MI
+    type: etf
+
+  - isin: IE00BMC38736
+    name: VanEck Semiconductor UCITS ETF
+    ticker: SMH.MI
+    type: etf
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `isin` | Yes | 12-character ISIN |
+| `ticker` | Recommended | Yahoo Finance ticker (prefer `.MI` for Milan) |
+| `type` | Recommended | `stock` or `etf` |
+| `name` | Optional | Display label (resolved name used if omitted) |
+| `theme` | Optional | Thematic bucket (e.g. Semiconductors, AI) — used by outlook/calendar agents |
+| `drivers` | Optional | List of key drivers for the theme |
+
+Default watchlist: three Milan-listed UCITS ETFs — **AIAI.MI** (AI), **SMH.MI** (semiconductors), **SWDA.MI** (global equities).
+
+## Briefing language
+
+Default: **English**.
+
+Configure globally in [`settings.yaml`](src/financial_researcher/config/settings.yaml) (`default_language`) or via `.env` (`REPORT_LANGUAGE=Italian`). Per-run override: `--language Italian`.
 
 ---
 
@@ -68,71 +128,143 @@ Default: **English**. Configure globally in [`settings.yaml`](src/financial_rese
 
 ### Overview
 
-Financial Researcher combines a **deterministic data layer** with a **sequential agent crew**:
-
-1. **Resolve** the instrument from ISIN (OpenFIGI, Yahoo Finance) and cache identity.
-2. **Fetch** a market snapshot — prices, performance, fundamentals, ETF top holdings — with a 1-hour cache.
-3. **Pre-format** cited market sections in Python (`report_builder`); Yahoo Finance is always reference **`[1]`**.
-4. **Run agents** — news research, then report composition — to produce a single Markdown file with numbered references, stock/ETF-specific templates, and explicit data-limitations.
+1. **Resolve** each watchlist instrument from ISIN via OpenFIGI and Yahoo Finance; cache identity locally.
+2. **Fetch** market snapshots — prices, performance, ETF profile, stock forecasts — with a 1-hour cache.
+3. **Aggregate** watchlist context, performance table, and theme map in Python (`watchlist_context`).
+4. **Run agents** — four analysts **in parallel** (market, news, outlook, calendar), then chief strategist — to produce one cited executive memo.
 
 > **Note:** Experimental software for learning and exploration, not production use. See [Disclaimer](#disclaimer).
 
 ### Pipeline
 
 ```
-ISIN + ticker
+watchlist.yaml
     │
-    ├─ IsinResolver          OpenFIGI → cached identity
-    ├─ MarketDataService     Yahoo Finance → cached snapshot
-    └─ report_builder        pre-formatted market_summary  →  [1]
+    ├─ WatchlistPipeline       ISIN resolve + Yahoo Finance snapshots
+    └─ watchlist_context       JSON + market_pulse_table + theme_map  →  [1..N]
             │
             ▼
-    CrewAI (sequential)
-    ├─ news_researcher       Serper, Yahoo News, scrape  →  [2+]
-    └─ report_composer       final Markdown report
+    CrewAI (sequential process, parallel async tasks)
+    ├─ market_analyst   ─┐
+    ├─ news_analyst     ─┤
+    ├─ outlook_analyst  ─┼─ parallel (async_execution)
+    └─ calendar_analyst ─┘
+            │
+            ▼
+    chief_strategist (gpt-4o)   unified executive briefing memo
+            │
+            ▼
+    output/briefings/watchlist_{DATE}_{SESSION}.md
 ```
+
+### Briefing structure
+
+The final memo includes (headings in the configured language):
+
+1. Title block — session, date, time, market
+2. **Executive Summary** — prioritised cross-instrument narrative
+3. Watchlist Performance Snapshot
+4. What's Driving the Moves
+5. Medium-Term Outlook — themes, scenarios, macro
+6. Event Calendar — upcoming 2–4 week catalysts
+7. Correlated Themes — macro, sector, Milan/Europe links
+8. Risks & Watchpoints
+9. References — consolidated numbered citations
+10. Disclaimer
 
 ### Agents
 
-Both agents use **OpenAI GPT-4o mini**. The news researcher finishes before the composer starts.
+Research analysts use **GPT-4o mini**; the chief strategist uses **GPT-4o** (configurable in YAML).
 
-#### `news_researcher` — Financial News Researcher
-
-| | |
-|---|---|
-| **Purpose** | Collect recent, verifiable news and events |
-| **Tools** | [Serper](https://serper.dev) search & news, Yahoo Finance news, website scraping (issuer/IR pages) |
-| **Scope** | Last **72 hours**; does not duplicate prices from market data |
-| **Citations** | New sources from **`[2]`** onward (`[1]` reserved for Yahoo Finance) |
-
-#### `report_composer` — Financial Instrument Report Writer
+#### `market_analyst`
 
 | | |
 |---|---|
-| **Purpose** | Assemble the final report in the configured language |
-| **Tools** | None — uses pre-loaded data and the news task output |
-| **Templates** | Separate layouts for **stock** and **ETF** instruments |
-| **Constraints** | Copies market sections verbatim; cites every statement; no buy/sell/hold advice |
+| **Purpose** | Analyse relative performance across the watchlist |
+| **Tools** | None — uses pre-loaded `watchlist_context` and `market_pulse_table` |
+| **Citations** | One Yahoo Finance reference per instrument (`[1]`..`[N]`) |
 
-Configuration: [`agents_instrument.yaml`](src/financial_researcher/config/agents_instrument.yaml) · [`tasks_instrument.yaml`](src/financial_researcher/config/tasks_instrument.yaml)
+#### `news_analyst`
+
+| | |
+|---|---|
+| **Purpose** | Find news and catalysts explaining recent moves (24–48 h) |
+| **Tools** | [Serper](https://serper.dev) search & news, Yahoo Finance news, website scraping |
+| **Citations** | New sources from **`[N+1]`** onward |
+
+#### `outlook_analyst`
+
+| | |
+|---|---|
+| **Purpose** | Medium-term (3–12 month) macro and thematic outlook |
+| **Tools** | Serper search & news, website scraping |
+| **Focus** | ECB/Fed, sector cycles, bull/base/bear scenarios per theme |
+
+#### `calendar_analyst`
+
+| | |
+|---|---|
+| **Purpose** | Upcoming events in the next 2–4 weeks |
+| **Tools** | Serper search & news, website scraping |
+| **Focus** | Central banks, macro prints, theme-proxy earnings |
+
+#### `chief_strategist`
+
+| | |
+|---|---|
+| **Purpose** | Write the final executive briefing |
+| **Tools** | None — synthesises all four analyst outputs |
+| **LLM** | GPT-4o — stronger synthesis and prose |
+| **Style** | Senior strategy consultant memo; no buy/sell/hold advice |
+
+Agent and task configuration:
+
+- [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml)
+- [`tasks_briefing.yaml`](src/financial_researcher/config/tasks_briefing.yaml)
 
 ## Output
 
 | Path | Description |
 |------|-------------|
-| `output/reports/{ISIN}_{TICKER}_{DATE}.md` | Generated report (local, gitignored) |
+| `output/briefings/watchlist_{DATE}_{SESSION}.md` | Unified executive briefing (local, gitignored) |
 | `data/identity/{ISIN}.json` | Cached instrument identity |
 | `data/market/{ISIN}/latest.json` | Cached market snapshot (1 h TTL) |
 
-## Sample reports
+Example filename: `output/briefings/watchlist_2026-06-07_close.md`
 
-Examples in [`examples/reports/`](examples/reports/) (2026-06-07):
+## Project structure
 
-| Instrument | Type | Report |
-|------------|------|--------|
-| NVIDIA Corporation (NVDA) | Stock | [US67066G1040_NVDA_2026-06-07.md](examples/reports/US67066G1040_NVDA_2026-06-07.md) |
-| L&G Artificial Intelligence UCITS ETF (AIAI.MI) | ETF | [IE00BK5BCD43_AIAI_MI_2026-06-07.md](examples/reports/IE00BK5BCD43_AIAI_MI_2026-06-07.md) |
-| VanEck Semiconductor UCITS ETF (SMH.MI) | ETF | [IE00BMC38736_SMH_MI_2026-06-07.md](examples/reports/IE00BMC38736_SMH_MI_2026-06-07.md) |
+```
+financial-researcher/
+├── src/financial_researcher/
+│   ├── main.py                 # CLI entry point (briefing)
+│   ├── crew.py                 # WatchlistBriefingCrew
+│   ├── settings.py             # Language and config loader
+│   ├── config/
+│   │   ├── watchlist.yaml      # Your instruments
+│   │   ├── sessions_milan.yaml # Milan session times
+│   │   ├── settings.yaml       # Default language
+│   │   ├── agents_briefing.yaml
+│   │   └── tasks_briefing.yaml
+│   ├── services/
+│   │   ├── watchlist_pipeline.py   # Resolve + fetch batch
+│   │   ├── watchlist_context.py    # Crew inputs builder
+│   │   ├── isin_resolver.py        # OpenFIGI + Yahoo identity
+│   │   └── market_data.py          # Yahoo Finance snapshots
+│   ├── storage/                # Local JSON caches
+│   └── tools/                  # Serper news tool
+├── examples/briefings/         # Sample output (tracked in git)
+├── output/briefings/           # Generated briefings (gitignored)
+└── data/                       # Runtime cache (gitignored)
+```
+
+## Sample briefing
+
+Static example in [`examples/briefings/`](examples/briefings/):
+
+| Session | Briefing |
+|---------|----------|
+| Close, 2026-06-07 | [watchlist_2026-06-07_close.md](examples/briefings/watchlist_2026-06-07_close.md) |
 
 ## Acknowledgements
 
@@ -154,7 +286,7 @@ Free to use, copy, modify, and redistribute without restrictions.
 
 **No warranty** — provided *as is* without guarantees of correctness or fitness for purpose.
 
-**Not financial advice** — reports are informational only; verify data against primary sources.
+**Not financial advice** — briefings are informational only; verify data against primary sources.
 
 **Your responsibility** — API costs, third-party terms, and use of generated output.
 

@@ -2,5 +2,5 @@
 # API keys belong in .env (see .env.sample at the project root).
 # REPORT_LANGUAGE in .env overrides default_language below.
 
-# Default language for generated reports (e.g. English, Italian).
+# Default language for generated briefings (e.g. English, Italian).
 default_language: English

@@ -1,7 +1,7 @@
-"""CrewAI crew definition for ISIN-based instrument reports.
+"""CrewAI crew for unified watchlist executive briefings.
 
-Agent/task layout follows the CrewAI project structure taught in Ed Donner's
-Udemy course: https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
+Agent/task layout follows CrewAI patterns from Ed Donner's Udemy course:
+https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
 """
 
 from crewai import Agent, Crew, Process, Task
@@ -12,43 +12,85 @@ from langchain_community.tools.yahoo_finance_news import YahooFinanceNewsTool
 
 from financial_researcher.tools.serper_news import SerperNewsTool
 
+_SEARCH_TOOLS = [
+    SerperDevTool(),
+    SerperNewsTool(),
+    ScrapeWebsiteTool(),
+]
+
 
 @CrewBase
-class InstrumentCrew:
-    """Two-agent sequential crew: news research, then report composition."""
+class WatchlistBriefingCrew:
+    """Four analysts in parallel, then chief strategist executive briefing."""
 
-    agents_config = "config/agents_instrument.yaml"
-    tasks_config = "config/tasks_instrument.yaml"
+    agents_config = "config/agents_briefing.yaml"
+    tasks_config = "config/tasks_briefing.yaml"
 
     @agent
-    def news_researcher(self) -> Agent:
-        """Collects recent news; citations start at [2] ([1] is Yahoo market data)."""
+    def market_analyst(self) -> Agent:
+        """Analyses pre-loaded watchlist market data."""
         return Agent(
-            config=self.agents_config["news_researcher"],
+            config=self.agents_config["market_analyst"],
+            verbose=True,
+        )
+
+    @agent
+    def news_analyst(self) -> Agent:
+        """Collects recent news; citations start after Yahoo market data."""
+        return Agent(
+            config=self.agents_config["news_analyst"],
             verbose=True,
             tools=[
-                SerperDevTool(),
-                SerperNewsTool(),
-                ScrapeWebsiteTool(),
+                *_SEARCH_TOOLS,
                 Tool.from_langchain(YahooFinanceNewsTool().as_tool()),
             ],
         )
 
     @agent
-    def report_composer(self) -> Agent:
-        """Assembles the final Markdown report from pre-loaded data and news output."""
+    def outlook_analyst(self) -> Agent:
+        """Medium-term macro and thematic outlook."""
         return Agent(
-            config=self.agents_config["report_composer"],
+            config=self.agents_config["outlook_analyst"],
+            verbose=True,
+            tools=_SEARCH_TOOLS,
+        )
+
+    @agent
+    def calendar_analyst(self) -> Agent:
+        """Upcoming events and catalysts calendar."""
+        return Agent(
+            config=self.agents_config["calendar_analyst"],
+            verbose=True,
+            tools=_SEARCH_TOOLS,
+        )
+
+    @agent
+    def chief_strategist(self) -> Agent:
+        """Writes the final executive watchlist briefing."""
+        return Agent(
+            config=self.agents_config["chief_strategist"],
             verbose=True,
         )
 
     @task
-    def news_research_task(self) -> Task:
-        return Task(config=self.tasks_config["news_research_task"])
+    def market_analysis_task(self) -> Task:
+        return Task(config=self.tasks_config["market_analysis_task"])
 
     @task
-    def compose_report_task(self) -> Task:
-        return Task(config=self.tasks_config["compose_report_task"])
+    def news_analysis_task(self) -> Task:
+        return Task(config=self.tasks_config["news_analysis_task"])
+
+    @task
+    def outlook_analysis_task(self) -> Task:
+        return Task(config=self.tasks_config["outlook_analysis_task"])
+
+    @task
+    def calendar_analysis_task(self) -> Task:
+        return Task(config=self.tasks_config["calendar_analysis_task"])
+
+    @task
+    def executive_briefing_task(self) -> Task:
+        return Task(config=self.tasks_config["executive_briefing_task"])
 
     @crew
     def crew(self) -> Crew:

@@ -2,17 +2,32 @@
 # language: Italian
 
 instruments:
-  - isin: US67066G1040
-    name: NVIDIA Corporation
-    ticker: NVDA
-    type: stock
-
-  - isin: IE00BK5BQT80
-    name: Vanguard FTSE All-World UCITS ETF
-    ticker: VWCE.DE
+  - isin: IE00BK5BCD43
+    name: L&G Artificial Intelligence UCITS ETF
+    ticker: AIAI.MI
     type: etf
+    theme: Artificial Intelligence
+    drivers:
+      - AI capex and hyperscaler spending
+      - US mega-cap tech earnings
+      - AI regulation and platform competition
 
-  - isin: US0378331005
-    name: Apple Inc.
-    ticker: AAPL
-    type: stock
+  - isin: IE00BMC38736
+    name: VanEck Semiconductor UCITS ETF
+    ticker: SMH.MI
+    type: etf
+    theme: Semiconductors
+    drivers:
+      - Semiconductor cycle and inventory normalisation
+      - NVDA and equipment-maker guidance
+      - Geopolitics and supply-chain constraints
+
+  - isin: IE00B4L5Y983
+    name: iShares Core MSCI World UCITS ETF
+    ticker: SWDA.MI
+    type: etf
+    theme: Global Equities
+    drivers:
+      - Global growth and corporate earnings
+      - US and EU interest-rate path
+      - USD/EUR and geopolitical risk

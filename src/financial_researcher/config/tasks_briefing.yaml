@@ -1,0 +1,185 @@
+# Tasks for watchlist executive briefing (Milan sessions)
+
+market_analysis_task:
+  async_execution: true
+  description: >
+    Analyse the full watchlist for session {session_label} on {current_date} at
+    {current_time} (Europe/Rome, Borsa Italiana).
+
+    Pre-loaded data — do not invent numbers:
+    {market_pulse_table}
+
+    Full structured context (JSON):
+    {watchlist_context}
+
+    Requirements:
+    - Compare instruments on 1D, 1W, 1M and YTD performance.
+    - Identify leaders, laggards, and divergences within the watchlist.
+    - For stocks with forecasts in the JSON, summarise street view (targets, ratings).
+    - For ETFs, note AUM/category context when relevant to performance.
+    - Cite every figure with [N] matching the instrument citation in the table.
+    - Write in {language}.
+
+  expected_output: >
+    A market analysis brief with:
+    - Session headline (2-3 lines) with citations
+    - Watchlist performance overview (relative ranking, key moves) with citations
+    - Per-instrument highlights (price, performance, forecasts if available) with citations
+    - Cross-instrument observations (sector/theme links) with citations
+    - Data limitations if any field is missing from watchlist_context
+
+  agent: market_analyst
+
+
+news_analysis_task:
+  async_execution: true
+  description: >
+    Research news and catalysts for the watchlist: {watchlist_names}
+    (tickers: {watchlist_tickers}).
+
+    Session: {session_label} · {current_date} · Milan market focus.
+
+    Use pre-loaded performance data to prioritise stories that explain recent moves:
+    {market_pulse_table}
+
+    Thematic drivers per instrument:
+    {theme_map_table}
+
+    Full structured context (JSON):
+    {watchlist_context}
+
+    Citation rules:
+    - [1]..[{last_citation}] are reserved for Yahoo Finance data per instrument.
+    - Start new sources at [{next_citation}].
+    - Cite every fact with [N]. Omit unsupported claims.
+
+    Search window: last 24–48 hours. Include macro/Europe/Milan context when
+    it correlates with watchlist moves.
+
+  expected_output: >
+    A news brief with:
+    - Top catalysts per instrument (title, date, summary) each with [N]
+    - Correlated macro or sector news affecting multiple watchlist names with [N]
+    - Risks or events to watch in the next session with [N]
+    - Additional references: [N] Source name, date, URL for N >= {next_citation}
+
+  agent: news_analyst
+
+
+outlook_analysis_task:
+  async_execution: true
+  description: >
+    Assess the medium-term (3–12 month) outlook for the watchlist on
+    {current_date}. Session: {session_label} · Milan/Europe focus.
+
+    Watchlist: {watchlist_names} (tickers: {watchlist_tickers}).
+
+    Thematic driver map:
+    {theme_map_table}
+
+    Current performance context:
+    {market_pulse_table}
+
+    Full structured context (JSON):
+    {watchlist_context}
+
+    Requirements:
+    - For each instrument/theme, explain structural drivers over 3–12 months.
+    - Cover macro: ECB/Fed path, inflation, growth, USD/EUR where relevant.
+    - For ETF themes (AI, semiconductors, global equities), research sector outlook
+      — do NOT invent price targets for the ETFs themselves.
+    - Provide bull / base / bear scenario bullets where evidence supports them.
+    - Link outlook to current YTD and 1M performance from market data with [N].
+    - Cite every claim. New sources from [{next_citation}].
+
+  expected_output: >
+    A macro and thematic outlook brief with:
+    - Cross-watchlist outlook headline (2-3 lines) with citations
+    - Per-theme medium-term view (drivers, tailwinds, headwinds) with citations
+    - Macro backdrop for Milan-listed UCITS (Europe rates, FX, flows) with citations
+    - Bull / base / bear scenarios for the watchlist themes with citations
+    - Key assumptions and data limitations
+    - References: [N] Source name, date, URL for N >= {next_citation}
+
+  agent: outlook_analyst
+
+
+calendar_analysis_task:
+  async_execution: true
+  description: >
+    Build an event calendar for the next 2–4 weeks from {current_date} that could
+    move the watchlist: {watchlist_tickers}.
+
+    Session: {session_label} · Milan market focus.
+
+    Thematic driver map (link events to instruments):
+    {theme_map_table}
+
+    Performance context:
+    {market_pulse_table}
+
+    Full structured context (JSON):
+    {watchlist_context}
+
+    Requirements:
+    - List confirmed upcoming events only (date, event, relevance to watchlist).
+    - Include: central-bank meetings, major macro releases, key earnings for
+      AI/semiconductor/global equity themes, EU/Milan market events.
+    - Map each event to affected tickers/themes.
+    - Cite every event and date. New sources from [{next_citation}].
+
+  expected_output: >
+    An event calendar brief with:
+    - Chronological table: Date | Event | Affected themes/tickers | Impact note | [N]
+    - Top 3 near-term catalysts to watch with citations
+    - Events that could correlate multiple watchlist instruments with citations
+    - References: [N] Source name, date, URL for N >= {next_citation}
+
+  agent: calendar_analyst
+
+
+executive_briefing_task:
+  description: >
+    Write ONE executive watchlist briefing in {language} for session
+    {session_label} on {current_date} at {current_time} (Borsa Italiana).
+
+    Synthesise all analyst outputs from task context:
+    - market analysis (performance, leaders/laggards)
+    - news research (recent catalysts)
+    - outlook analysis (3–12 month themes and scenarios)
+    - calendar analysis (upcoming 2–4 week events)
+
+    Do not give buy/sell/hold advice.
+
+    Style: senior strategy consultant memo — authoritative, concise, accessible.
+    The Executive Summary is the centrepiece (read in under 3 minutes).
+
+    Required sections (headings in {language}):
+    1. Title block — session, date, time, market, instrument count
+    2. Executive Summary — prioritised insights across all time horizons
+    3. Watchlist Performance Snapshot — table or bullets from market data with [N]
+    4. What's Driving the Moves — news-linked explanation with [N]
+    5. Medium-Term Outlook — themes, scenarios, macro from outlook analysis with [N]
+    6. Event Calendar — key upcoming dates from calendar analysis with [N]
+    7. Correlated Themes — cross-instrument links with [N]
+    8. Risks & Watchpoints — cited only
+    9. References — single consolidated numbered list (dedupe sources, renumber)
+    10. Disclaimer — informational only, not investment advice
+
+    Citation rules:
+    - Market data: [1]..[{last_citation}] per instrument in watchlist_context
+    - Research sources: consolidate from all analyst tasks into one list
+    - Every factual statement must carry [N]
+
+  expected_output: >
+    A polished Markdown executive briefing for the entire watchlist.
+    Single cohesive memo (not separate per-instrument reports).
+    Executive Summary must weave performance, news, outlook and calendar.
+    References section must be deduplicated and sequentially numbered.
+
+  agent: chief_strategist
+  context:
+    - market_analysis_task
+    - news_analysis_task
+    - outlook_analysis_task
+    - calendar_analysis_task

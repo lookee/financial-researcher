@@ -27,7 +27,7 @@ def _load_yaml_settings() -> dict:
 
 
 def get_default_language() -> str:
-    """Return the default report language.
+    """Return the default briefing language.
 
     Priority: REPORT_LANGUAGE env var > settings.yaml > English.
     """

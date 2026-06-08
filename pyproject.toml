@@ -1,7 +1,7 @@
 [project]
 name = "financial-researcher"
-version = "0.1.0"
-description = "CrewAI multi-agent CLI for ISIN-based stock and ETF research reports"
+version = "0.2.0"
+description = "CrewAI multi-agent CLI for Milan watchlist executive briefings"
 readme = "README.md"
 license = { text = "Unlicense" }
 authors = [{ name = "Luca Amore", email = "luca.amore@gmail.com" }]
@@ -14,10 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-report = "financial_researcher.main:report_cli"
-resolve = "financial_researcher.main:resolve_cli"
-watchlist = "financial_researcher.main:watchlist_cli"
-refresh-reports = "financial_researcher.main:refresh_reports_cli"
+briefing = "financial_researcher.main:briefing_cli"
 
 [build-system]
 requires = ["hatchling"]

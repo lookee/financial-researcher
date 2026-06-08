@@ -1,0 +1,9 @@
+# Milan stock exchange (Borsa Italiana) briefing schedule — Europe/Rome
+timezone: Europe/Rome
+exchange: Borsa Italiana
+
+sessions:
+  pre_open: "08:45"
+  post_open: "09:30"
+  midday: "13:00"
+  close: "17:45"
