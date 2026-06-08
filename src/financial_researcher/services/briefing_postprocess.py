@@ -194,23 +194,46 @@ def build_performance_highlights(
     )
 
 
-def _parse_research_references(section: str) -> list[str]:
-    """Extract non-Yahoo reference lines from a references section."""
-    research: list[tuple[int, str]] = []
+def _parse_research_references(section: str) -> dict[int, str]:
+    """Extract non-Yahoo reference lines keyed by citation number."""
+    research: dict[int, str] = {}
     for match in NUMBERED_REF_RE.finditer(section):
         number = int(match.group(1))
         text = match.group(2).strip()
         if "yahoo finance" in text.lower():
             continue
-        research.append((number, text))
-    research.sort(key=lambda item: item[0])
-    return [text for _, text in research]
+        research[number] = text
+    return research
+
+
+def _format_seed_reference(entry: dict[str, Any]) -> str:
+    return (
+        f"{entry['source']} — {entry['title']} — {entry.get('date', 'n/a')} — "
+        f"{entry['url']}"
+    )
+
+
+def _load_seed_references(inputs: dict[str, str]) -> dict[int, str]:
+    raw = inputs.get("research_reference_seed_json", "").strip()
+    if not raw:
+        return {}
+    try:
+        entries = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return {
+        int(entry["citation"]): _format_seed_reference(entry)
+        for entry in entries
+        if entry.get("citation") and entry.get("url")
+    }
 
 
 def _merge_references_section(
     content: str,
     *,
     yahoo_refs: list[str],
+    seed_refs: dict[int, str],
+    body: str,
     instrument_count: int,
 ) -> str:
     before, refs_block, after = _split_before_section(
@@ -218,7 +241,7 @@ def _merge_references_section(
     )
     if refs_block is None:
         heading = f"## {section_title('references')}"
-        research_lines = []
+        research_lines: dict[int, str] = {}
         tail = after
     else:
         heading_match = HEADING_RE.search(refs_block)
@@ -233,13 +256,24 @@ def _merge_references_section(
                 disclaimer_block = disc_section + disc_after
                 tail = disclaimer_block + tail
                 break
-        research_lines = _parse_research_references(refs_body)
+        research_lines = _parse_research_references(refs_body if refs_block else "")
 
-    renumbered = [
-        f"{instrument_count + index + 1}. {line}"
-        for index, line in enumerate(research_lines)
+    merged = dict(seed_refs)
+    merged.update(research_lines)
+
+    cited = {
+        int(value)
+        for value in CITATION_RE.findall(body)
+        if int(value) > instrument_count
+    }
+    ref_numbers = sorted(set(merged.keys()) | cited)
+
+    research_formatted = [
+        f"{number}. {merged[number]}"
+        for number in ref_numbers
+        if number in merged
     ]
-    all_refs = yahoo_refs + renumbered
+    all_refs = yahoo_refs + research_formatted
     refs_text = heading + "\n\n" + "\n".join(all_refs)
     if tail.strip():
         return before.rstrip() + "\n\n" + refs_text + "\n\n" + tail.lstrip("\n")
@@ -263,6 +297,46 @@ def validate_citations(content: str, *, reference_count: int) -> list[str]:
     missing = sorted(number for number in range(1, reference_count + 1) if number not in used)
     if missing and len(missing) <= 6:
         warnings.append(f"Market-data citations never used in body: {missing}")
+
+    return warnings
+
+
+def validate_material_news_prominence(content: str, inputs: dict[str, str]) -> list[str]:
+    """Warn when ALTA material news may have been diluted or replaced in narrative."""
+    material = inputs.get("watchlist_material_news", "")
+    if "Impatto **ALTA**" not in material and "Impact **ALTA**" not in material:
+        return []
+
+    warnings: list[str] = []
+    lowered = content.lower()
+    vague_markers = ("speculaz", "incertezze nel settore", "competizione nel settore")
+    if any(marker in lowered for marker in vague_markers) and (
+        "notizia dominante" in material.lower() or "dominant watchlist story" in material.lower()
+    ):
+        warnings.append(
+            "Prefetch flagged ALTA issuer news as the dominant watchlist story, but the "
+            "briefing uses vague sector/speculation language — verify headline facts and [N] "
+            "appear in the Executive Summary and Drivers."
+        )
+
+    raw_seed = inputs.get("research_reference_seed_json", "").strip()
+    if raw_seed:
+        try:
+            seed = json.loads(raw_seed)
+        except json.JSONDecodeError:
+            seed = []
+        for entry in seed:
+            url = (entry.get("url") or "").lower()
+            title = (entry.get("title") or "").lower()
+            ticker = entry.get("ticker", "")
+            if "borsaitaliana.it" not in url or ticker.upper() != "ISP.MI":
+                continue
+            if title and title[:40] not in lowered and "bancaditalia" in lowered:
+                warnings.append(
+                    "Prefetch top ISP headline is from Borsa Italiana but briefing emphasises "
+                    "Banca d'Italia — verify the correct issuer story is reported."
+                )
+                break
 
     return warnings
 
@@ -301,13 +375,18 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
             break
 
     yahoo_refs = build_market_data_references(instruments, date_str=date_str)
+    seed_refs = _load_seed_references(inputs)
+    body_before_refs, _, _ = _split_before_section(updated, references_section_titles())
     updated = _merge_references_section(
         updated,
         yahoo_refs=yahoo_refs,
+        seed_refs=seed_refs,
+        body=body_before_refs or updated,
         instrument_count=instrument_count,
     )
 
     body, refs_block, _ = _split_before_section(updated, references_section_titles())
     reference_count = len(NUMBERED_REF_RE.findall(refs_block or ""))
     warnings = validate_citations(body or updated, reference_count=reference_count)
+    warnings.extend(validate_material_news_prominence(updated, inputs))
     return updated, warnings

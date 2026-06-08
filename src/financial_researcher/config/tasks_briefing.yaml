@@ -43,6 +43,15 @@ news_analysis_task:
 
     Session: {session_label} · {current_date} · Milan market focus.
 
+    Official issuer/regulatory sources (check for stocks):
+    {institutional_sources_guide}
+
+    Material news ranking from prefetch (baseline impact — extend with tools):
+    {watchlist_material_news}
+
+    Deterministic research citations for prefetch headlines (use EXACT numbers):
+    {research_reference_seed}
+
     PRE-FETCHED HEADLINES (review FIRST — do not ignore):
     {prefetched_news_digest}
 
@@ -72,23 +81,31 @@ news_analysis_task:
 
     Priority rules:
     1. Include every material headline from prefetched_news_digest with citation.
-    2. Prioritise recent headlines that explain 1D/1W moves in market_pulse_table.
-    3. Material instrument-specific news MUST lead over generic macro/sector talk.
-    4. For ETFs, include fund-specific AND global theme/sector news (e.g. Nvidia for SMH).
-    5. For .MI stocks, include Italian press AND global wire stories (Reuters, Bloomberg).
-    6. To explain 1D/1W moves, prefer headlines dated within the last 7 calendar days.
-    7. Never cite [1]..[{last_citation}] for news — those numbers are Yahoo market data only.
+    2. **Official issuer/regulatory news is never optional** for stocks: corporate
+       announcements, market operations, fines/sanctions/investigations, and items from
+       institutional portals (Borsa Italiana, CONSOB, etc.). If present, they MUST lead
+       that instrument's subsection and flow into the final briefing.
+    3. Prioritise recent headlines that explain 1D/1W moves in market_pulse_table.
+    4. Material instrument-specific news MUST lead over generic macro/sector talk.
+    5. For ETFs, include fund-specific AND global theme/sector news (e.g. Nvidia for SMH).
+    6. For .MI stocks, include Italian press AND global wire stories (Reuters, Bloomberg).
+    7. To explain 1D/1W moves, prefer headlines dated within the last 7 calendar days.
+    8. Never cite [1]..[{last_citation}] for news — those numbers are Yahoo market data only.
 
     Citation rules:
     - [1]..[{last_citation}] are reserved for Yahoo Finance data per instrument.
-    - Start new sources at [{next_citation}].
+    - Use the EXACT citation numbers from research_reference_seed for prefetch headlines.
+    - Additional tool discoveries may use the next free number after the seed list.
     - Every news fact must use [{next_citation}] or higher with Source, date, URL in References.
-    - Cite every fact with [N]. Omit unsupported claims.
+    - End with a **References** block listing every [N] used (seed + new), one line per number.
 
     Search window: last 7 days (primary), up to 14 days if nothing recent.
 
   expected_output: >
     A news brief with:
+    - **Material news by impact** — at the top, one block per instrument with Impatto ALTA/MEDIA
+      from watchlist_material_news; confirm or upgrade with tool searches and [N]. For ALTA items,
+      restate the headline facts verbatim (do not paraphrase into vague sector talk).
     - MANDATORY subsection for EVERY instrument ({instrument_count}) — none omitted.
       Heading format: ### Name (TICKER). In prose always write Name (TICKER), not ticker alone.
       For each instrument list at least 2 headlines when available (from prefetch and/or
@@ -98,7 +115,8 @@ news_analysis_task:
       sector/theme driver with [N].
     - Correlated macro or sector news affecting multiple watchlist names with [N]
     - Risks or events to watch in the next session with [N]
-    - Additional references: [N] Source name, YYYY-MM-DD, URL for N >= {next_citation}
+    - **References** section: every [N] cited in the brief (include all research_reference_seed
+      entries plus any additional tool sources), format: N. Source — title — YYYY-MM-DD — URL
 
   agent: news_analyst
 
@@ -196,6 +214,12 @@ executive_briefing_task:
     - outlook analysis (3–12 month themes and scenarios)
     - calendar analysis (upcoming 2–4 week events)
 
+    Material news ranking from prefetch — honour impact in prose (never dilute ALTA headlines):
+    {watchlist_material_news}
+
+    Research citations (deterministic — include ALL in References section):
+    {research_reference_seed}
+
     Do not give buy/sell/hold advice.
 
     Instrument naming in all narrative text:
@@ -211,10 +235,13 @@ executive_briefing_task:
     1. Title block (# level) — session, date, time, market, instrument count
     2. Executive Summary / Sommario Esecutivo — prioritised insights across all time horizons.
        Structure (do NOT use one long paragraph):
-       - Opening (2-3 sentences): leader/laggard 1D, dominant theme, nearest catalyst.
-       - Then {instrument_count} bullets — one per instrument as **Name (TICKER)** with 1D or 1W move + headline.
-       Lead with the most material instrument-specific headlines from news research
-       (including corporate actions when reported) — before generic macro.
+       - Opening (2-3 sentences): if watchlist_material_news lists a **dominant** ALTA story,
+         the FIRST sentence must state that event with specific facts and [N]; then leader/laggard
+         1D and nearest catalyst. Never open only with performance if a stock has ALTA issuer news.
+       - Then {instrument_count} bullets — one per instrument as **Name (TICKER)** with 1D or 1W
+         move + headline. For instruments with Impatto **ALTA**, the bullet MUST lead with the
+         headline facts from watchlist_material_news (cite [N]) — not 'speculazioni' or generic
+         sector commentary when a sourced headline exists.
        MANDATORY: mention every instrument — none skipped:
        {watchlist_summary_checklist}
        Reserve [1]..[{last_citation}] for that instrument's market figures only.
@@ -225,20 +252,25 @@ executive_briefing_task:
     4. Drivers section — one entry per instrument as **Name (TICKER)** with news-linked explanation [N]:
        MANDATORY full coverage checklist (one entry per instrument, none skipped):
        {watchlist_driver_checklist}
+       For ALTA-impact instruments, repeat the headline substance before any interpretation.
        For each stock, cite specific issuer events before sector generalities.
+       Never replace a sourced headline with vague words ('speculazioni', 'incertezze di settore')
+       when watchlist_material_news or news research provides a concrete title and source.
        If news research found no headline for an instrument, still include it and
        explain the move using performance data and sector/theme context with [N].
     5. Outlook section — themes, scenarios, macro from outlook analysis with [N].
        MUST include Bull / Base / Bear bullets with citations.
     6. Calendar section — markdown table copied from calendar analysis.
+       ALSO include dated ALTA issuer/regulatory events from watchlist_material_news and news
+       research (corporate announcements, board meetings, regulatory actions) with [N].
        NEVER list an event without a confirmed YYYY-MM-DD date and source URL in References.
        If calendar analysis has no dated events, write that explicitly.
     7. Correlated themes section — cross-instrument links with [N]; cover tech cluster and
        non-tech names (e.g. banks) where relevant.
     8. Risks section — at least 3 cited bullets spanning macro and watchlist names
-    9. References section — list research sources [{next_citation}] and above ONLY here
-       (format: N. Source — title — YYYY-MM-DD — URL). Yahoo Finance [1]..[{last_citation}]
-       are added automatically — do not omit research entries you cited in the body.
+    9. References section — Yahoo Finance [1]..[{last_citation}] are injected automatically.
+       You MUST also list every research_reference_seed entry and every additional [N] cited
+       in the body (format: N. Source — title — YYYY-MM-DD — URL). Do not omit seed refs.
     10. Disclaimer — informational only, not investment advice
 
     Citation rules:
@@ -258,7 +290,7 @@ executive_briefing_task:
     and every ETF. Verify against watchlist_driver_checklist before finishing.
     Event Calendar section must preserve exact YYYY-MM-DD dates from calendar analysis.
     References: Yahoo [1]..[{last_citation}] are injected automatically; include every
-    research source you cited at [{next_citation}]+ with URL.
+    research_reference_seed entry plus any extra sources cited in the body, with URL.
 
   agent: chief_strategist
   context:

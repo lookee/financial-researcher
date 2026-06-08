@@ -35,7 +35,9 @@ Edit `.env` and set your API keys:
 | `OPENFIGI_API_KEY` | No | Higher OpenFIGI rate limits for ISIN resolution |
 | `REPORT_LANGUAGE` | No | Override briefing language (e.g. `Italian`) |
 
-On first run the CLI creates `output/briefings/`, `data/identity/`, and `data/market/` automatically.
+On first run the CLI creates `output/briefings/`, `data/identity/`, `data/market/`, and `config/` automatically.
+
+Copy `config/watchlist.yaml.example` to `config/watchlist.yaml` (or let the CLI create it on first run) and edit your instruments there.
 
 ## Usage
 
@@ -62,7 +64,7 @@ uv run briefing --watchlist path/to/watchlist.yaml
 | `--session` | Milan session: `pre_open`, `post_open`, `midday`, `close` (default: inferred from clock) |
 | `--force` | Refresh cached identity and market data |
 | `--language LANG` | Briefing language (default: English from settings) |
-| `--watchlist PATH` | Watchlist YAML path (default: [`watchlist.yaml`](src/financial_researcher/config/watchlist.yaml)) |
+| `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml` in the project directory) |
 
 ### Milan sessions (Europe/Rome)
 
@@ -87,7 +89,7 @@ Example cron (close briefing, weekdays):
 
 ## Watchlist
 
-Instruments are defined in [`watchlist.yaml`](src/financial_researcher/config/watchlist.yaml):
+Instruments are defined in `config/watchlist.yaml` (user config, not in source code):
 
 ```yaml
 # Optional: override default_language for this watchlist only
@@ -135,7 +137,7 @@ Configure globally in [`settings.yaml`](src/financial_researcher/config/settings
 ### Pipeline
 
 ```
-watchlist.yaml
+config/watchlist.yaml
     │
     ├─ WatchlistPipeline       ISIN resolve + Yahoo Finance snapshots
     └─ watchlist_context       JSON + market_pulse_table + profiles  →  [1..N]
@@ -233,12 +235,16 @@ Example filename: `output/briefings/watchlist_2026-06-07_close.md`
 
 ```
 financial-researcher/
+├── config/
+│   ├── watchlist.yaml.example  # Template (committed)
+│   └── watchlist.yaml          # Your instruments (gitignored)
 ├── src/financial_researcher/
 │   ├── main.py                 # CLI entry point (briefing)
 │   ├── crew.py                 # WatchlistBriefingCrew
+│   ├── paths.py                # User config path resolution
 │   ├── settings.py             # Language and config loader
 │   ├── config/
-│   │   ├── watchlist.yaml      # Your instruments
+│   │   ├── watchlist.example.yaml  # Fallback template for first-run init
 │   │   ├── sessions_milan.yaml # Milan session times
 │   │   ├── settings.yaml       # Default language
 │   │   ├── agents_briefing.yaml

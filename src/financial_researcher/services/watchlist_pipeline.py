@@ -6,6 +6,7 @@ from typing import Any
 import yaml
 
 from financial_researcher.models.instrument import InstrumentIdentity
+from financial_researcher.paths import ensure_watchlist_exists
 from financial_researcher.services.isin_resolver import IsinResolver
 from financial_researcher.services.market_data import MarketDataService
 from financial_researcher.services.watchlist_context import (
@@ -14,12 +15,11 @@ from financial_researcher.services.watchlist_context import (
 )
 from financial_researcher.settings import get_default_language
 
-DEFAULT_WATCHLIST = Path("src/financial_researcher/config/watchlist.yaml")
 VALID_SESSIONS = ("pre_open", "post_open", "midday", "close")
 
 
 def load_watchlist(path: Path | None = None) -> dict[str, Any]:
-    watchlist_path = path or DEFAULT_WATCHLIST
+    watchlist_path = ensure_watchlist_exists(path)
     with watchlist_path.open(encoding="utf-8") as handle:
         return yaml.safe_load(handle) or {}
 

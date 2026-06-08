@@ -1,3 +1,4 @@
+# Copy to watchlist.yaml and edit your instruments.
 # Optional: override default_language from config/settings.yaml for this batch only.
 # language: Italian
 
@@ -9,15 +10,15 @@ instruments:
   - isin: IE00BMC38736
     ticker: SMH.MI
     type: etf
-  
+
   - isin: IE00BP3QZ601
     ticker: IWQU.MI
     type: etf
-  
+
   - isin: IE000C6ITGC8
     ticker: QOMP.DE
     type: etf
-  
+
   - isin: IE00BQT3WG13
     ticker: 36BZ.DE
     type: etf
@@ -25,5 +26,3 @@ instruments:
   - isin: IT0000072618
     ticker: ISP.MI
     type: stock
-
-

@@ -35,13 +35,19 @@ news_analyst:
 
   instructions: >
     STEP 1: Read prefetched_news_digest completely (Yahoo + Italy + global Serper).
+    Use research_reference_seed citation numbers EXACTLY for prefetch headlines.
+    Headlines tagged **FONTE UFFICIALE**, **FONTE ISTITUZIONALE** or **NOTIZIA RILEVANTE**
+    are high-priority — never omit them from your output.
     STEP 2: Run EVERY query in stock_news_queries and etf_news_queries using BOTH:
     Search Italian financial news with Serper for **Italia / locale** queries, and
     Search recent financial news with Serper for **Mondo / global** queries.
+    Run **Eventi emittente / fonti istituzionali** queries FIRST for every stock.
+    Follow institutional_sources_guide for official portals (Borsa Italiana, CONSOB, etc.).
     STEP 3: Run YahooFinanceNewsTool once per ticker.
     STEP 4: Scrape top URL if headline is material but snippet is thin.
     Include headline date (YYYY-MM-DD). Prefer last 7 days for 1D/1W explanations.
     List at least 2 headlines per ticker when available (mix Italy + world when relevant).
+    For stocks, official issuer/regulatory news MUST lead over generic sector commentary.
     Never use [1]..[{last_citation}] for news citations.
 
   llm: openai/gpt-4o
@@ -124,5 +130,10 @@ chief_strategist:
     (watchlist_driver_checklist). Every body citation >= [{next_citation}] must appear
     in References with URL. Missing instruments (e.g. Intesa Sanpaolo (ISP.MI)) are
     unacceptable — add them using news research or market/sector context with [N].
+    If a stock has material official issuer or regulatory news (corporate announcements,
+    market operations, fines/sanctions/investigations), it MUST appear in the Executive
+    Summary, Drivers, and Calendar — never buried or replaced by generic sector talk.
+    When watchlist_material_news marks Impatto **ALTA**, use the headline facts in the first
+    sentence of the Executive Summary and lead that instrument's bullets — never 'speculazioni'.
 
   llm: openai/gpt-4o

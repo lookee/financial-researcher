@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 
 from financial_researcher.crew import WatchlistBriefingCrew
+from financial_researcher.paths import default_watchlist_path
 from financial_researcher.services.briefing_postprocess import postprocess_briefing
 from financial_researcher.services.watchlist_context import (
     briefing_output_path,
@@ -21,13 +22,14 @@ from financial_researcher.services.watchlist_pipeline import (
 )
 from financial_researcher.settings import get_default_language
 
-WATCHLIST_PATH = Path("src/financial_researcher/config/watchlist.yaml")
+WATCHLIST_PATH = default_watchlist_path()
 
 
 def _ensure_dirs() -> None:
     os.makedirs("output/briefings", exist_ok=True)
     os.makedirs("data/identity", exist_ok=True)
     os.makedirs("data/market", exist_ok=True)
+    os.makedirs("config", exist_ok=True)
 
 
 def run_briefing(
@@ -106,7 +108,7 @@ Examples:
         "--watchlist",
         type=Path,
         default=WATCHLIST_PATH,
-        help="Path to watchlist YAML",
+        help=f"Watchlist YAML path (default: {default_watchlist_path()})",
     )
     return parser
 

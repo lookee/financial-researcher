@@ -158,6 +158,109 @@ def _global_press_suffix() -> str:
     return "Reuters OR Bloomberg OR CNBC OR MarketWatch OR Financial Times"
 
 
+def _is_bank_issuer(item: dict[str, Any]) -> bool:
+    sector = (item.get("sector") or "").lower()
+    industry = (item.get("industry") or "").lower()
+    blob = f"{sector} {industry}"
+    return any(token in blob for token in ("bank", "banc", "financial service"))
+
+
+def _stock_issuer_event_query_sets(
+    item: dict[str, Any], *, current_year: int
+) -> tuple[list[str], list[str]]:
+    """Official-source news queries built from issuer identity (name/ticker/sites)."""
+    query_name = _search_name(item["name"])
+    ticker = item["ticker"]
+
+    local_queries: list[str] = []
+    if _is_milan_ticker(ticker):
+        local_queries = [
+            f'"{query_name}" OR {ticker} site:borsaitaliana.it',
+            f"{ticker} site:borsaitaliana.it",
+            f'"{query_name}" OR {ticker} site:consob.it',
+        ]
+        if _is_bank_issuer(item):
+            local_queries.append(f'"{query_name}" OR {ticker} site:bancaditalia.it')
+    elif ticker.upper().endswith(".DE"):
+        local_queries = [
+            f'"{query_name}" OR {ticker} site:bafin.de',
+            f'"{query_name}" OR {ticker} site:deutsche-boerse.com',
+        ]
+
+    global_queries = [
+        f'"{query_name}" OR {ticker} news {current_year}',
+    ]
+    return local_queries, global_queries
+
+
+def iter_stock_issuer_event_query_sets(
+    item: dict[str, Any], *, current_year: int
+) -> tuple[list[str], list[str]]:
+    return _stock_issuer_event_query_sets(item, current_year=current_year)
+
+
+def _nasdaq_news_query_sets(item: dict[str, Any], *, current_year: int) -> list[str]:
+    """NASDAQ.com news queries from instrument identity (name, ticker, category)."""
+    if item.get("type") == "etf":
+        short_name = _etf_short_name(item["name"])
+        ticker = item["ticker"]
+        etf_data = item.get("etf") or {}
+        category = str(etf_data.get("category") or item.get("profile") or "").strip()
+        queries = [
+            f'"{short_name}" site:nasdaq.com {current_year}',
+            f"{ticker} site:nasdaq.com",
+        ]
+        if category and category.lower() not in short_name.lower():
+            queries.append(f'"{category}" site:nasdaq.com {current_year}')
+        return queries
+
+    query_name = _search_name(item["name"])
+    ticker = item["ticker"]
+    return [
+        f'"{query_name}" site:nasdaq.com {current_year}',
+        f"{ticker} site:nasdaq.com",
+    ]
+
+
+def iter_nasdaq_news_query_sets(item: dict[str, Any], *, current_year: int) -> list[str]:
+    return _nasdaq_news_query_sets(item, current_year=current_year)
+
+
+def _format_nasdaq_query_block(queries: list[str]) -> list[str]:
+    if not queries:
+        return []
+    lines = ["**NASDAQ / US** (Search NASDAQ news with Serper):"]
+    for index, query in enumerate(queries, start=1):
+        lines.append(f"{index}. {query}")
+    return lines
+
+
+def build_institutional_sources_guide(*, language: str = "English") -> str:
+    """Guide for official issuer/regulatory sources the news analyst must check."""
+    if language.lower().startswith("ital"):
+        return (
+            "Fonti istituzionali da consultare per titoli in watchlist (priorità alta):\n"
+            "- **Borsa Italiana** (borsaitaliana.it): comunicati, avvisi, documenti societari\n"
+            "- **CONSOB** (consob.it): provvedimenti, sanzioni, disclosure obbligatorie\n"
+            "- **Banca d'Italia**: documenti di supervisione — ranking penalizza PDF/rapporti "
+            "statici vs notizie recenti su Borsa Italiana\n"
+            "- **BaFin / Deutsche Börse**: per titoli .DE\n"
+            "- **NASDAQ** (nasdaq.com): notizie US utili soprattutto per ETF tematici\n"
+            "Cerca notizie recenti sull'emittente su fonti ufficiali — priorità a Borsa Italiana."
+        )
+    return (
+        "Institutional sources to check for watchlist issuers (high priority):\n"
+        "- **Borsa Italiana** (borsaitaliana.it): company announcements and market notices\n"
+        "- **CONSOB** (consob.it): sanctions, enforcement, mandatory disclosures\n"
+        "- **Bank of Italy**: supervision documents — ranking penalises static PDFs vs "
+        "recent Borsa Italiana news\n"
+        "- **BaFin / Deutsche Börse**: for .DE listings\n"
+        "- **NASDAQ** (nasdaq.com): US market news, especially relevant for thematic ETFs\n"
+        "Look for official corporate events, market operations, fines/sanctions/investigations "
+        "and serious regulatory issues — before generic sector commentary."
+    )
+
+
 def _stock_serper_query_sets(
     item: dict[str, Any], *, current_year: int
 ) -> tuple[list[str], list[str]]:
@@ -236,16 +339,32 @@ def build_stock_news_queries(
 
     blocks: list[str] = [
         "Run EVERY query below before writing. Use BOTH Italy/local AND global/world coverage.",
+        "For stocks: run **Eventi emittente / fonti istituzionali** queries FIRST — "
+        "notizie recenti su portali ufficiali (Borsa Italiana, CONSOB, …).",
         "Italia → Search Italian financial news with Serper (gl=it).",
         "Mondo → Search recent financial news with Serper (international sources).",
+        "NASDAQ → Search NASDAQ news with Serper (US market, nasdaq.com).",
         "",
     ]
     for item in stocks:
         name = item["name"]
         ticker = item["ticker"]
+        issuer_local, issuer_global = _stock_issuer_event_query_sets(
+            item, current_year=current_year
+        )
         local, global_q = _stock_serper_query_sets(item, current_year=current_year)
         blocks.append(f"### {name} ({ticker})")
+        if issuer_local or issuer_global:
+            blocks.append(
+                "**Eventi emittente / fonti istituzionali** "
+                "(Search Italian financial news + Search recent financial news — run FIRST):"
+            )
+            for index, query in enumerate(issuer_local + issuer_global, start=1):
+                blocks.append(f"{index}. {query}")
+            blocks.append("")
         blocks.extend(_format_dual_query_block(local, global_q))
+        nasdaq_queries = _nasdaq_news_query_sets(item, current_year=current_year)
+        blocks.extend(_format_nasdaq_query_block(nasdaq_queries))
         blocks.append("")
     return "\n".join(blocks).rstrip()
 
@@ -401,7 +520,8 @@ def build_etf_news_queries(
     blocks: list[str] = [
         "Run EVERY query below before writing. Use BOTH Italy/local AND global/world coverage.",
         "Italia → Search Italian financial news with Serper. Mondo → Search recent financial news with Serper.",
-        "ETF moves often follow global sector/theme news — always run global queries.",
+        "NASDAQ → Search NASDAQ news with Serper (US market, nasdaq.com).",
+        "ETF moves often follow global sector/theme news — always run global and NASDAQ queries.",
         "",
     ]
     for item in etfs:
@@ -410,6 +530,8 @@ def build_etf_news_queries(
         local, global_q = _etf_serper_query_sets(item, current_year=current_year)
         blocks.append(f"### {name} ({ticker})")
         blocks.extend(_format_dual_query_block(local, global_q))
+        nasdaq_queries = _nasdaq_news_query_sets(item, current_year=current_year)
+        blocks.extend(_format_nasdaq_query_block(nasdaq_queries))
         blocks.append("")
     return "\n".join(blocks).rstrip()
 
@@ -628,21 +750,35 @@ def build_watchlist_context(
         "etf_news_queries": build_etf_news_queries(
             instruments, current_year=today.year
         ),
+        "institutional_sources_guide": build_institutional_sources_guide(
+            language=briefing_language
+        ),
     }
 
 
 def attach_prefetched_news(context: dict[str, str]) -> dict[str, str]:
-    """Add deterministic news digest to crew inputs."""
-    from financial_researcher.services.news_prefetch import prefetch_watchlist_news
+    """Add deterministic news digest and reference seed to crew inputs."""
+    from financial_researcher.services.news_prefetch import prefetch_watchlist_news_bundle
 
     payload = json.loads(context["watchlist_context"])
     instruments = payload["instruments"]
     today = payload.get("current_date") or context.get("current_date", "")
     year = int(str(today)[:4]) if today else datetime.now(MILAN_TZ).year
+    language = context.get("language", payload.get("language", "English"))
+    start_citation = int(context.get("next_citation", payload.get("next_citation", 7)))
     print("Prefetching Yahoo + Serper news...")
     context = dict(context)
-    context["prefetched_news_digest"] = prefetch_watchlist_news(
-        instruments, current_year=year
+    digest, material, seed_markdown, seed_entries = prefetch_watchlist_news_bundle(
+        instruments,
+        current_year=year,
+        language=language,
+        start_citation=start_citation,
+    )
+    context["prefetched_news_digest"] = digest
+    context["watchlist_material_news"] = material
+    context["research_reference_seed"] = seed_markdown
+    context["research_reference_seed_json"] = json.dumps(
+        seed_entries, ensure_ascii=False, indent=2
     )
     return context
 
