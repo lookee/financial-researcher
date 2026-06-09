@@ -6,18 +6,21 @@
 
 > One **executive briefing** for your whole **watchlist** — not one report per ticker.
 
-A CLI that turns a list of ISINs into a single, cited strategy memo for **Borsa Italiana** instruments and **Milan trading sessions**. It pairs a deterministic data layer (Yahoo Finance + OpenFIGI) with a five-agent [CrewAI](https://crewai.com) workflow — four analysts in parallel, then a chief strategist who writes the memo.
+Stop reading ten scattered ticker pages. **Financial Researcher** turns a plain list of ISINs into a single, board-ready strategy memo — the leaders, the laggards, the news that moved them, and what to watch next — every claim footnoted to a real source.
 
-📄 **[Sample briefing (English →)](examples/briefings/watchlist_2026-06-09_close.md)** · **[Italiano →](examples/briefings/watchlist_2026-06-09_close_it.md)** · ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
+Under the hood, a deterministic Python data layer (Yahoo Finance + OpenFIGI) feeds a five-agent [CrewAI](https://crewai.com) newsroom: four analysts work the market, the news, the macro outlook and the event calendar **in parallel**, then a chief strategist writes the memo. It speaks **Borsa Italiana** and the **Milan trading clock** natively — the briefing reads differently at the open than at the close.
+
+📄 **[Sample briefing (English →)](examples/briefings/watchlist_2026-06-10_close.md)** · **[Italiano →](examples/briefings/watchlist_2026-06-10_close_it.md)** · ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
 
 ---
 
 ## Why
 
-- **Portfolio-level, not ticker-level** — cross-instrument narrative, leaders/laggards, shared themes.
-- **Cited & verifiable** — every claim maps to a numbered Yahoo Finance or news source.
-- **Milan-native** — four daily sessions aligned with Borsa Italiana hours.
-- **Deterministic core** — prices and identities resolved in Python; agents reason, they don't invent data.
+- **Portfolio-level, not ticker-level** — one cross-instrument narrative with leaders, laggards and shared themes, instead of N disconnected reports.
+- **Cited & verifiable** — every figure and claim maps to a numbered Yahoo Finance or news source. No anonymous assertions.
+- **Milan-native** — four daily sessions aligned with Borsa Italiana hours; the memo's tone and metrics adapt to the time of day.
+- **Deterministic core** — prices and identities are resolved in Python and cached; the agents reason over real data, they don't invent it.
+- **Bilingual** — generate the same briefing in English or Italian from one watchlist.
 
 ## Quickstart
 
@@ -54,7 +57,22 @@ uv run briefing --watchlist path/to.yaml     # custom watchlist
 | `--force` | Refresh cached identity and market data |
 | `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
 
-**Milan sessions** (Europe/Rome) — `pre_open` 08:45 · `post_open` 09:30 · `midday` 13:00 · `close` 17:45. When `--session` is omitted, the CLI picks the most recently passed slot ([schedule](src/financial_researcher/config/sessions_milan.yaml)).
+### The four moments of the Milan day
+
+The briefing is **session-aware**: the same watchlist produces a different memo depending on where you are in the Borsa Italiana day (Europe/Rome). When `--session` is omitted, the CLI picks the most recently passed slot ([schedule](src/financial_researcher/config/sessions_milan.yaml)).
+
+| Session | Clock | The memo's job | What it leans on |
+|---------|-------|----------------|------------------|
+| `pre_open` | **08:45** | *What does today face?* Forward-looking — no intraday recap yet | Previous close, index futures, overnight moves (Asia close, US futures), scheduled catalysts |
+| `post_open` | **09:30** | *How did we open?* The reaction in the first minutes | The **gap** vs previous close and the news driving it (prices still thin/noisy) |
+| `midday` | **13:00** | *Where do we stand at lunch?* Session in progress | **Partial** intraday move, the morning's headlines, what the afternoon still holds |
+| `close` | **17:45** | *How did the day end — and what's next?* Full recap + setup | Final 1D/1W/1M/YTD, the day's drivers, the next 2–4 weeks of catalysts |
+
+```bash
+# Morning preview, then evening wrap-up
+uv run briefing --session pre_open
+uv run briefing --session close
+```
 
 ## Watchlist
 
