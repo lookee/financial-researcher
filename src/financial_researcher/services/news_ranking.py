@@ -201,5 +201,5 @@ def impact_level(item: dict[str, Any], headline: dict[str, str]) -> str:
     ):
         return "HIGH"
     if score >= MATERIALITY_THRESHOLD:
-        return "MEDIA"
-    return "BASSA"
+        return "MEDIUM"
+    return "LOW"

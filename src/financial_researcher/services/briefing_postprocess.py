@@ -304,7 +304,7 @@ def validate_citations(content: str, *, reference_count: int) -> list[str]:
 def validate_material_news_prominence(content: str, inputs: dict[str, str]) -> list[str]:
     """Warn when HIGH material news may have been diluted or replaced in narrative."""
     material = inputs.get("watchlist_material_news", "")
-    if "Impatto **HIGH**" not in material and "Impact **HIGH**" not in material:
+    if "Impact **HIGH**" not in material:
         return []
 
     warnings: list[str] = []

@@ -301,11 +301,11 @@ def _format_headline_line(instrument: dict[str, Any], headline: dict[str, str]) 
     priority_tag = ""
     if score >= MATERIALITY_THRESHOLD:
         if is_exchange_news(headline):
-            priority_tag = "**FONTE UFFICIALE** | "
+            priority_tag = "**OFFICIAL SOURCE** | "
         elif is_official_source(headline):
-            priority_tag = "**FONTE ISTITUZIONALE** | "
+            priority_tag = "**INSTITUTIONAL SOURCE** | "
         else:
-            priority_tag = "**NOTIZIA RILEVANTE** | "
+            priority_tag = "**MATERIAL NEWS** | "
     line = f"- {priority_tag}{date} | **{title}** | {source}{region_tag}"
     if url:
         line += f" | {url}"
@@ -421,7 +421,7 @@ def build_material_news_brief(
         top = material[0]
         score = headline_relevance_score(item, top)
         level = impact_level(item, top)
-        lines.append(f"### {label} — Impatto **{level}**")
+        lines.append(f"### {label} — Impact **{level}**")
 
         if italian:
             lines.append(f"- **Titolo da riportare**: {top['title']}")
@@ -535,8 +535,8 @@ def prefetch_watchlist_news_bundle(
     digest_lines = [
         "Pre-fetched headlines (deterministic). Ranked by structural relevance:",
         "recency, match on instrument name/ticker, source tier, document type.",
-        "Tags: **FONTE UFFICIALE** (Borsa Italiana news), **FONTE ISTITUZIONALE**, "
-        "**NOTIZIA RILEVANTE**.",
+        "Tags: **OFFICIAL SOURCE** (Borsa Italiana news), **INSTITUTIONAL SOURCE**, "
+        "**MATERIAL NEWS**.",
         "",
     ]
 

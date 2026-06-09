@@ -317,11 +317,11 @@ def _format_dual_query_block(
 ) -> list[str]:
     lines: list[str] = []
     if local_queries:
-        lines.append("**Italia / locale** (Search Italian financial news with Serper):")
+        lines.append("**Italy / local** (Search Italian financial news with Serper):")
         for index, query in enumerate(local_queries, start=1):
             lines.append(f"{index}. {query}")
     if global_queries:
-        lines.append("**Mondo / global** (Search recent financial news with Serper):")
+        lines.append("**World / global** (Search recent financial news with Serper):")
         offset = 0 if not local_queries else len(local_queries)
         for index, query in enumerate(global_queries, start=1):
             lines.append(f"{index + offset}. {query}")
@@ -339,8 +339,8 @@ def build_stock_news_queries(
         return "No individual stocks in watchlist — skip stock-specific searches."
 
     blocks: list[str] = [
-        "Run EVERY query below. Italia → Search Italian financial news with Serper.",
-        "Mondo → Search recent financial news with Serper.",
+        "Run EVERY query below. Italy → Search Italian financial news with Serper.",
+        "World → Search recent financial news with Serper.",
         "NASDAQ → Search NASDAQ news with Serper.",
         "",
     ]
@@ -354,7 +354,7 @@ def build_stock_news_queries(
         blocks.append(f"### {name} ({ticker})")
         if issuer_local or issuer_global:
             blocks.append(
-                "**Eventi emittente / fonti istituzionali** "
+                "**Issuer events / institutional sources** "
                 "(Search Italian financial news + Search recent financial news — run FIRST):"
             )
             for index, query in enumerate(issuer_local + issuer_global, start=1):
@@ -516,8 +516,8 @@ def build_etf_news_queries(
         return "No ETFs in watchlist — skip ETF-specific searches."
 
     blocks: list[str] = [
-        "Run EVERY query below. Italia → Search Italian financial news with Serper.",
-        "Mondo → Search recent financial news with Serper.",
+        "Run EVERY query below. Italy → Search Italian financial news with Serper.",
+        "World → Search recent financial news with Serper.",
         "NASDAQ → Search NASDAQ news with Serper.",
         "",
     ]

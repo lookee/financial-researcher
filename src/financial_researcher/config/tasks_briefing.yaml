@@ -13,11 +13,11 @@ market_analysis_task:
       (e.g. "23,45 EUR", "612,30 USD"). When YTD/1M is in a non-EUR currency, note
       the embedded FX effect.
     - DATA RECENCY: anchor every figure to a source dated within 5 calendar days of
-      {current_date}. If the only source is older, label it "fonte di prezzo non
-      aggiornata (data fonte: YYYY-MM-DD)" and list it under Data limitations —
+      {current_date}. If the only source is older, label it "price source not
+      up to date (source date: YYYY-MM-DD)" and list it under Data limitations —
       never present a stale quote as a session price.
     - INTERNAL CONSISTENCY: if a 1D move is inconsistent in sign/magnitude with 1W/1M
-      (e.g. -5% 1D vs -1% 1W), add a one-line note explaining it or mark "da verificare".
+      (e.g. -5% 1D vs -1% 1W), add a one-line note explaining it or mark "to verify".
     - Identify leaders, laggards, and divergences within the watchlist.
     - For stocks with forecasts in the JSON, summarise street view (targets, ratings).
     - For ETFs, note AUM/category context when relevant to performance.
@@ -69,8 +69,8 @@ news_analysis_task:
     Workflow (strict order):
     1. Read prefetched_news_digest for every ticker (Yahoo + Italy + global + NASDAQ Serper).
     2. Run ALL stock_news_queries and etf_news_queries using ALL THREE tools:
-       - Search Italian financial news with Serper → **Italia / locale** queries
-       - Search recent financial news with Serper → **Mondo / global** queries
+       - Search Italian financial news with Serper → **Italy / local** queries
+       - Search recent financial news with Serper → **World / global** queries
        - Search NASDAQ news with Serper → **NASDAQ / US** queries
     3. Call YahooFinanceNewsTool once per ticker for supplemental headlines.
     4. INSTITUTIONAL SCRAPE (mandatory): for every instrument flagged **HIGH** in
@@ -115,7 +115,7 @@ news_analysis_task:
     Search window: last 7 days (primary), up to 14 days if nothing recent.
   expected_output: >
     A news brief with:
-    - **Material news by impact** — at the top, one block per instrument with Impatto HIGH/MEDIA
+    - **Material news by impact** — at the top, one block per instrument with Impact HIGH/MEDIUM
       from watchlist_material_news; confirm or upgrade with tool searches and [N]. For HIGH items,
       restate the headline facts verbatim (do not paraphrase into vague sector talk), including the
       core facts extracted from the official source scrape.
@@ -230,7 +230,7 @@ executive_briefing_task:
     - Open with a single vivid "market mood" line (one sentence) before the summary bullets.
     - Active, confident prose; varied sentence length; concrete verbs over hedging.
     - Consistent visual vocabulary used sparingly for scanning, never decoration:
-      ▲ up · ▼ down · ► flat for moves; 🔴 HIGH / 🟠 MEDIA tags only for material news.
+      ▲ up · ▼ down · ► flat for moves; 🔴 HIGH / 🟠 MEDIUM tags only for material news.
     - Bold the instrument name on first mention in each section.
     - Skimmable: bullets over walls of text; the Executive Summary reads in under 3 minutes.
 
@@ -248,20 +248,20 @@ executive_briefing_task:
          the FIRST sentence must state that event with specific facts and [N]; then leader/laggard
          1D and nearest catalyst. Never open only with performance if a stock has HIGH issuer news.
        - Then {instrument_count} bullets — one per instrument as **Name (TICKER)** with 1D or 1W
-         move (prefix ▲/▼/►) + headline. For instruments with Impatto **HIGH**, prefix 🔴 and the
+         move (prefix ▲/▼/►) + headline. For instruments with Impact **HIGH**, prefix 🔴 and the
          bullet MUST lead with the headline facts from watchlist_material_news (cite [N]) — not
-         'speculazioni' or generic sector commentary when a sourced headline exists.
+         'speculation' or generic sector commentary when a sourced headline exists.
        MANDATORY: mention every instrument — none skipped:
        {watchlist_summary_checklist}
        Reserve [1]..[{last_citation}] for that instrument's market figures only.
        Use [{next_citation}]+ for news facts. Never use ticker alone without the full name.
     3. Performance section — present the snapshot table with EXACTLY these columns
        (one source citation per ROW, valid for the whole row):
-       | Ref | Instrument | Ticker | Price (ccy) | 1D | 1W | 1M | YTD | Fonte |
-       The "Fonte" column carries the single [N] for that instrument's market data;
+       | Ref | Instrument | Ticker | Price (ccy) | 1D | 1W | 1M | YTD | Source |
+       The "Source" column carries the single [N] for that instrument's market data;
        do NOT repeat [N] after every individual percentage. Include absolute price with
        currency. If a row has a stale-source or consistency flag from market analysis,
-       add a "⚠" marker in the Fonte cell and explain it in one line beneath the table.
+       add a "⚠" marker in the Source cell and explain it in one line beneath the table.
        (If the pipeline injects the table automatically, keep this heading and add one
        sentence on leaders/laggards above it; otherwise render the table as specified.)
     4. Drivers section — one entry per instrument as **Name (TICKER)** with news-linked explanation [N]:
@@ -270,7 +270,7 @@ executive_briefing_task:
        For HIGH-impact instruments, repeat the headline substance (with the facts scraped
        from the official source) before any interpretation. For each stock, cite specific
        issuer events before sector generalities. Never replace a sourced headline with vague
-       words ('speculazioni', 'incertezze di settore') when a concrete title/source exists.
+       words ('speculation', 'sector uncertainty') when a concrete title/source exists.
        When sources conflict on a name, surface both in one sentence.
        If news research found no headline for an instrument, still include it and
        explain the move using performance data and sector/theme context with [N].
@@ -305,7 +305,7 @@ executive_briefing_task:
     every instrument by Name (TICKER) ({instrument_count} instruments) — verify
     against watchlist_summary_checklist before finishing.
     The Performance table must include a Price (with currency) column and a single per-row
-    "Fonte [N]" column (no per-cell citation spam).
+    "Source [N]" column (no per-cell citation spam).
     Section 4 (What's Driving the Moves) MUST contain exactly {instrument_count}
     entries — one per instrument as Name (TICKER), including stocks (e.g. Intesa Sanpaolo (ISP.MI))
     and every ETF. Verify against watchlist_driver_checklist before finishing.
