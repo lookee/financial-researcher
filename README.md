@@ -56,11 +56,6 @@ uv run briefing --watchlist path/to.yaml     # custom watchlist
 
 **Milan sessions** (Europe/Rome) — `pre_open` 08:45 · `post_open` 09:30 · `midday` 13:00 · `close` 17:45. When `--session` is omitted, the CLI picks the most recently passed slot ([schedule](src/financial_researcher/config/sessions_milan.yaml)).
 
-```bash
-# Cron: close briefing every weekday
-45 17 * * 1-5 cd /path/to/financial_researcher && uv run briefing --session close
-```
-
 ## Watchlist
 
 Define instruments in `config/watchlist.yaml` — name, sector and category are resolved automatically.

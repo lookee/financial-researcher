@@ -1,39 +1,28 @@
 # Example watchlist — copy to watchlist.yaml and edit for your own portfolio.
 #   cp config/watchlist.yaml.example config/watchlist.yaml
 #
-# Three Milan-listed ETFs plus equities on Borsa Italiana (FTSE MIB + Apple on GEM).
-# No banking names.
+# AI & hypertech theme on Borsa Italiana (Milan): two thematic ETFs plus two
+# semiconductor / AI bellwether stocks. NVIDIA trades on the Borsa Italiana
+# Global Equity Market (GEM) via the 1NVDA.MI line.
 
 # Optional: override default_language from config/settings.yaml for this batch only.
 # language: English
 
 instruments:
   # --- ETFs (Borsa Italiana) ---
-  - isin: IE00BK5BCD43
-    ticker: AIAI.MI
-    type: etf
-
   - isin: IE00BMC38736
     ticker: SMH.MI
     type: etf
 
-  - isin: IE00BP3QZ601
-    ticker: IWQU.MI
+  - isin: IE00BDVPNG13
+    ticker: WTAI.MI
     type: etf
 
   # --- Equities (Borsa Italiana) ---
+  - isin: US67066G1040
+    ticker: 1NVDA.MI
+    type: stock
+
   - isin: NL0000226223
     ticker: STMMI.MI
-    type: stock
-
-  - isin: IT0003132476
-    ticker: ENI.MI
-    type: stock
-
-  - isin: NL0011585146
-    ticker: RACE.MI
-    type: stock
-
-  - isin: US0378331005
-    ticker: 1AAPL.MI
     type: stock
