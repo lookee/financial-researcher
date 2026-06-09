@@ -73,7 +73,7 @@ news_analysis_task:
        - Search recent financial news with Serper → **Mondo / global** queries
        - Search NASDAQ news with Serper → **NASDAQ / US** queries
     3. Call YahooFinanceNewsTool once per ticker for supplemental headlines.
-    4. INSTITUTIONAL SCRAPE (mandatory): for every instrument flagged **ALTA** in
+    4. INSTITUTIONAL SCRAPE (mandatory): for every instrument flagged **HIGH** in
        watchlist_material_news, and for any stock with a corporate action or
        regulatory item, run ScrapeWebsiteTool on the OFFICIAL primary source
        (Borsa Italiana news page, CONSOB, company IR / press-release) and extract
@@ -115,8 +115,8 @@ news_analysis_task:
     Search window: last 7 days (primary), up to 14 days if nothing recent.
   expected_output: >
     A news brief with:
-    - **Material news by impact** — at the top, one block per instrument with Impatto ALTA/MEDIA
-      from watchlist_material_news; confirm or upgrade with tool searches and [N]. For ALTA items,
+    - **Material news by impact** — at the top, one block per instrument with Impatto HIGH/MEDIA
+      from watchlist_material_news; confirm or upgrade with tool searches and [N]. For HIGH items,
       restate the headline facts verbatim (do not paraphrase into vague sector talk), including the
       core facts extracted from the official source scrape.
     - MANDATORY subsection for EVERY instrument ({instrument_count}) — none omitted.
@@ -215,7 +215,7 @@ executive_briefing_task:
     - outlook analysis (3–12 month themes and scenarios)
     - calendar analysis (upcoming 2–4 week events)
 
-    Material news ranking from prefetch — honour impact in prose (never dilute ALTA headlines):
+    Material news ranking from prefetch — honour impact in prose (never dilute HIGH headlines):
     {watchlist_material_news}
 
     Research citations (deterministic — include ALL in References section):
@@ -230,7 +230,7 @@ executive_briefing_task:
     - Open with a single vivid "market mood" line (one sentence) before the summary bullets.
     - Active, confident prose; varied sentence length; concrete verbs over hedging.
     - Consistent visual vocabulary used sparingly for scanning, never decoration:
-      ▲ up · ▼ down · ► flat for moves; 🔴 ALTA / 🟠 MEDIA tags only for material news.
+      ▲ up · ▼ down · ► flat for moves; 🔴 HIGH / 🟠 MEDIA tags only for material news.
     - Bold the instrument name on first mention in each section.
     - Skimmable: bullets over walls of text; the Executive Summary reads in under 3 minutes.
 
@@ -244,11 +244,11 @@ executive_briefing_task:
        Immediately under the title, one-line "market mood" hook.
     2. Executive Summary / Sommario Esecutivo — prioritised insights across all time horizons.
        Structure (do NOT use one long paragraph):
-       - Opening (2-3 sentences): if watchlist_material_news lists a **dominant** ALTA story,
+       - Opening (2-3 sentences): if watchlist_material_news lists a **dominant** HIGH story,
          the FIRST sentence must state that event with specific facts and [N]; then leader/laggard
-         1D and nearest catalyst. Never open only with performance if a stock has ALTA issuer news.
+         1D and nearest catalyst. Never open only with performance if a stock has HIGH issuer news.
        - Then {instrument_count} bullets — one per instrument as **Name (TICKER)** with 1D or 1W
-         move (prefix ▲/▼/►) + headline. For instruments with Impatto **ALTA**, prefix 🔴 and the
+         move (prefix ▲/▼/►) + headline. For instruments with Impatto **HIGH**, prefix 🔴 and the
          bullet MUST lead with the headline facts from watchlist_material_news (cite [N]) — not
          'speculazioni' or generic sector commentary when a sourced headline exists.
        MANDATORY: mention every instrument — none skipped:
@@ -267,7 +267,7 @@ executive_briefing_task:
     4. Drivers section — one entry per instrument as **Name (TICKER)** with news-linked explanation [N]:
        MANDATORY full coverage checklist (one entry per instrument, none skipped):
        {watchlist_driver_checklist}
-       For ALTA-impact instruments, repeat the headline substance (with the facts scraped
+       For HIGH-impact instruments, repeat the headline substance (with the facts scraped
        from the official source) before any interpretation. For each stock, cite specific
        issuer events before sector generalities. Never replace a sourced headline with vague
        words ('speculazioni', 'incertezze di settore') when a concrete title/source exists.
@@ -277,7 +277,7 @@ executive_briefing_task:
     5. Outlook section — themes, scenarios, macro from outlook analysis with [N].
        MUST include Bull / Base / Bear bullets, each tied to a dated trigger, with citations.
     6. Calendar section — markdown table copied from calendar analysis, Impact column using the
-       closed taxonomy. ALSO include dated ALTA issuer/regulatory events from watchlist_material_news
+       closed taxonomy. ALSO include dated HIGH issuer/regulatory events from watchlist_material_news
        and news research with [N]. NEVER list an event without a confirmed YYYY-MM-DD and source URL.
        If calendar analysis has no dated events, write that explicitly.
     7. Correlated themes section — cross-instrument links with [N]; cover tech cluster and

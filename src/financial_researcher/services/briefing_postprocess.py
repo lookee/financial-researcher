@@ -302,9 +302,9 @@ def validate_citations(content: str, *, reference_count: int) -> list[str]:
 
 
 def validate_material_news_prominence(content: str, inputs: dict[str, str]) -> list[str]:
-    """Warn when ALTA material news may have been diluted or replaced in narrative."""
+    """Warn when HIGH material news may have been diluted or replaced in narrative."""
     material = inputs.get("watchlist_material_news", "")
-    if "Impatto **ALTA**" not in material and "Impact **ALTA**" not in material:
+    if "Impatto **HIGH**" not in material and "Impact **HIGH**" not in material:
         return []
 
     warnings: list[str] = []
@@ -314,7 +314,7 @@ def validate_material_news_prominence(content: str, inputs: dict[str, str]) -> l
         "notizia dominante" in material.lower() or "dominant watchlist story" in material.lower()
     ):
         warnings.append(
-            "Prefetch flagged ALTA issuer news as the dominant watchlist story, but the "
+            "Prefetch flagged HIGH issuer news as the dominant watchlist story, but the "
             "briefing uses vague sector/speculation language — verify headline facts and [N] "
             "appear in the Executive Summary and Drivers."
         )

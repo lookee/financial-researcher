@@ -443,7 +443,7 @@ def build_material_news_brief(
             cite_label = "Citazione obbligatoria" if italian else "Mandatory citation"
             lines.append(f"- **{cite_label}**: [{seed_citation}]")
 
-        if level == "ALTA":
+        if level == "HIGH":
             high_impact.append((score, item, top))
             if italian:
                 lines.append(

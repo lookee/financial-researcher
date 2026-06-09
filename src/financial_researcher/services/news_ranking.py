@@ -191,7 +191,7 @@ def impact_level(item: dict[str, Any], headline: dict[str, str]) -> str:
     age = headline_age_days(headline)
 
     if score >= HIGH_IMPACT_SCORE:
-        return "ALTA"
+        return "HIGH"
     if (
         item.get("type") == "stock"
         and is_exchange_news(headline)
@@ -199,7 +199,7 @@ def impact_level(item: dict[str, Any], headline: dict[str, str]) -> str:
         and age <= 14
         and issuer_match_score(item, headline) >= 20
     ):
-        return "ALTA"
+        return "HIGH"
     if score >= MATERIALITY_THRESHOLD:
         return "MEDIA"
     return "BASSA"

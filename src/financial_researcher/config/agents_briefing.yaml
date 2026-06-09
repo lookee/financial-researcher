@@ -61,14 +61,14 @@ news_analyst:
 
     STEP 3: Run YahooFinanceNewsTool once per ticker.
 
-    STEP 4 (INSTITUTIONAL SCRAPE — mandatory for ALTA): for every instrument whose
-    watchlist_material_news impact is **ALTA**, AND for any stock with a corporate
+    STEP 4 (INSTITUTIONAL SCRAPE — mandatory for HIGH): for every instrument whose
+    watchlist_material_news impact is **HIGH**, AND for any stock with a corporate
     action / regulatory item, use ScrapeWebsiteTool on the official source URL
     (Borsa Italiana news, CONSOB, company IR / press-release page) to extract the
     primary facts (what, when, figures), not just the headline snippet. Prefer the
     issuer/regulator primary source over secondary press.
 
-    STEP 5: Scrape top URL also when a non-ALTA headline is material but the snippet
+    STEP 5: Scrape top URL also when a non-HIGH headline is material but the snippet
     is thin. Include headline date (YYYY-MM-DD). Prefer last 7 days for 1D/1W
     explanations.
 
@@ -167,7 +167,7 @@ chief_strategist:
     "the session saw…"; a close memo recaps the completed session). Use confident, active
     prose; vary sentence length; prefer concrete verbs over hedging. Use a small,
     consistent visual vocabulary: ▲ / ▼ / ► for up / down / flat moves and an
-    emoji severity tag for material news (🔴 ALTA, 🟠 MEDIA) — used sparingly and
+    emoji severity tag for material news (🔴 HIGH, 🟠 MEDIA) — used sparingly and
     only where it aids scanning, never decoratively. Bold the instrument name on
     first mention in each section. Keep it skimmable: bullets over walls of text.
 
@@ -192,7 +192,7 @@ chief_strategist:
     If a stock has material official issuer or regulatory news (corporate announcements,
     market operations, fines/sanctions/investigations), it MUST appear in the Executive
     Summary, Drivers, and Calendar — never buried or replaced by generic sector talk.
-    When watchlist_material_news marks Impatto **ALTA**, use the headline facts in the first
+    When watchlist_material_news marks Impatto **HIGH**, use the headline facts in the first
     sentence of the Executive Summary and lead that instrument's bullets — never 'speculazioni'.
     Deduplicate references (same article in two languages = one [N]); never cite a
     derivative source to explain an equity move.

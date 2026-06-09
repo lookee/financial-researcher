@@ -240,7 +240,7 @@ def build_institutional_sources_guide(*, language: str = "English") -> str:
     """Guide for official issuer/regulatory sources the news analyst must check."""
     if language.lower().startswith("ital"):
         return (
-            "Fonti istituzionali da consultare per titoli in watchlist (priorità alta):\n"
+            "Fonti istituzionali da consultare per titoli in watchlist (priorità HIGH):\n"
             "- **Borsa Italiana** (borsaitaliana.it): comunicati, avvisi, documenti societari\n"
             "- **CONSOB** (consob.it): provvedimenti, sanzioni, disclosure obbligatorie\n"
             "- **Banca d'Italia**: documenti di supervisione — ranking penalizza PDF/rapporti "
