@@ -81,22 +81,19 @@ Define instruments in `config/watchlist.yaml` — name, sector and category are 
 ```yaml
 # language: Italian          # optional per-watchlist override
 instruments:
-  - { isin: IE00BK5BCD43, ticker: AIAI.MI,  type: etf }   # L&G AI
   - { isin: IE00BMC38736, ticker: SMH.MI,   type: etf }   # VanEck Semiconductors
-  - { isin: IE00BP3QZ601, ticker: IWQU.MI,  type: etf }   # iShares World Quality
+  - { isin: IE00BDVPNG13, ticker: WTAI.MI,  type: etf }   # WisdomTree AI
+  - { isin: US67066G1040, ticker: 1NVDA.MI, type: stock } # NVIDIA (GEM)
   - { isin: NL0000226223, ticker: STMMI.MI, type: stock } # STMicroelectronics
-  - { isin: IT0003132476, ticker: ENI.MI,   type: stock } # Eni
-  - { isin: NL0011585146, ticker: RACE.MI,  type: stock } # Ferrari
-  - { isin: US0378331005, ticker: 1AAPL.MI, type: stock } # Apple (GEM)
 ```
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `isin` | ✅ | 12-character ISIN |
-| `ticker` | ✅ | Yahoo Finance ticker (e.g. `AIAI.MI`, `RACE.MI`, `1AAPL.MI`) |
+| `ticker` | ✅ | Yahoo Finance ticker (e.g. `SMH.MI`, `STMMI.MI`, `1NVDA.MI`) |
 | `type` | — | `stock` or `etf` — disambiguates ISIN resolution |
 
-> The bundled [`config/watchlist.yaml.example`](config/watchlist.yaml.example) covers 3 ETFs + 4 Borsa Italiana equities (including Apple on the Global Equity Market), with no banking names.
+> The bundled [`config/watchlist.yaml.example`](config/watchlist.yaml.example) is an **AI & hypertech** theme on Borsa Italiana: 2 thematic ETFs (semiconductors + AI) plus 2 AI bellwether stocks, including NVIDIA on the Global Equity Market (GEM).
 
 ## How it works
 
@@ -119,13 +116,18 @@ CrewAI  ├─ market_analyst ─┐
 
 | Agent | Role | Model | Tools |
 |-------|------|-------|-------|
-| `market_analyst` | Relative performance across the watchlist | gpt-4o-mini | Pre-loaded context |
-| `news_analyst` | News & catalysts behind recent moves | gpt-4o | Serper · Yahoo news · scraping |
-| `outlook_analyst` | 3–12 month macro & thematic outlook | gpt-4o-mini | Serper · scraping |
-| `calendar_analyst` | Catalysts in the next 2–4 weeks | gpt-4o-mini | Serper · scraping |
-| `chief_strategist` | Synthesises the final executive memo | gpt-4o | — |
+| `market_analyst` | Relative performance across the watchlist | gpt-5.5 | Pre-loaded context |
+| `news_analyst` | News & catalysts behind recent moves | gpt-5.5 | Serper · Yahoo news · scraping |
+| `outlook_analyst` | 3–12 month macro & thematic outlook | gpt-5.5 | Serper · scraping |
+| `calendar_analyst` | Catalysts in the next 2–4 weeks | gpt-5.4-mini | Serper · scraping |
+| `chief_strategist` | Synthesises the final executive memo | gpt-5.5 | — |
 
 Config: [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) · [`tasks_briefing.yaml`](src/financial_researcher/config/tasks_briefing.yaml)
+
+> [!WARNING]
+> **This default lineup is tuned for quality, not for your wallet.** Four of the five agents run on the **most capable — and most expensive — frontier model** (`gpt-5.5`). A single full briefing makes many LLM calls plus news search and page scraping, so cost adds up quickly when you run it several times a day.
+>
+> **Want to pay less?** Downgrade the models in [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) — change the `llm:` line of any agent to a cheaper tier (e.g. `openai/gpt-5.4-mini`, or an even smaller/older model like `openai/gpt-4o-mini`). The briefing will still generate; expect a **less nuanced narrative and weaker synthesis** in exchange for materially lower cost. The `chief_strategist` and `news_analyst` benefit most from a strong model — downgrade the others first if you want a balance.
 
 <details>
 <summary><b>Briefing structure</b></summary>
@@ -164,12 +166,12 @@ financial-researcher/
 <details>
 <summary><b>Sample briefings</b></summary>
 
-Generated from [`config/watchlist.yaml.example`](config/watchlist.yaml.example) (7 instruments):
+Generated from [`config/watchlist.yaml.example`](config/watchlist.yaml.example) (4 instruments — AI & hypertech theme):
 
 | Language | Session | Briefing |
 |----------|---------|----------|
-| English | Close, 2026-06-09 | [watchlist_2026-06-09_close.md](examples/briefings/watchlist_2026-06-09_close.md) |
-| Italian | Close, 2026-06-09 | [watchlist_2026-06-09_close_it.md](examples/briefings/watchlist_2026-06-09_close_it.md) |
+| English | Close, 2026-06-10 | [watchlist_2026-06-10_close.md](examples/briefings/watchlist_2026-06-10_close.md) |
+| Italian | Close, 2026-06-10 | [watchlist_2026-06-10_close_it.md](examples/briefings/watchlist_2026-06-10_close_it.md) |
 
 Regenerate:
 
