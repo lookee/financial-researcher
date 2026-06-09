@@ -10,6 +10,8 @@ from crewai.tools.base_tool import Tool
 from crewai_tools import ScrapeWebsiteTool
 from langchain_community.tools.yahoo_finance_news import YahooFinanceNewsTool
 
+from financial_researcher import llm_compat  # noqa: F401 — patch LLM before agents run
+
 from financial_researcher.tools.serper_news import (
     SerperNasdaqNewsTool,
     SerperNewsItalyTool,

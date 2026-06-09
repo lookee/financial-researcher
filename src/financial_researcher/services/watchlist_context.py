@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import yaml
 
 from financial_researcher.models.instrument import InstrumentIdentity
+from financial_researcher.session_profiles import resolve_session_profile
 from financial_researcher.settings import get_default_language
 
 BRIEFING_SECTION_ORDER = [
@@ -711,11 +712,12 @@ def build_watchlist_context(
     today = now.date()
     window_end = today + timedelta(days=28)
     session_time = load_milan_sessions().get(session, "17:45")
+    session_label = SESSION_LABELS.get(session, session)
 
-    return {
+    inputs = {
         "language": briefing_language,
         "session": session,
-        "session_label": SESSION_LABELS.get(session, session),
+        "session_label": session_label,
         "current_date": today.isoformat(),
         "current_time": session_time,
         "calendar_window_start": today.isoformat(),
@@ -750,6 +752,17 @@ def build_watchlist_context(
             language=briefing_language
         ),
     }
+
+    profile = resolve_session_profile(session_label, now)
+    inputs.update(
+        {
+            "session_orientation": profile["session_orientation"],
+            "valid_metrics": profile["valid_metrics"],
+            "news_window": profile["news_window"],
+            "calendar_split": profile["calendar_split"],
+        }
+    )
+    return inputs
 
 
 def attach_prefetched_news(context: dict[str, str]) -> dict[str, str]:
