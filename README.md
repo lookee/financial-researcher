@@ -10,7 +10,7 @@ Stop reading ten scattered ticker pages. **Financial Researcher** turns a plain 
 
 Under the hood, a deterministic Python data layer (Yahoo Finance + OpenFIGI) feeds a five-agent [CrewAI](https://crewai.com) newsroom: four analysts work the market, the news, the macro outlook and the event calendar **in parallel**, then a chief strategist writes the memo. It speaks **Borsa Italiana** and the **Milan trading clock** natively — the briefing reads differently at the open than at the close.
 
-📄 **[Sample briefing (English →)](examples/briefings/watchlist_2026-06-10_close.md)** · **[Italiano →](examples/briefings/watchlist_2026-06-09_close_it.md)** · ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
+📄 **[Sample briefing (English →)](examples/briefings/watchlist_2026-06-10_close.md)** · ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
 
 ---
 
@@ -171,7 +171,6 @@ Generated from [`config/watchlist.yaml.example`](config/watchlist.yaml.example) 
 | Language | Session | Briefing |
 |----------|---------|----------|
 | English | Close, 2026-06-10 | [watchlist_2026-06-10_close.md](examples/briefings/watchlist_2026-06-10_close.md) |
-| Italian | Close, 2026-06-09 | [watchlist_2026-06-09_close_it.md](examples/briefings/watchlist_2026-06-09_close_it.md) |
 
 Regenerate:
 

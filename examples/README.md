@@ -12,7 +12,6 @@ Static samples for the **example watchlist** (`config/watchlist.yaml.example`):
 | Language | Session | File |
 |----------|---------|------|
 | English | Close, 2026-06-10 | [watchlist_2026-06-10_close.md](briefings/watchlist_2026-06-10_close.md) |
-| Italian | Close, 2026-06-09 | [watchlist_2026-06-09_close_it.md](briefings/watchlist_2026-06-09_close_it.md) |
 
 The CLI writes new briefings to `output/briefings/`, which is not tracked by git.
 
