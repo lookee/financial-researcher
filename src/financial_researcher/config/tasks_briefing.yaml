@@ -215,7 +215,8 @@ executive_briefing_task:
     - outlook analysis (3–12 month themes and scenarios)
     - calendar analysis (upcoming 2–4 week events)
 
-    Material news ranking from prefetch — honour impact in prose (never dilute HIGH headlines):
+    Material news ranking from prefetch — honour Impact HIGH/MEDIUM/LOW; at most 2 HIGH
+    (already capped). Never inflate tags; reference/profile pages are not news:
     {watchlist_material_news}
 
     Research citations (deterministic — include ALL in References section):
@@ -230,7 +231,8 @@ executive_briefing_task:
     - Open with a single vivid "market mood" line (one sentence) before the summary bullets.
     - Active, confident prose; varied sentence length; concrete verbs over hedging.
     - Consistent visual vocabulary used sparingly for scanning, never decoration:
-      ▲ up · ▼ down · ► flat for moves; 🔴 HIGH / 🟠 MEDIUM tags only for material news.
+      ▲ up · ▼ down · ► flat for moves; 🔴 HIGH at most twice in the whole memo;
+      🟠 MEDIUM where useful; no emoji on reference pages or LOW-impact items.
     - Bold the instrument name on first mention in each section.
     - Skimmable: bullets over walls of text; the Executive Summary reads in under 3 minutes.
 
@@ -248,9 +250,11 @@ executive_briefing_task:
          the FIRST sentence must state that event with specific facts and [N]; then leader/laggard
          1D and nearest catalyst. Never open only with performance if a stock has HIGH issuer news.
        - Then {instrument_count} bullets — one per instrument as **Name (TICKER)** with 1D or 1W
-         move (prefix ▲/▼/►) + headline. For instruments with Impact **HIGH**, prefix 🔴 and the
-         bullet MUST lead with the headline facts from watchlist_material_news (cite [N]) — not
-         'speculation' or generic sector commentary when a sourced headline exists.
+         move (prefix ▲/▼/►) + headline. Prefix 🔴 ONLY when watchlist_material_news shows
+         Impact **HIGH** for that instrument (max 2 🔴 in the full Executive Summary including
+         the opening). Impact **MEDIUM** may use 🟠 or no tag. Reference/profile pages: no 🔴 —
+         use performance + sector/theme with [N]. HIGH bullets MUST lead with headline facts
+         (cite [N]) — not 'speculation' or generic sector talk.
        MANDATORY: mention every instrument — none skipped:
        {watchlist_summary_checklist}
        Reserve [1]..[{last_citation}] for that instrument's market figures only.
@@ -267,8 +271,9 @@ executive_briefing_task:
     4. Drivers section — one entry per instrument as **Name (TICKER)** with news-linked explanation [N]:
        MANDATORY full coverage checklist (one entry per instrument, none skipped):
        {watchlist_driver_checklist}
-       For HIGH-impact instruments, repeat the headline substance (with the facts scraped
-       from the official source) before any interpretation. For each stock, cite specific
+       For Impact **HIGH** instruments only (max 2 🔴 in the entire briefing), repeat the
+       headline substance before interpretation. Do not prefix 🔴 on every driver entry.
+       For each stock, cite specific
        issuer events before sector generalities. Never replace a sourced headline with vague
        words ('speculation', 'sector uncertainty') when a concrete title/source exists.
        When sources conflict on a name, surface both in one sentence.

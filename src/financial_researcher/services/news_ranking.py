@@ -12,7 +12,8 @@ from financial_researcher.services.watchlist_context import _search_name
 MILAN_TZ = ZoneInfo("Europe/Rome")
 
 MATERIALITY_THRESHOLD = 45
-HIGH_IMPACT_SCORE = 70
+HIGH_IMPACT_SCORE = 75
+MAX_HIGH_IMPACT_INSTRUMENTS = 2
 
 OFFICIAL_DOMAINS: tuple[str, ...] = (
     "borsaitaliana.it",
@@ -40,6 +41,27 @@ STATIC_DOCUMENT_PATHS: tuple[str, ...] = (
     "/annual",
     "/archive/",
     "/static/",
+)
+
+# Product/profile pages — identity metadata, not session news.
+REFERENCE_PAGE_PATHS: tuple[str, ...] = (
+    "/borsa/etf/scheda/",
+    "profilo-societa-dettaglio",
+    "profilo-societa",
+    "/borsa/azioni/scheda/",
+    "/borsa/cw-e-certificates/scheda/",
+    "listino-ufficiale",
+    "/market-activity/stocks/",
+    "/market-activity/etf/",
+)
+
+REFERENCE_TITLE_MARKERS: tuple[str, ...] = (
+    "quotazioni in tempo reale",
+    "profilo societario",
+    "company profile",
+    "holdings and performance recap",
+    "latest prices, charts",
+    "earnings report date",
 )
 
 
@@ -80,10 +102,19 @@ def headline_age_days(
     return None
 
 
+def is_reference_page(headline: dict[str, str]) -> bool:
+    """ETF/stock fact sheets and profile pages — not time-sensitive news."""
+    url = (headline.get("url") or "").lower()
+    title = (headline.get("title") or "").lower()
+    if any(segment in url for segment in REFERENCE_PAGE_PATHS):
+        return True
+    return any(marker in title for marker in REFERENCE_TITLE_MARKERS)
+
+
 def recency_score(headline: dict[str, str]) -> int:
     age = headline_age_days(headline)
     if age is None:
-        return 0
+        return -15 if is_reference_page(headline) else -5
     if age <= 3:
         return 30
     if age <= 7:
@@ -128,6 +159,8 @@ def source_tier_score(headline: dict[str, str]) -> int:
 
     domain = urlparse(url).netloc.lower()
     if "borsaitaliana.it" in domain:
+        if is_reference_page(headline):
+            return 4
         score = 28
         if any(segment in url for segment in EXCHANGE_NEWS_PATHS):
             score += 22
@@ -150,6 +183,8 @@ def document_form_penalty(headline: dict[str, str]) -> int:
     url = (headline.get("url") or "").lower()
     if not url:
         return 0
+    if is_reference_page(headline):
+        return -45
     if url.endswith(".pdf"):
         return -35
     if any(segment in url for segment in STATIC_DOCUMENT_PATHS):
@@ -187,11 +222,12 @@ def headline_relevance_score(item: dict[str, Any], headline: dict[str, str]) -> 
 
 
 def impact_level(item: dict[str, Any], headline: dict[str, str]) -> str:
+    if is_reference_page(headline):
+        return "LOW"
+
     score = headline_relevance_score(item, headline)
     age = headline_age_days(headline)
 
-    if score >= HIGH_IMPACT_SCORE:
-        return "HIGH"
     if (
         item.get("type") == "stock"
         and is_exchange_news(headline)
@@ -200,6 +236,30 @@ def impact_level(item: dict[str, Any], headline: dict[str, str]) -> str:
         and issuer_match_score(item, headline) >= 20
     ):
         return "HIGH"
+
+    url = (headline.get("url") or "").lower()
+    is_recent_press = age is not None and age <= 14 and (
+        "press-release" in url
+        or headline.get("issuer_event")
+        or is_exchange_news(headline)
+    )
+    if score >= HIGH_IMPACT_SCORE and is_recent_press:
+        return "HIGH"
+
     if score >= MATERIALITY_THRESHOLD:
         return "MEDIUM"
     return "LOW"
+
+
+def cap_high_impact_levels(
+    rows: list[tuple[int, dict[str, Any], dict[str, str], str]],
+    *,
+    max_high: int = MAX_HIGH_IMPACT_INSTRUMENTS,
+) -> dict[str, str]:
+    """Downgrade excess HIGH labels — keep at most *max_high* across the watchlist."""
+    levels = {item["ticker"]: level for _, item, _, level in rows}
+    high_rows = [(score, item) for score, item, _, level in rows if level == "HIGH"]
+    high_rows.sort(key=lambda row: -row[0])
+    for _, item in high_rows[max_high:]:
+        levels[item["ticker"]] = "MEDIUM"
+    return levels

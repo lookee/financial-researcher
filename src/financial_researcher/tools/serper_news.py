@@ -228,6 +228,14 @@ apply_serper_tool_input_patch()
 class SerperSearchTool(FlexibleSerperTool):
     """General web search via Serper."""
 
+    name: str = "Search web with Serper"
+    description: str = (
+        "General web search worldwide (no country filter). "
+        "Use for global/English sources: Fed, BLS, US CPI, company IR in English, "
+        "Reuters, Bloomberg. Write search_query in English. "
+        "For Italian sites and Italy-focused topics, use Search Italian web with Serper "
+        "with Italian query text instead."
+    )
     n_results: int = 12
 
 
@@ -237,8 +245,11 @@ class SerperNewsTool(FlexibleSerperTool):
     name: str = "Search recent financial news with Serper"
     description: str = (
         "Search recent news articles worldwide (news mode, no country filter). "
-        "Use for international headlines: Reuters, Bloomberg, CNBC, MarketWatch, "
-        "Financial Times, sector and macro news. Complement Italian/local searches. "
+        "Use for **World / global** and **Issuer events (global)** queries: "
+        "Reuters, Bloomberg, CNBC, MarketWatch, Financial Times, US sector news. "
+        "Write search_query in English. "
+        "For Italian/local headlines and Italian institutional sites, use "
+        "Search Italian financial news with Serper with Italian query text instead. "
         "Pass search_query as a single string, or a JSON array of {search_query: ...} "
         "objects (one query per item)."
     )
@@ -251,15 +262,35 @@ class SerperNewsItalyTool(SerperNewsTool):
 
     name: str = "Search Italian financial news with Serper"
     description: str = (
-        "Search recent Italian/local financial news (news mode, Italy locale). "
-        "Use for .MI stocks and ETFs, Borsa Italiana, Il Sole 24 Ore, ANSA, "
-        "Milano Finanza. Pair with global Serper searches for full coverage. "
+        "Search recent Italian/local financial news (news mode, gl=it, hl=it). "
+        "Use for **Italy / local** and **Issuer events (Italy)** queries: .MI stocks "
+        "and ETFs, Borsa Italiana, CONSOB, Il Sole 24 Ore, ANSA, Milano Finanza. "
+        "Write search_query in Italian (e.g. notizie, utili, comunicato, borsa). "
+        "Do NOT use this tool for English/global or NASDAQ queries. "
         "Pass search_query as one plain string per call; if batching, use a JSON "
         "array of {search_query: ...} objects."
     )
     country: str = "it"
     locale: str = "it"
     n_results: int = 15
+
+
+class SerperSearchItalyTool(FlexibleSerperTool):
+    """Web search biased to Italian sources (gl=it, hl=it)."""
+
+    name: str = "Search Italian web with Serper"
+    description: str = (
+        "General web search with Italy locale (gl=it, hl=it). "
+        "Use for official Italian portals and Italy-focused macro research: "
+        "Borsa Italiana, CONSOB, Banca d'Italia, ECB/BCE (Italian pages), "
+        "Eurostat, calendario eventi in Italia. "
+        "Write search_query in Italian. "
+        "For Fed, US BLS, US earnings and global English sources, use "
+        "Search recent financial news with Serper or Search web with Serper instead."
+    )
+    country: str = "it"
+    locale: str = "it"
+    n_results: int = 12
 
 
 class SerperNasdaqNewsTool(SerperNewsTool):

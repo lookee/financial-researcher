@@ -12,10 +12,12 @@ import yfinance as yf
 
 from financial_researcher.services.news_ranking import (
     MATERIALITY_THRESHOLD,
+    cap_high_impact_levels,
     headline_relevance_score,
     impact_level,
     is_exchange_news,
     is_official_source,
+    is_reference_page,
 )
 from financial_researcher.services.watchlist_context import (
     instrument_label,
@@ -390,11 +392,14 @@ def build_material_news_brief(
     italian = language.lower().startswith("ital")
     lines: list[str] = [
         "Material news ranking (structural scoring: recency, issuer match, source tier).",
-        "Honour impact levels in the final memo.",
+        "Honour impact levels below. At most 2 instruments are Impact HIGH (already capped).",
+        "Use 🔴 only for HIGH dated news — never for ETF scheda, company profile, or "
+        "reference pages marked as metadata.",
         "",
     ]
 
     high_impact: list[tuple[int, dict[str, Any], dict[str, str]]] = []
+    instrument_rows: list[tuple[int, dict[str, Any], dict[str, str], str]] = []
 
     for item in instruments:
         headlines = headlines_by_ticker.get(item["ticker"], [])
@@ -402,11 +407,14 @@ def build_material_news_brief(
             headlines,
             key=lambda headline: -headline_relevance_score(item, headline),
         )
+        news_headlines = [h for h in ranked if not is_reference_page(h)]
         material = [
             headline
-            for headline in ranked
+            for headline in news_headlines
             if headline_relevance_score(item, headline) >= MATERIALITY_THRESHOLD
         ]
+        if not material and ranked:
+            material = [ranked[0]]
         label = instrument_label(item)
 
         if not material:
@@ -421,7 +429,26 @@ def build_material_news_brief(
         top = material[0]
         score = headline_relevance_score(item, top)
         level = impact_level(item, top)
+        instrument_rows.append((score, item, top, level))
+
+    capped_levels = cap_high_impact_levels(instrument_rows)
+
+    for score, item, top, _raw_level in instrument_rows:
+        level = capped_levels[item["ticker"]]
+        label = instrument_label(item)
         lines.append(f"### {label} — Impact **{level}**")
+
+        if is_reference_page(top):
+            if italian:
+                lines.append(
+                    "- **Nota**: fonte di scheda/profilo (metadata) — NON è una notizia. "
+                    "Non usare 🔴 HIGH; spiega il movimento con performance e tema settore."
+                )
+            else:
+                lines.append(
+                    "- **Note**: reference/profile page (metadata) — NOT news. "
+                    "Do not use 🔴 HIGH; explain the move with performance and sector/theme context."
+                )
 
         if italian:
             lines.append(f"- **Titolo da riportare**: {top['title']}")
@@ -443,7 +470,7 @@ def build_material_news_brief(
             cite_label = "Citazione obbligatoria" if italian else "Mandatory citation"
             lines.append(f"- **{cite_label}**: [{seed_citation}]")
 
-        if level == "HIGH":
+        if level == "HIGH" and not is_reference_page(top):
             high_impact.append((score, item, top))
             if italian:
                 lines.append(
