@@ -5,6 +5,11 @@
 # Default language for generated briefings (e.g. English, Italian).
 default_language: English
 
+# Serper news/search (prefetch + agent tools).
+serper:
+  # Free Serper plans reject site: and long OR queries — auto-simplify (default true).
+  free_tier: true
+
 # Website scrape tool (ScrapeWebsiteTool used by news/outlook/calendar agents).
 scrape:
   # When true (default), scraped pages are truncated before reaching the LLM.

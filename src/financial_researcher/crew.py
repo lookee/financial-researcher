@@ -4,6 +4,10 @@ Agent/task layout follows CrewAI patterns from Ed Donner's Udemy course:
 https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
 """
 
+from financial_researcher.cli_output import configure_clean_cli_output, crew_verbose_enabled
+
+configure_clean_cli_output()
+
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from financial_researcher import llm_compat  # noqa: F401 — patch LLM before agents run
@@ -45,7 +49,7 @@ class WatchlistBriefingCrew:
         """Analyses pre-loaded watchlist market data."""
         return Agent(
             config=self.agents_config["market_analyst"],
-            verbose=True,
+            verbose=crew_verbose_enabled(),
         )
 
     @agent
@@ -53,7 +57,7 @@ class WatchlistBriefingCrew:
         """Collects recent news; citations start after Yahoo market data."""
         return Agent(
             config=self.agents_config["news_analyst"],
-            verbose=True,
+            verbose=crew_verbose_enabled(),
             tools=_NEWS_TOOLS,
         )
 
@@ -62,7 +66,7 @@ class WatchlistBriefingCrew:
         """Medium-term macro and thematic outlook."""
         return Agent(
             config=self.agents_config["outlook_analyst"],
-            verbose=True,
+            verbose=crew_verbose_enabled(),
             tools=_SEARCH_TOOLS,
         )
 
@@ -71,7 +75,7 @@ class WatchlistBriefingCrew:
         """Upcoming events and catalysts calendar."""
         return Agent(
             config=self.agents_config["calendar_analyst"],
-            verbose=True,
+            verbose=crew_verbose_enabled(),
             tools=_SEARCH_TOOLS,
         )
 
@@ -80,7 +84,7 @@ class WatchlistBriefingCrew:
         """Writes the final executive watchlist briefing."""
         return Agent(
             config=self.agents_config["chief_strategist"],
-            verbose=True,
+            verbose=crew_verbose_enabled(),
         )
 
     @task
@@ -109,5 +113,5 @@ class WatchlistBriefingCrew:
             agents=self.agents,
             tasks=self.tasks,
             process=Process.sequential,
-            verbose=True,
+            verbose=crew_verbose_enabled(),
         )

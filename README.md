@@ -32,12 +32,15 @@ cp .env.sample .env        # add OPENAI_API_KEY and SERPER_API_KEY
 uv run briefing            # session inferred from the Milan clock
 ```
 
+Use `uv run briefing` directly — avoid activating another project's `.venv` first, or `uv` may warn about a mismatched `VIRTUAL_ENV`. CrewAI agent/task progress is shown by default; add `--quiet` (or `BRIEFING_QUIET=1`) to hide it.
+
 The first run scaffolds `config/`, `output/briefings/`, and `data/`, and seeds `config/watchlist.yaml` from the example template.
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `OPENAI_API_KEY` | ✅ | LLM backend for the agents |
 | `SERPER_API_KEY` | ✅ | News and web search |
+| `SERPER_FREE_TIER` | — | Set `0` if you have a paid Serper plan (keeps `site:` queries) |
 | `FINNHUB_API_KEY` | — | Company news prefetch (merged with Yahoo/Serper) |
 | `OPENFIGI_API_KEY` | — | Higher ISIN-resolution rate limits |
 | `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
@@ -57,6 +60,7 @@ uv run briefing --watchlist path/to.yaml     # custom watchlist
 | `--language LANG` | Briefing language (default: English) |
 | `--force` | Refresh cached identity and market data |
 | `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
+| `--quiet` | Hide CrewAI agent/task progress (default: shown) |
 
 ## Configuration
 
@@ -68,6 +72,9 @@ News, outlook and calendar agents use `ScrapeWebsiteTool` for institutional page
 
 ```yaml
 # src/financial_researcher/config/settings.yaml
+serper:
+  free_tier: true   # simplify site:/OR queries for Serper free plans (default)
+
 scrape:
   truncate_enabled: true   # set false for full page text (higher token use)
   max_chars: 2500

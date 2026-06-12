@@ -10,6 +10,9 @@ from crewai_tools import SerperDevTool
 from json_repair import repair_json
 from pydantic import BaseModel, Field, model_validator
 
+from financial_researcher.settings import get_serper_settings
+from financial_researcher.tools.serper_query import sanitize_serper_query
+
 _MIN_QUERY_LEN = 12
 
 
@@ -191,16 +194,25 @@ class FlexibleSerperTool(SerperDevTool):
                 "Pass one plain query string (company name, ticker, or site: filter) "
                 "as search_query."
             )
+        prepared = sanitize_serper_query(
+            search_query,
+            free_tier=get_serper_settings()["free_tier"],
+        )
+        if not prepared:
+            return "Serper search skipped: empty query after free-tier sanitisation."
+
         try:
-            return super()._run(search_query=search_query)
+            return super()._run(search_query=prepared)
         except requests.exceptions.HTTPError as exc:
             response = getattr(exc, "response", None)
             if response is not None and response.status_code == 400:
                 detail = (response.text or "").strip()[:500]
                 return (
-                    f"Serper news search failed (400 Bad Request) for query: "
-                    f"{search_query!r}. API message: {detail or 'Missing query parameter'}. "
-                    "Retry with a shorter plain-text query."
+                    f"Serper search unavailable for this query (400). "
+                    f"Query used: {prepared!r}. "
+                    f"API: {detail or 'Bad Request'}. "
+                    "On Serper free plans, avoid site: filters — set serper.free_tier: true "
+                    "in settings.yaml or upgrade the API plan."
                 )
             raise
 

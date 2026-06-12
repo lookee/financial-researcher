@@ -10,7 +10,9 @@ from zoneinfo import ZoneInfo
 import requests
 import yfinance as yf
 
+from financial_researcher.settings import get_serper_settings
 from financial_researcher.services.news_providers import FinnhubNewsProvider, dedupe_headlines
+from financial_researcher.tools.serper_query import sanitize_serper_query
 from financial_researcher.services.news_ranking import (
     MATERIALITY_THRESHOLD,
     cap_high_impact_levels,
@@ -91,6 +93,10 @@ def _serper_news(
 ) -> list[dict[str, str]]:
     api_key = os.getenv("SERPER_API_KEY", "").strip()
     if not api_key:
+        return []
+
+    query = sanitize_serper_query(query, free_tier=get_serper_settings()["free_tier"])
+    if not query:
         return []
 
     payload: dict[str, Any] = {"q": query, "num": num}
@@ -591,7 +597,7 @@ def prefetch_watchlist_news_bundle(
         ticker = item["ticker"]
         name = item["name"]
         digest_lines.append(f"### {name} ({ticker})")
-        print(f"  Prefetch news: {ticker}...", flush=True)
+        print(f"  ▸ {ticker}", flush=True)
 
         if not has_serper:
             digest_lines.append("- _Serper prefetch skipped (SERPER_API_KEY not set)._")

@@ -804,7 +804,7 @@ def attach_prefetched_news(context: dict[str, str]) -> dict[str, str]:
     year = int(str(today)[:4]) if today else datetime.now(MILAN_TZ).year
     language = context.get("language", payload.get("language", "English"))
     start_citation = int(context.get("next_citation", payload.get("next_citation", 7)))
-    print("Prefetching Yahoo + Serper news...")
+    print("▸ Prefetching news (Yahoo + Serper + Finnhub)...")
     context = dict(context)
     digest, material, seed_markdown, seed_entries = prefetch_watchlist_news_bundle(
         instruments,

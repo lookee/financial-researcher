@@ -25,6 +25,10 @@ dev = ["pytest>=8.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore::pydantic.warnings.ArbitraryTypeWarning",
+]
 
 [tool.crewai]
 type = "crew"

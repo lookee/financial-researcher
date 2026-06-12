@@ -73,7 +73,7 @@ class WatchlistPipeline:
             snapshot = self.market.get_snapshot(identity, use_cache=not force)
             identities.append(identity)
             snapshots.append(snapshot)
-            print(f"  Loaded {identity.primary_ticker} ({identity.name})")
+            print(f"  ▸ {identity.primary_ticker} ({identity.name})")
 
         if not identities:
             raise ValueError("Watchlist contains no instruments.")

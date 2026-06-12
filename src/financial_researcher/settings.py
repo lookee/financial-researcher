@@ -68,3 +68,22 @@ def get_scrape_settings() -> dict[str, int | bool]:
         "truncate_enabled": bool(truncate_enabled),
         "max_chars": max(500, min(max_chars, 20_000)),
     }
+
+
+@lru_cache
+def get_serper_settings() -> dict[str, bool]:
+    """Serper API options (free_tier sanitisation defaults to True)."""
+    env_flag = os.getenv("SERPER_FREE_TIER", "").strip().lower()
+    if env_flag:
+        free_tier = env_flag not in {"0", "false", "no", "off"}
+        return {"free_tier": free_tier}
+
+    serper = _load_yaml_settings().get("serper") or {}
+    if not isinstance(serper, dict):
+        serper = {}
+
+    free_tier = serper.get("free_tier", True)
+    if isinstance(free_tier, str):
+        free_tier = free_tier.strip().lower() not in {"0", "false", "no", "off"}
+
+    return {"free_tier": bool(free_tier)}

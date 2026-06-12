@@ -5,6 +5,10 @@ Forked and extended from CrewAI patterns in Ed Donner's Udemy course:
 https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
 """
 
+from financial_researcher.cli_output import configure_clean_cli_output
+
+configure_clean_cli_output()
+
 import argparse
 import os
 import time
@@ -57,8 +61,8 @@ def run_briefing(
             f"Choose from: {', '.join(VALID_SESSIONS)}"
         )
 
-    print(f"Session: {chosen_session} (Milan)")
-    print("Loading watchlist market data...")
+    print(f"\n▸ Session: {chosen_session} (Milan)")
+    print("▸ Loading watchlist market data...")
     pipeline = WatchlistPipeline()
     inputs = pipeline.collect(
         watchlist_path,
@@ -95,15 +99,14 @@ def run_briefing(
     )
     write_run_metrics(metrics_path, metrics_payload)
 
-    for warning in warnings:
-        print(f"Post-process warning: {warning}")
+    if warnings:
+        print("\n▸ Post-process warnings:")
+        for warning in warnings:
+            print(f"  • {warning}")
 
-    print(format_metrics_summary(usage, warnings=warnings))
-    print(f"Metrics saved to {metrics_path}")
-
-    print(f"\n\n=== WATCHLIST BRIEFING ({chosen_session}) ===\n\n")
-    print(processed)
-    print(f"\n\nBriefing saved to {output_file}")
+    print(f"\n▸ {format_metrics_summary(usage, warnings=warnings)}")
+    print(f"▸ Briefing saved to {output_file}")
+    print(f"▸ Metrics saved to {metrics_path}")
     return output_file
 
 
@@ -140,12 +143,20 @@ Examples:
         default=WATCHLIST_PATH,
         help=f"Watchlist YAML path (default: {default_watchlist_path()})",
     )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Hide CrewAI agent progress (default: show task/agent status). Same as BRIEFING_QUIET=1",
+    )
     return parser
 
 
 def cli(argv: list[str] | None = None) -> None:
     parser = _build_parser()
     args = parser.parse_args(argv)
+    if args.quiet:
+        os.environ["BRIEFING_QUIET"] = "1"
+        configure_clean_cli_output()
     run_briefing(
         session=args.session,
         language=args.language,
