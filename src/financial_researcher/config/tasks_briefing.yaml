@@ -128,117 +128,51 @@ calendar_analysis_task:
   agent: calendar_analyst
 executive_briefing_task:
   description: >
-    Write ONE executive watchlist briefing in {language} for session
-    {session_label} on {current_date} at {current_time} (Borsa Italiana).
-    Synthesise all analyst outputs from task context:
-    - market analysis (performance, leaders/laggards)
-    - news research (recent catalysts)
-    - outlook analysis (3–12 month themes and scenarios)
-    - calendar analysis (upcoming 2–4 week events)
+    Write ONE executive watchlist briefing for the chief strategist role.
+    Human-facing memo — polished prose in {language}.
 
-    Material news ranking from prefetch — honour Impact HIGH/MEDIUM/LOW; at most 2 HIGH
-    (already capped). Never inflate tags; reference/profile pages are not news:
-    {watchlist_material_news}
+    HARD LENGTH CAP: 1100–1400 words for ALL narrative sections combined.
+    EXCLUDE from word count: performance table (injected by pipeline) and References section.
 
-    Research citations (deterministic — include ALL in References section):
-    {research_reference_seed}
+    HARD REDUNDANCY (mandatory):
+    - Any performance figure (e.g. "+5.66% 1D") appears at most TWICE in the entire memo:
+      once in the performance table, once in prose.
+    - Each section adds NEW information — never restate the Executive Summary in Drivers,
+      Outlook, Risks, or Correlated Themes.
 
-    Do not give buy/sell/hold advice.
+    EDITORIAL STYLE:
+    - One vivid "market mood" line before summary bullets.
+    - Active prose; ▲/▼/► for moves; bold instrument on first mention per section.
+    - Skimmable bullets in Executive Summary.
 
-    Instrument naming in all narrative text:
-    {instrument_naming_guide}
+    SOURCE FRESHNESS: attribute 1D moves only to CAUSAL sources; label BACKGROUND as context.
 
-    EDITORIAL STYLE (make it compelling and highly readable):
-    - Open with a single vivid "market mood" line (one sentence) before the summary bullets.
-    - Active, confident prose; varied sentence length; concrete verbs over hedging.
-    - Consistent visual vocabulary used sparingly for scanning, never decoration:
-      ▲ up · ▼ down · ► flat for moves; 🟠 MEDIUM where useful; no emoji on
-      reference pages or LOW-impact items.
-    - Bold the instrument name on first mention in each section.
-    - Skimmable: bullets over walls of text; the Executive Summary reads in under 3 minutes.
+    SECTION RULES — use EXACT headings from briefing_section_headings:
+    1. Title + mood hook
+    2. Executive Summary — {instrument_count} bullets Name (TICKER); dominant HIGH first if any
+    3. Performance — heading + one leader/laggard sentence ONLY (no table)
+    4. Drivers — one entry per instrument ({instrument_count})
+    5. Outlook — Bull/Base/Bear with dated triggers
+    6. Calendar — forward events only (date >= today), closed Impact taxonomy
+    7. Correlated themes · 8. Risks (≥3) · 9. References (injected) · 10. Disclaimer
 
-    SOURCE FRESHNESS: honour CAUSAL vs BACKGROUND tags from prefetch — attribute 1D moves
-    only to CAUSAL sources (≤3 trading days); label older sources as background/context.
+    Citation rules: [1]..[{last_citation}] = Yahoo per instrument only; news/calendar [{next_citation}]+.
+    No buy/sell/hold advice.
 
-    ANTI-REDUNDANCY (mandatory — keeps the memo concise):
-    - Each performance figure (e.g. "+5.66% 1D") may appear at most TWICE in the
-      entire memo: once in the performance table (injected by the pipeline) and once
-      in prose. Do not repeat the same % in Executive Summary, Drivers, Outlook and Risks.
-    - Each section must add NEW information not already stated in earlier sections.
-      Do not restate or paraphrase the Executive Summary in Drivers, Outlook or Risks.
-    - Target length: 1100–1400 words for narrative sections (exclude the performance
-      table and References). Prefer density over repetition.
+    Synthesise analyst task outputs (market, news, outlook, calendar) from task context.
 
-    The Executive Summary is the centrepiece.
-
-    Required sections — use EXACTLY these headings (pre-localized for {language}):
+    --- RUN CONTEXT ---
+    Session: {session_label} · {current_date} {current_time} · Borsa Italiana · {language}
     {briefing_section_headings}
-
-    Section content rules:
-    1. Title block (# level) — session, date, time, market, instrument count.
-       Immediately under the title, one-line "market mood" hook.
-    2. Executive Summary / Sommario Esecutivo — prioritised insights across all time horizons.
-       Structure (do NOT use one long paragraph):
-       - Opening (2-3 sentences): if watchlist_material_news lists a **dominant** HIGH story,
-         the FIRST sentence must state that event with specific facts and [N]; then leader/laggard
-         1D and nearest catalyst. Never open only with performance if a stock has HIGH issuer news.
-       - Then {instrument_count} bullets — one per instrument as **Name (TICKER)** with 1D or 1W
-         move (prefix ▲/▼/►) + headline. Impact **MEDIUM** may use 🟠 or no tag.
-         Impact **NONE**: use performance + sector/theme with [N] only. HIGH bullets MUST lead
-         with headline facts (cite [N]) — not 'speculation' or generic sector talk.
-       MANDATORY: mention every instrument — none skipped:
-       {watchlist_summary_checklist}
-       Reserve [1]..[{last_citation}] for that instrument's market figures only.
-       Use [{next_citation}]+ for news facts. Never use ticker alone without the full name.
-    3. Performance section — write ONLY the section heading plus one sentence on
-       1D leaders/laggards. The performance table is injected automatically by the
-       pipeline; do NOT render a markdown table in this section.
-    4. Drivers section — one entry per instrument as **Name (TICKER)** with news-linked explanation [N]:
-       MANDATORY full coverage checklist (one entry per instrument, none skipped):
-       {watchlist_driver_checklist}
-       For Impact **HIGH** instruments, repeat the headline substance before interpretation.
-       For each stock, cite specific
-       issuer events before sector generalities. Never replace a sourced headline with vague
-       words ('speculation', 'sector uncertainty') when a concrete title/source exists.
-       When sources conflict on a name, surface both in one sentence.
-       If news research found no headline for an instrument, still include it and
-       explain the move using performance data and sector/theme context with [N].
-    5. Outlook section — themes, scenarios, macro from outlook analysis with [N].
-       MUST include Bull / Base / Bear bullets, each tied to a dated trigger, with citations.
-    6. Calendar section — forward-looking events ONLY (dates >= {current_date}).
-       Copy the calendar analyst forward table with the closed Impact taxonomy.
-       Do NOT list past news here — those belong in Drivers, not Event Calendar.
-       NEVER list an event without a confirmed YYYY-MM-DD and source URL.
-       If no forward events exist, state that explicitly.
-    7. Correlated themes section — cross-instrument links with [N]; cover tech cluster and
-       non-tech names where relevant.
-    8. Risks section — at least 3 cited bullets spanning macro and watchlist names.
-    9. References section — Yahoo Finance [1]..[{last_citation}] and research citations are
-       injected automatically by the pipeline. Cite [{next_citation}]+ in the body as needed.
-    10. Disclaimer — informational only, not investment advice.
-
-    Citation rules:
-    - Market data prices/performance: [1]..[{last_citation}] only for the matching instrument.
-    - News, outlook, calendar: [{next_citation}] and above only.
-    - Every factual statement must carry [N].
-    - Do not cite a number unless it appears in References (research) or is 1..[{last_citation}] for Yahoo.
-
-    MISSING INPUT HANDLING: if any context input is empty/missing, note it under Data
-    limitations — never fabricate to fill the gap.
+    {instrument_naming_guide}
+    {watchlist_summary_checklist}
+    {watchlist_driver_checklist}
+    {watchlist_material_news}
+    {research_reference_seed}
   expected_output: >
-    A polished, visually engaging Markdown executive briefing for the entire watchlist.
-    Single cohesive memo (not separate per-instrument reports), opening with a one-line
-    market-mood hook.
-    Executive Summary must weave performance, news, outlook and calendar AND mention
-    every instrument by Name (TICKER) ({instrument_count} instruments) — verify
-    against watchlist_summary_checklist before finishing.
-    The Performance section must include a one-line leader/laggard summary; the table is
-    injected by post-processing.
-    Section 4 (What's Driving the Moves) MUST contain exactly {instrument_count}
-    entries — one per instrument as Name (TICKER), including stocks (e.g. STMicroelectronics (STMMI.MI))
-    and every ETF. Verify against watchlist_driver_checklist before finishing.
-    Event Calendar section must preserve exact YYYY-MM-DD dates and the closed Impact taxonomy.
-    References are injected automatically by the pipeline.
+    Executive Markdown briefing: all sections, all instruments, citations intact.
+    Narrative 1100–1400 words excluding performance table and References.
+    Performance section: one leader/laggard line only. References injected by pipeline.
   agent: chief_strategist
   context:
     - market_analysis_task
