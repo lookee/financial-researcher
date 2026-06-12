@@ -11,6 +11,7 @@ configure_clean_cli_output()
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from financial_researcher import llm_compat  # noqa: F401 — patch LLM before agents run
+from financial_researcher.agent_llm import build_agent_llm
 
 from financial_researcher.tools.scrape_limited import build_scrape_tool
 from financial_researcher.tools.serper_news import (
@@ -49,6 +50,7 @@ class WatchlistBriefingCrew:
         """Analyses pre-loaded watchlist market data."""
         return Agent(
             config=self.agents_config["market_analyst"],
+            llm=build_agent_llm("market"),
             verbose=crew_verbose_enabled(),
         )
 
@@ -57,6 +59,7 @@ class WatchlistBriefingCrew:
         """Collects recent news; citations start after Yahoo market data."""
         return Agent(
             config=self.agents_config["news_analyst"],
+            llm=build_agent_llm("news"),
             verbose=crew_verbose_enabled(),
             tools=_NEWS_TOOLS,
         )
@@ -66,6 +69,7 @@ class WatchlistBriefingCrew:
         """Medium-term macro and thematic outlook."""
         return Agent(
             config=self.agents_config["outlook_analyst"],
+            llm=build_agent_llm("outlook"),
             verbose=crew_verbose_enabled(),
             tools=_SEARCH_TOOLS,
         )
@@ -75,6 +79,7 @@ class WatchlistBriefingCrew:
         """Upcoming events and catalysts calendar."""
         return Agent(
             config=self.agents_config["calendar_analyst"],
+            llm=build_agent_llm("calendar"),
             verbose=crew_verbose_enabled(),
             tools=_SEARCH_TOOLS,
         )
@@ -84,6 +89,7 @@ class WatchlistBriefingCrew:
         """Writes the final executive watchlist briefing."""
         return Agent(
             config=self.agents_config["chief_strategist"],
+            llm=build_agent_llm("chief"),
             verbose=crew_verbose_enabled(),
         )
 
