@@ -20,5 +20,11 @@ briefing = "financial_researcher.main:briefing_cli"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.crewai]
 type = "crew"

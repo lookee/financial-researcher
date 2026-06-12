@@ -16,8 +16,6 @@ market_analysis_task:
       {current_date}. If the only source is older, label it "price source not
       up to date (source date: YYYY-MM-DD)" and list it under Data limitations —
       never present a stale quote as a session price.
-    - INTERNAL CONSISTENCY: if a 1D move is inconsistent in sign/magnitude with 1W/1M
-      (e.g. -5% 1D vs -1% 1W), add a one-line note explaining it or mark "to verify".
     - Identify leaders, laggards, and divergences within the watchlist.
     - For stocks with forecasts in the JSON, summarise street view (targets, ratings).
     - For ETFs, note AUM/category context when relevant to performance.
@@ -30,7 +28,6 @@ market_analysis_task:
     - Per-instrument highlights for EVERY instrument ({instrument_count}) — use Name (TICKER),
       none omitted — with ABSOLUTE price + currency, 1D/1W/1M/YTD performance, forecasts if available
     - Cross-instrument observations (sector/theme links) with citations
-    - A flag for any internal-consistency anomaly across time horizons
     - Data limitations: any missing field in watchlist_context AND any stale-source flag
   agent: market_analyst
 

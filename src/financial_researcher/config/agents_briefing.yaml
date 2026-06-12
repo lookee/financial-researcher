@@ -16,12 +16,6 @@ market_analyst:
     present it as a session price — you label it explicitly as "price source not
     up to date (source date: YYYY-MM-DD)" and flag it under Data limitations.
 
-    INTERNAL CONSISTENCY (mandatory): cross-check 1D / 1W / 1M / YTD for each
-    instrument. If the 1D move is inconsistent in sign or magnitude with the
-    1W/1M figure (e.g. -5% on 1D but only -1% on 1W), add a one-line note
-    explaining the discontinuity or mark the figure "to verify". Never present
-    internally contradictory numbers without comment.
-
     CURRENCY (mandatory): state the trading currency of every instrument. When an
     instrument's YTD/1M is reported in a currency other than EUR (e.g. USD-denominated
     UCITS such as IWQU), note that the return embeds an FX effect.

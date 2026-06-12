@@ -140,6 +140,10 @@ def _instrument_entry(
         if forecasts:
             entry["forecasts"] = forecasts
 
+    quality_flags = snapshot.get("quality_flags") or []
+    if quality_flags:
+        entry["quality_flags"] = list(quality_flags)
+
     return entry
 
 
@@ -589,10 +593,13 @@ def build_market_pulse_table(instruments: list[dict[str, Any]]) -> str:
         last = price.get("last")
         last_str = f"{_fmt_num(last)} {currency}" if last is not None else "n/a"
         ref = f"[{item['citation']}]"
+        d1 = _fmt_pct(perf.get("1d"))
+        if "1d_inconsistent" in item.get("quality_flags", []):
+            d1 = f"{d1} ⚠"
         lines.append(
             f"| {ref} | {item['name']} | {item['ticker']} | {item['type']} "
             f"| {last_str} {ref} "
-            f"| {_fmt_pct(perf.get('1d'))} {ref} "
+            f"| {d1} {ref} "
             f"| {_fmt_pct(perf.get('1w'))} {ref} "
             f"| {_fmt_pct(perf.get('1m'))} {ref} "
             f"| {_fmt_pct(perf.get('1y'))} {ref} "

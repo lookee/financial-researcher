@@ -9,6 +9,29 @@ import yfinance as yf
 from financial_researcher.models.instrument import InstrumentIdentity
 from financial_researcher.storage.market_cache import MarketCache
 
+ONE_D_INCONSISTENCY_THRESHOLD_PP = 0.5
+
+
+def compute_canonical_1d(
+    current: float | None,
+    previous_close: float | None,
+    history_1d: float | None,
+) -> tuple[float | None, list[str]]:
+    """Derive a single 1D % change from quote fields, with history fallback."""
+    quote_1d: float | None = None
+    if current is not None and previous_close is not None and previous_close != 0:
+        quote_1d = round(((current / previous_close) - 1) * 100, 2)
+
+    canonical = quote_1d if quote_1d is not None else history_1d
+    flags: list[str] = []
+    if (
+        quote_1d is not None
+        and history_1d is not None
+        and abs(quote_1d - history_1d) > ONE_D_INCONSISTENCY_THRESHOLD_PP
+    ):
+        flags.append("1d_inconsistent")
+    return canonical, flags
+
 
 class MarketDataService:
     """Build a structured market snapshot for briefing context."""
@@ -38,21 +61,28 @@ class MarketDataService:
         history = ticker.history(period="1y", auto_adjust=True)
 
         performance = self._calculate_performance(history)
+        current = info.get("currentPrice") or info.get("regularMarketPrice")
+        previous_close = info.get("previousClose")
+        canonical_1d, quality_flags = compute_canonical_1d(
+            current, previous_close, performance.get("1d")
+        )
+        performance = {**performance, "1d": canonical_1d}
+
         source_url = (
             f"https://finance.yahoo.com/quote/{identity.primary_ticker}"
         )
 
-        return {
+        snapshot: dict[str, Any] = {
             "fetched_on": date.today().isoformat(),
             "source": "Yahoo Finance",
             "source_url": source_url,
             "ticker": identity.primary_ticker,
             "instrument_type": identity.instrument_type,
             "price": {
-                "current": info.get("currentPrice") or info.get("regularMarketPrice"),
-                "previous_close": info.get("previousClose"),
+                "current": current,
+                "previous_close": previous_close,
                 "currency": info.get("currency") or identity.currency,
-                "change_percent": info.get("regularMarketChangePercent"),
+                "change_percent": canonical_1d,
             },
             "performance": performance,
             "profile": {
@@ -63,6 +93,9 @@ class MarketDataService:
             "fundamentals": self._extract_fundamentals(info, identity.instrument_type),
             "forecasts": self._extract_forecasts(info, identity.instrument_type),
         }
+        if quality_flags:
+            snapshot["quality_flags"] = quality_flags
+        return snapshot
 
     def _calculate_performance(self, history: pd.DataFrame) -> dict[str, float | None]:
         if history.empty or "Close" not in history.columns:
