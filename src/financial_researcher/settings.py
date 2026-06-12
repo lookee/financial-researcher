@@ -103,3 +103,26 @@ def get_pipeline_settings() -> dict[str, int]:
         max_workers = 4
 
     return {"max_workers": max(1, min(max_workers, 16))}
+
+
+@lru_cache
+def get_benchmark_settings() -> list[dict[str, str]]:
+    """Benchmark tickers for relative performance context (default: MIB + STOXX)."""
+    raw = _load_yaml_settings().get("benchmarks") or []
+    if not isinstance(raw, list):
+        return [
+            {"ticker": "FTSEMIB.MI", "name": "FTSE MIB"},
+            {"ticker": "^STOXX", "name": "STOXX Europe 600"},
+        ]
+    benchmarks: list[dict[str, str]] = []
+    for entry in raw:
+        if not isinstance(entry, dict):
+            continue
+        ticker = str(entry.get("ticker", "")).strip()
+        name = str(entry.get("name", ticker)).strip()
+        if ticker:
+            benchmarks.append({"ticker": ticker, "name": name})
+    return benchmarks or [
+        {"ticker": "FTSEMIB.MI", "name": "FTSE MIB"},
+        {"ticker": "^STOXX", "name": "STOXX Europe 600"},
+    ]

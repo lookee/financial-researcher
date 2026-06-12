@@ -99,10 +99,13 @@ class WatchlistPipeline:
         identities = [pair[0] for pair in results if pair is not None]
         snapshots = [pair[1] for pair in results if pair is not None]
 
+        benchmark_snapshots = self.market.fetch_benchmark_snapshots()
+
         context = build_watchlist_context(
             identities,
             snapshots,
             session=session,
             language=briefing_language,
+            benchmark_snapshots=benchmark_snapshots,
         )
         return attach_prefetched_news(context)

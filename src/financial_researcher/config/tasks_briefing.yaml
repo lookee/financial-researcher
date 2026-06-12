@@ -5,6 +5,8 @@ market_analysis_task:
     {current_time} (Europe/Rome, Borsa Italiana).
     Pre-loaded data — do not invent numbers:
     {market_pulse_table}
+    Benchmark reference rows (alpha vs beta):
+    {benchmark_context}
     Full structured context (JSON):
     {watchlist_context}
     Requirements:
@@ -17,6 +19,7 @@ market_analysis_task:
       up to date (source date: YYYY-MM-DD)" and list it under Data limitations —
       never present a stale quote as a session price.
     - Identify leaders, laggards, and divergences within the watchlist.
+    - Express watchlist moves relative to the benchmark rows (alpha vs beta).
     - For stocks with forecasts in the JSON, summarise street view (targets, ratings).
     - For ETFs, note AUM/category context when relevant to performance.
     - Cite every figure with [N] matching the instrument citation in the table.
@@ -165,8 +168,10 @@ calendar_analysis_task:
     {instrument_profile_table}
     Performance context:
     {market_pulse_table}
-    Full structured context (JSON):
-    {watchlist_context}
+    Pre-loaded FORWARD events (Yahoo Finance — confirmed dates only):
+    {forward_calendar_table}
+    Recent dated news (past items — NOT the Event Calendar; reference only):
+    {recent_dated_events_table}
     MANDATORY date rules:
     - Every event MUST have an exact date in YYYY-MM-DD format.
     - Dates must fall within {calendar_window_start}..{calendar_window_end}.
@@ -272,10 +277,11 @@ executive_briefing_task:
        explain the move using performance data and sector/theme context with [N].
     5. Outlook section — themes, scenarios, macro from outlook analysis with [N].
        MUST include Bull / Base / Bear bullets, each tied to a dated trigger, with citations.
-    6. Calendar section — markdown table copied from calendar analysis, Impact column using the
-       closed taxonomy. ALSO include dated HIGH issuer/regulatory events from watchlist_material_news
-       and news research with [N]. NEVER list an event without a confirmed YYYY-MM-DD and source URL.
-       If calendar analysis has no dated events, write that explicitly.
+    6. Calendar section — forward-looking events ONLY (dates >= {current_date}).
+       Copy the calendar analyst forward table with the closed Impact taxonomy.
+       Do NOT list past news here — those belong in Drivers, not Event Calendar.
+       NEVER list an event without a confirmed YYYY-MM-DD and source URL.
+       If no forward events exist, state that explicitly.
     7. Correlated themes section — cross-instrument links with [N]; cover tech cluster and
        non-tech names where relevant.
     8. Risks section — at least 3 cited bullets spanning macro and watchlist names.

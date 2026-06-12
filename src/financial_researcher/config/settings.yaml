@@ -14,6 +14,13 @@ serper:
 pipeline:
   max_workers: 4
 
+# Benchmark indices appended to performance tables (alpha vs beta context).
+benchmarks:
+  - ticker: FTSEMIB.MI
+    name: FTSE MIB
+  - ticker: ^STOXX
+    name: STOXX Europe 600
+
 # Website scrape tool (ScrapeWebsiteTool used by news/outlook/calendar agents).
 scrape:
   # When true (default), scraped pages are truncated before reaching the LLM.

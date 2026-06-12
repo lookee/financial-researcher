@@ -8,9 +8,23 @@ import yfinance as yf
 
 from financial_researcher.models.instrument import InstrumentIdentity
 from financial_researcher.services.retry import with_retries
+from financial_researcher.settings import get_benchmark_settings
 from financial_researcher.storage.market_cache import MarketCache
 
 ONE_D_INCONSISTENCY_THRESHOLD_PP = 0.5
+
+
+def compute_volatility_30d(history: pd.DataFrame) -> float | None:
+    """30-day realized volatility (daily return stdev × √30), as a percentage."""
+    if history.empty or "Close" not in history.columns:
+        return None
+    closes = history["Close"].dropna().tail(31)
+    if len(closes) < 5:
+        return None
+    returns = closes.pct_change().dropna()
+    if returns.empty:
+        return None
+    return round(float(returns.std() * (30**0.5) * 100), 2)
 
 
 def compute_canonical_1d(
@@ -95,9 +109,54 @@ class MarketDataService:
             "fundamentals": self._extract_fundamentals(info, identity.instrument_type),
             "forecasts": self._extract_forecasts(info, identity.instrument_type),
         }
+        vol_30d = compute_volatility_30d(history)
+        if vol_30d is not None:
+            snapshot["volatility_30d"] = vol_30d
         if quality_flags:
             snapshot["quality_flags"] = quality_flags
         return snapshot
+
+    def get_benchmark_snapshot(self, ticker: str, name: str) -> dict[str, Any]:
+        """Lightweight index snapshot for benchmark rows (not cached per ISIN)."""
+        symbol = yf.Ticker(ticker)
+        info = with_retries(lambda: symbol.info or {})
+        history = with_retries(lambda: symbol.history(period="1y", auto_adjust=True))
+        performance = self._calculate_performance(history)
+        current = info.get("currentPrice") or info.get("regularMarketPrice")
+        previous_close = info.get("previousClose")
+        canonical_1d, _ = compute_canonical_1d(
+            current, previous_close, performance.get("1d")
+        )
+        performance = {**performance, "1d": canonical_1d}
+        vol_30d = compute_volatility_30d(history)
+        return {
+            "fetched_on": date.today().isoformat(),
+            "source": "Yahoo Finance",
+            "source_url": f"https://finance.yahoo.com/quote/{ticker}",
+            "ticker": ticker,
+            "name": name,
+            "instrument_type": "benchmark",
+            "price": {
+                "current": current,
+                "previous_close": previous_close,
+                "currency": info.get("currency") or "",
+                "change_percent": canonical_1d,
+            },
+            "performance": performance,
+            "volatility_30d": vol_30d,
+        }
+
+    def fetch_benchmark_snapshots(self) -> list[dict[str, Any]]:
+        """Fetch configured benchmark indices."""
+        snapshots: list[dict[str, Any]] = []
+        for entry in get_benchmark_settings():
+            try:
+                snapshots.append(
+                    self.get_benchmark_snapshot(entry["ticker"], entry["name"])
+                )
+            except Exception:
+                continue
+        return snapshots
 
     def _calculate_performance(self, history: pd.DataFrame) -> dict[str, float | None]:
         if history.empty or "Close" not in history.columns:

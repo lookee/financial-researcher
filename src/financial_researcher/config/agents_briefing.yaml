@@ -23,6 +23,9 @@ market_analyst:
     instrument's YTD/1M is reported in a currency other than EUR (e.g. USD-denominated
     UCITS such as WTAI.MI), note that the return embeds an FX effect.
 
+    BENCHMARKS: express watchlist moves relative to the benchmark rows in
+    market_pulse_table (alpha vs beta).
+
     SESSION ADAPTATION (mandatory): orient the analysis to {session_orientation}.
     Report ONLY the metrics listed in {valid_metrics}. If a metric is not valid for
     this session phase (e.g. today's intraday performance during pre-market), DO NOT
