@@ -1,10 +1,12 @@
 """Tests for watchlist context table builders."""
 
 from financial_researcher.services.briefing_postprocess import _replace_section_body
+from financial_researcher.services.market_data import compute_volatility_30d
 from financial_researcher.services.watchlist_context import (
     build_market_pulse_table,
     build_watchlist_performance_table,
 )
+import pandas as pd
 
 
 def _sample_instrument(**overrides) -> dict:
@@ -15,7 +17,7 @@ def _sample_instrument(**overrides) -> dict:
         "type": "etf",
         "currency": "EUR",
         "price": {"last": 23.45},
-        "performance": {"1d": 1.2, "1w": -0.5, "1m": 3.0, "1y": 5.0, "ytd": 4.0},
+        "performance": {"1d": 1.2, "1w": -0.5, "1m": 11.48, "1y": 5.0, "ytd": 4.0},
     }
     base.update(overrides)
     return base
@@ -37,7 +39,45 @@ class TestBuildWatchlistPerformanceTable:
         )
         assert "Prezzo (valuta)" in table
         assert "23,45 EUR" in table
+        assert "1,20%" in table
+        assert "11. 48%" not in table  # no thousand-separator artifact
+        assert "11,48%" in table
         assert "[1] ⚠" in table
+
+    def test_includes_ytd_1y_and_vol_columns(self):
+        table = build_watchlist_performance_table(
+            [_sample_instrument(volatility_30d=12.34)],
+            language="English",
+        )
+        assert "| YTD | 1Y |" in table
+        assert "30d Vol" in table
+        assert "4.00%" in table
+        assert "12.34%" in table
+
+    def test_benchmark_rows_appended(self):
+        benchmark = {
+            "ticker": "FTSEMIB.MI",
+            "name": "FTSE MIB",
+            "price": {"current": 35000},
+            "performance": {"1d": 0.5, "1w": 1.0, "1m": 2.0, "ytd": 3.0, "1y": 4.0},
+            "source_url": "https://finance.yahoo.com/quote/FTSEMIB.MI",
+        }
+        table = build_watchlist_performance_table(
+            [_sample_instrument()],
+            benchmarks=[benchmark],
+        )
+        assert "FTSE MIB" in table
+        assert "FTSEMIB.MI" in table
+        assert table.strip().splitlines()[-1].startswith("| — |")
+
+
+class TestComputeVolatility30d:
+    def test_returns_percentage_for_sufficient_history(self):
+        closes = [100 + i for i in range(40)]
+        history = pd.DataFrame({"Close": closes})
+        vol = compute_volatility_30d(history)
+        assert vol is not None
+        assert vol > 0
 
 
 class TestBuildMarketPulseTable:

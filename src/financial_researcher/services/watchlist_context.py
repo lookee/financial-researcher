@@ -9,6 +9,11 @@ from zoneinfo import ZoneInfo
 import yaml
 
 from financial_researcher.models.instrument import InstrumentIdentity
+from financial_researcher.services.forward_calendar import (
+    build_forward_calendar_table,
+    build_recent_dated_events_table,
+    fetch_forward_calendar_events,
+)
 from financial_researcher.session_profiles import resolve_session_profile
 from financial_researcher.settings import get_default_language
 
@@ -184,7 +189,54 @@ def _instrument_entry(
     if quality_flags:
         entry["quality_flags"] = list(quality_flags)
 
+    vol = snapshot.get("volatility_30d")
+    if vol is not None:
+        entry["volatility_30d"] = vol
+
     return entry
+
+
+def _slim_instrument_for_context(item: dict[str, Any]) -> dict[str, Any]:
+    """Drop fields already present in market_pulse_table to save tokens."""
+    slim: dict[str, Any] = {
+        "citation": item["citation"],
+        "name": item["name"],
+        "ticker": item["ticker"],
+        "type": item["type"],
+        "profile": item.get("profile"),
+        "sector": item.get("sector"),
+        "industry": item.get("industry"),
+    }
+    if item.get("etf"):
+        slim["etf"] = item["etf"]
+    if item.get("stock"):
+        slim["stock"] = item["stock"]
+    if item.get("forecasts"):
+        slim["forecasts"] = item["forecasts"]
+    if item.get("quality_flags"):
+        slim["quality_flags"] = item["quality_flags"]
+    return slim
+
+
+def _benchmark_table_row(
+    snapshot: dict[str, Any],
+    *,
+    italian: bool,
+) -> dict[str, Any]:
+    perf = snapshot.get("performance", {})
+    price = snapshot.get("price", {})
+    return {
+        "citation": "—",
+        "name": snapshot.get("name", snapshot.get("ticker", "")),
+        "ticker": snapshot["ticker"],
+        "type": "benchmark",
+        "currency": price.get("currency") or "",
+        "price": {"last": price.get("current")},
+        "performance": perf,
+        "volatility_30d": snapshot.get("volatility_30d"),
+        "quality_flags": [],
+        "source_url": snapshot.get("source_url"),
+    }
 
 
 def _is_milan_ticker(ticker: str) -> bool:
@@ -594,69 +646,113 @@ def build_watchlist_performance_table(
     instruments: list[dict[str, Any]],
     *,
     language: str = "English",
+    benchmarks: list[dict[str, Any]] | None = None,
 ) -> str:
     """Markdown performance snapshot with price, horizons, and one source ref per row."""
-    italian = language.lower().startswith("ital")
+    italian = is_italian_language(language)
     if italian:
         header = (
             "| Ref | Strumento | Ticker | Prezzo (valuta) | Giornaliera | "
-            "Settimanale | Mensile | Annuale (YTD) | Fonte |"
+            "Settimanale | Mensile | YTD | 1A | Vol. 30g | Fonte |"
         )
         sep = (
             "|-----|-----------|--------|-----------------|-------------|"
-            "-------------|---------|---------------|-------|"
+            "-------------|---------|-----|-----|--------|-------|"
         )
     else:
         header = (
-            "| Ref | Instrument | Ticker | Price (ccy) | 1D | 1W | 1M | YTD | Source |"
+            "| Ref | Instrument | Ticker | Price (ccy) | 1D | 1W | 1M | YTD | 1Y | "
+            "30d Vol | Source |"
         )
-        sep = "|-----|------------|--------|-------------|----|----|----|-----|--------|"
+        sep = (
+            "|-----|------------|--------|-------------|----|----|----|-----|-----|"
+            "--------|--------|"
+        )
+
+    rows = list(instruments)
+    if benchmarks:
+        rows.extend(
+            _benchmark_table_row(snapshot, italian=italian) for snapshot in benchmarks
+        )
 
     lines = [header, sep]
-    for item in instruments:
+    for item in rows:
         perf = item.get("performance", {})
         price = item.get("price", {})
         currency = item.get("currency") or ""
-        ref = f"[{item['citation']}]"
+        citation = item.get("citation")
+        ref = "—" if citation == "—" else f"[{citation}]"
         source_cell = ref
         if "1d_inconsistent" in item.get("quality_flags", []):
             source_cell = f"{ref} ⚠"
+        vol = item.get("volatility_30d")
+        vol_str = _fmt_pct(vol, italian=italian) if vol is not None else "n/a"
         lines.append(
             f"| {ref} | {item['name']} | {item['ticker']} "
             f"| {_fmt_price(price.get('last'), currency, italian=italian)} "
-            f"| {_fmt_pct(perf.get('1d'))} "
-            f"| {_fmt_pct(perf.get('1w'))} "
-            f"| {_fmt_pct(perf.get('1m'))} "
-            f"| {_fmt_pct(perf.get('ytd'))} "
+            f"| {_fmt_pct(perf.get('1d'), italian=italian)} "
+            f"| {_fmt_pct(perf.get('1w'), italian=italian)} "
+            f"| {_fmt_pct(perf.get('1m'), italian=italian)} "
+            f"| {_fmt_pct(perf.get('ytd'), italian=italian)} "
+            f"| {_fmt_pct(perf.get('1y'), italian=italian)} "
+            f"| {vol_str} "
             f"| {source_cell} |"
         )
     return "\n".join(lines)
 
 
-def build_market_pulse_table(instruments: list[dict[str, Any]]) -> str:
+def build_market_pulse_table(
+    instruments: list[dict[str, Any]],
+    *,
+    benchmarks: list[dict[str, Any]] | None = None,
+) -> str:
     """Markdown table of watchlist performance for agent context."""
     lines = [
-        "| Ref | Instrument | Ticker | Type | Last | 1D | 1W | 1M | 1Y | YTD |",
-        "|-----|------------|--------|------|------|----|----|----|----|-----|",
+        "| Ref | Instrument | Ticker | Type | Last | 1D | 1W | 1M | YTD | 1Y | 30d Vol |",
+        "|-----|------------|--------|------|------|----|----|----|-----|-----|---------|",
     ]
-    for item in instruments:
+    rows = list(instruments)
+    if benchmarks:
+        rows.extend(
+            _benchmark_table_row(snapshot, italian=False) for snapshot in benchmarks
+        )
+    for item in rows:
         perf = item.get("performance", {})
         price = item.get("price", {})
         currency = item.get("currency") or ""
         last = price.get("last")
         last_str = f"{_fmt_num(last)} {currency}" if last is not None else "n/a"
-        ref = f"[{item['citation']}]"
+        citation = item.get("citation")
+        ref = "—" if citation == "—" else f"[{citation}]"
         d1 = _fmt_pct(perf.get("1d"))
         if "1d_inconsistent" in item.get("quality_flags", []):
             d1 = f"{d1} ⚠"
+        vol = item.get("volatility_30d")
+        vol_str = _fmt_pct(vol) if vol is not None else "n/a"
         lines.append(
             f"| {ref} | {item['name']} | {item['ticker']} | {item['type']} "
             f"| {last_str} "
             f"| {d1} "
             f"| {_fmt_pct(perf.get('1w'))} "
             f"| {_fmt_pct(perf.get('1m'))} "
+            f"| {_fmt_pct(perf.get('ytd'))} "
             f"| {_fmt_pct(perf.get('1y'))} "
-            f"| {_fmt_pct(perf.get('ytd'))} |"
+            f"| {vol_str} |"
+        )
+    return "\n".join(lines)
+
+
+def build_benchmark_context_block(benchmarks: list[dict[str, Any]]) -> str:
+    """Compact benchmark summary for agent context (~2 lines per index)."""
+    if not benchmarks:
+        return ""
+    lines = ["Benchmark rows (alpha vs beta reference — appended to performance tables):"]
+    for snapshot in benchmarks:
+        perf = snapshot.get("performance", {})
+        lines.append(
+            f"- {snapshot.get('name')} ({snapshot['ticker']}): "
+            f"1D {_fmt_pct(perf.get('1d'))}, 1W {_fmt_pct(perf.get('1w'))}, "
+            f"YTD {_fmt_pct(perf.get('ytd'))}"
         )
     return "\n".join(lines)
 
@@ -729,6 +825,7 @@ def build_watchlist_context(
     *,
     session: str,
     language: str | None = None,
+    benchmark_snapshots: list[dict[str, Any]] | None = None,
 ) -> dict[str, str]:
     """Build crew inputs from resolved identities and market snapshots."""
     briefing_language = language or get_default_language()
@@ -739,17 +836,25 @@ def build_watchlist_context(
         for index, (identity, snapshot) in enumerate(zip(identities, snapshots))
     ]
 
+    today = now.date()
+    window_end = today + timedelta(days=28)
+
+    forward_events = fetch_forward_calendar_events(
+        instruments,
+        window_start=today,
+        window_end=window_end,
+    )
+
     context = {
         "generated_at": now.isoformat(),
         "session": session,
         "session_label": SESSION_LABELS.get(session, session),
         "market": "Borsa Italiana (Milan)",
-        "timezone": "Europe/Rome",
         "language": briefing_language,
         "current_date": now.date().isoformat(),
         "current_time": load_milan_sessions().get(session, "17:45"),
         "instrument_count": len(instruments),
-        "instruments": instruments,
+        "instruments": [_slim_instrument_for_context(item) for item in instruments],
     }
 
     tickers = ", ".join(item["ticker"] for item in instruments)
@@ -762,8 +867,6 @@ def build_watchlist_context(
     ) or "none"
 
     count = len(instruments)
-    today = now.date()
-    window_end = today + timedelta(days=28)
     session_time = load_milan_sessions().get(session, "17:45")
     session_label = SESSION_LABELS.get(session, session)
 
@@ -784,10 +887,22 @@ def build_watchlist_context(
         "watchlist_stocks": stock_names,
         "watchlist_etfs": etf_names,
         "watchlist_context": json.dumps(context, indent=2, ensure_ascii=False),
-        "market_pulse_table": build_market_pulse_table(instruments),
-        "watchlist_performance_table": build_watchlist_performance_table(
-            instruments, language=briefing_language
+        "watchlist_instruments_json": json.dumps(
+            instruments, ensure_ascii=False, indent=2
         ),
+        "market_pulse_table": build_market_pulse_table(
+            instruments, benchmarks=benchmark_snapshots
+        ),
+        "watchlist_performance_table": build_watchlist_performance_table(
+            instruments,
+            language=briefing_language,
+            benchmarks=benchmark_snapshots,
+        ),
+        "benchmark_context": build_benchmark_context_block(benchmark_snapshots or []),
+        "forward_calendar_table": build_forward_calendar_table(
+            forward_events, language=briefing_language
+        ),
+        "recent_dated_events_table": "",
         "instrument_profile_table": build_instrument_profile_table(instruments),
         "watchlist_summary_checklist": build_watchlist_summary_checklist(instruments),
         "watchlist_driver_checklist": build_watchlist_driver_checklist(
@@ -825,7 +940,13 @@ def attach_prefetched_news(context: dict[str, str]) -> dict[str, str]:
     print("▸ Prefetching news (Yahoo + Serper + Finnhub)...")
     context = dict(context)
     as_of = date.fromisoformat(str(today)) if today else None
-    digest, material, seed_markdown, seed_entries = prefetch_watchlist_news_bundle(
+    (
+        digest,
+        material,
+        seed_markdown,
+        seed_entries,
+        headlines_by_ticker,
+    ) = prefetch_watchlist_news_bundle(
         instruments,
         current_year=year,
         as_of_date=as_of,
@@ -838,6 +959,12 @@ def attach_prefetched_news(context: dict[str, str]) -> dict[str, str]:
     context["research_reference_seed_json"] = json.dumps(
         seed_entries, ensure_ascii=False, indent=2
     )
+    if as_of:
+        context["recent_dated_events_table"] = build_recent_dated_events_table(
+            instruments,
+            headlines_by_ticker,
+            as_of=as_of,
+        )
     return context
 
 
