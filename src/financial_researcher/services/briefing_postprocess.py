@@ -662,7 +662,10 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
     updated = content
 
     context = json.loads(inputs["watchlist_context"])
-    instruments: list[dict[str, Any]] = context["instruments"]
+    if inputs.get("watchlist_instruments_json"):
+        instruments = json.loads(inputs["watchlist_instruments_json"])
+    else:
+        instruments = context["instruments"]
     language = inputs.get("language", context.get("language", "English"))
     date_str = inputs.get("current_date", context.get("current_date", ""))
     instrument_count = len(instruments)
