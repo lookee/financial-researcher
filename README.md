@@ -11,7 +11,7 @@ Stop reading ten scattered ticker pages. **Financial Researcher** turns a plain 
 
 Under the hood, a deterministic Python data layer (Yahoo Finance + OpenFIGI) feeds a five-agent [CrewAI](https://crewai.com) newsroom: four analysts work the market, the news, the macro outlook and the event calendar **in parallel**, then a chief strategist writes the memo. It speaks **Borsa Italiana** and the **Milan trading clock** natively — the briefing reads differently at the open than at the close.
 
-📄 **[Sample briefings](#sample-briefings)** (6 memo in Italian in [`examples/briefings/`](examples/briefings/)) · ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
+📄 **[Sample briefings](#sample-briefings)** (7 samples in [`examples/briefings/`](examples/briefings/)) · ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
 
 ---
 
@@ -232,8 +232,9 @@ Static samples live in [`examples/briefings/`](examples/briefings/) (tracked in 
 | Italian | 2026-06-12 | `post_open` | [watchlist_2026-06-12_post_open.md](examples/briefings/watchlist_2026-06-12_post_open.md) |
 | Italian | 2026-06-12 | `midday` | [watchlist_2026-06-12_midday.md](examples/briefings/watchlist_2026-06-12_midday.md) |
 | Italian | 2026-06-12 | `close` | [watchlist_2026-06-12_close.md](examples/briefings/watchlist_2026-06-12_close.md) |
+| English | 2026-06-12 | `close` | [watchlist_2026-06-12_close_en.md](examples/briefings/watchlist_2026-06-12_close_en.md) |
 
-These samples were generated from a 6-instrument personal watchlist (not the 4-instrument [`config/watchlist.yaml.example`](config/watchlist.yaml.example)). To add an English sample or refresh an existing file:
+Italian samples were generated from a 6-instrument personal watchlist (not the 4-instrument [`config/watchlist.yaml.example`](config/watchlist.yaml.example)). To add an English sample or refresh an existing file:
 
 ```bash
 # English — example watchlist
