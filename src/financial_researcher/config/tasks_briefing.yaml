@@ -254,15 +254,9 @@ executive_briefing_task:
        {watchlist_summary_checklist}
        Reserve [1]..[{last_citation}] for that instrument's market figures only.
        Use [{next_citation}]+ for news facts. Never use ticker alone without the full name.
-    3. Performance section — present the snapshot table with EXACTLY these columns
-       (one source citation per ROW, valid for the whole row):
-       | Ref | Instrument | Ticker | Price (ccy) | 1D | 1W | 1M | YTD | Source |
-       The "Source" column carries the single [N] for that instrument's market data;
-       do NOT repeat [N] after every individual percentage. Include absolute price with
-       currency. If a row has a stale-source or consistency flag from market analysis,
-       add a "⚠" marker in the Source cell and explain it in one line beneath the table.
-       (If the pipeline injects the table automatically, keep this heading and add one
-       sentence on leaders/laggards above it; otherwise render the table as specified.)
+    3. Performance section — write ONLY the section heading plus one sentence on
+       1D leaders/laggards. The performance table is injected automatically by the
+       pipeline; do NOT render a markdown table in this section.
     4. Drivers section — one entry per instrument as **Name (TICKER)** with news-linked explanation [N]:
        MANDATORY full coverage checklist (one entry per instrument, none skipped):
        {watchlist_driver_checklist}
@@ -301,8 +295,8 @@ executive_briefing_task:
     Executive Summary must weave performance, news, outlook and calendar AND mention
     every instrument by Name (TICKER) ({instrument_count} instruments) — verify
     against watchlist_summary_checklist before finishing.
-    The Performance table must include a Price (with currency) column and a single per-row
-    "Source [N]" column (no per-cell citation spam).
+    The Performance section must include a one-line leader/laggard summary; the table is
+    injected by post-processing.
     Section 4 (What's Driving the Moves) MUST contain exactly {instrument_count}
     entries — one per instrument as Name (TICKER), including stocks (e.g. Intesa Sanpaolo (ISP.MI))
     and every ETF. Verify against watchlist_driver_checklist before finishing.

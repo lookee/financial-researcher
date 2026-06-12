@@ -59,6 +59,21 @@ def _fmt_pct(value: float | None) -> str:
     return f"{_fmt_num(value)}%"
 
 
+def _fmt_price(
+    value: float | int | None,
+    currency: str,
+    *,
+    italian: bool,
+) -> str:
+    if value is None:
+        return "n/a"
+    if italian:
+        body = f"{float(value):.2f}".replace(".", ",")
+    else:
+        body = f"{float(value):,.2f}"
+    return f"{body} {currency}".strip() if currency else body
+
+
 def instrument_label(item: dict[str, Any]) -> str:
     """Preferred prose reference: full name plus ticker."""
     return f"{item['name']} ({item['ticker']})"
@@ -555,27 +570,40 @@ def build_watchlist_performance_table(
     *,
     language: str = "English",
 ) -> str:
-    """Markdown performance snapshot: daily, weekly, monthly, YTD (annual)."""
+    """Markdown performance snapshot with price, horizons, and one source ref per row."""
     italian = language.lower().startswith("ital")
     if italian:
         header = (
-            "| Ref | Strumento | Ticker | Giornaliera | Settimanale | Mensile | Annuale (YTD) |"
+            "| Ref | Strumento | Ticker | Prezzo (valuta) | Giornaliera | "
+            "Settimanale | Mensile | Annuale (YTD) | Fonte |"
         )
-        sep = "|-----|-----------|--------|-------------|-------------|---------|---------------|"
+        sep = (
+            "|-----|-----------|--------|-----------------|-------------|"
+            "-------------|---------|---------------|-------|"
+        )
     else:
-        header = "| Ref | Instrument | Ticker | 1D | 1W | 1M | YTD |"
-        sep = "|-----|------------|--------|----|----|----|-----|"
+        header = (
+            "| Ref | Instrument | Ticker | Price (ccy) | 1D | 1W | 1M | YTD | Source |"
+        )
+        sep = "|-----|------------|--------|-------------|----|----|----|-----|--------|"
 
     lines = [header, sep]
     for item in instruments:
         perf = item.get("performance", {})
+        price = item.get("price", {})
+        currency = item.get("currency") or ""
         ref = f"[{item['citation']}]"
+        source_cell = ref
+        if "1d_inconsistent" in item.get("quality_flags", []):
+            source_cell = f"{ref} ⚠"
         lines.append(
             f"| {ref} | {item['name']} | {item['ticker']} "
-            f"| {_fmt_pct(perf.get('1d'))} {ref} "
-            f"| {_fmt_pct(perf.get('1w'))} {ref} "
-            f"| {_fmt_pct(perf.get('1m'))} {ref} "
-            f"| {_fmt_pct(perf.get('ytd'))} {ref} |"
+            f"| {_fmt_price(price.get('last'), currency, italian=italian)} "
+            f"| {_fmt_pct(perf.get('1d'))} "
+            f"| {_fmt_pct(perf.get('1w'))} "
+            f"| {_fmt_pct(perf.get('1m'))} "
+            f"| {_fmt_pct(perf.get('ytd'))} "
+            f"| {source_cell} |"
         )
     return "\n".join(lines)
 
@@ -598,12 +626,12 @@ def build_market_pulse_table(instruments: list[dict[str, Any]]) -> str:
             d1 = f"{d1} ⚠"
         lines.append(
             f"| {ref} | {item['name']} | {item['ticker']} | {item['type']} "
-            f"| {last_str} {ref} "
-            f"| {d1} {ref} "
-            f"| {_fmt_pct(perf.get('1w'))} {ref} "
-            f"| {_fmt_pct(perf.get('1m'))} {ref} "
-            f"| {_fmt_pct(perf.get('1y'))} {ref} "
-            f"| {_fmt_pct(perf.get('ytd'))} {ref} |"
+            f"| {last_str} "
+            f"| {d1} "
+            f"| {_fmt_pct(perf.get('1w'))} "
+            f"| {_fmt_pct(perf.get('1m'))} "
+            f"| {_fmt_pct(perf.get('1y'))} "
+            f"| {_fmt_pct(perf.get('ytd'))} |"
         )
     return "\n".join(lines)
 
