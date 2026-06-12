@@ -17,6 +17,10 @@ from pathlib import Path
 from financial_researcher.crew import WatchlistBriefingCrew
 from financial_researcher.paths import default_watchlist_path, ensure_runtime_dirs
 from financial_researcher.services.briefing_postprocess import postprocess_briefing
+from financial_researcher.services.briefing_validator import (
+    format_validation_summary,
+    validate_briefing,
+)
 from financial_researcher.services.run_metrics import (
     build_run_metrics_payload,
     extract_usage_metrics,
@@ -74,6 +78,7 @@ def run_briefing(
     output_path = Path(output_file)
     raw_markdown = output_path.read_text(encoding="utf-8") if output_path.exists() else (result.raw or "")
     processed, warnings = postprocess_briefing(raw_markdown, inputs)
+    validation_warnings = validate_briefing(processed, inputs)
     output_path.write_text(processed, encoding="utf-8")
 
     usage = extract_usage_metrics(crew)
@@ -87,16 +92,22 @@ def run_briefing(
         instrument_count=int(inputs.get("instrument_count", 0)),
         usage=usage,
         duration_seconds=duration_seconds,
-        warnings=warnings,
+        warnings=warnings + validation_warnings,
     )
     write_run_metrics(metrics_path, metrics_payload)
 
+    all_warnings = warnings + validation_warnings
     if warnings:
         print("\n▸ Post-process warnings:")
         for warning in warnings:
             print(f"  • {warning}")
 
-    print(f"\n▸ {format_metrics_summary(usage, warnings=warnings)}")
+    print(f"\n▸ {format_validation_summary(validation_warnings)}")
+    if validation_warnings:
+        for warning in validation_warnings:
+            print(f"  • {warning}")
+
+    print(f"\n▸ {format_metrics_summary(usage, warnings=all_warnings)}")
     print(f"▸ Briefing saved to {output_file}")
     print(f"▸ Metrics saved to {metrics_path}")
     return output_file
