@@ -777,12 +777,6 @@ def build_watchlist_context(
         ),
         "briefing_section_headings": build_briefing_section_headings(briefing_language),
         "instrument_naming_guide": build_instrument_naming_guide(instruments),
-        "stock_news_queries": build_stock_news_queries(
-            instruments, current_year=today.year
-        ),
-        "etf_news_queries": build_etf_news_queries(
-            instruments, current_year=today.year
-        ),
         "institutional_sources_guide": build_institutional_sources_guide(
             language=briefing_language
         ),

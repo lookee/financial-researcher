@@ -6,9 +6,7 @@ https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
 
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from crewai.tools.base_tool import Tool
 from crewai_tools import ScrapeWebsiteTool
-from langchain_community.tools.yahoo_finance_news import YahooFinanceNewsTool
 
 from financial_researcher import llm_compat  # noqa: F401 — patch LLM before agents run
 
@@ -55,10 +53,7 @@ class WatchlistBriefingCrew:
         return Agent(
             config=self.agents_config["news_analyst"],
             verbose=True,
-            tools=[
-                *_NEWS_TOOLS,
-                Tool.from_langchain(YahooFinanceNewsTool().as_tool()),
-            ],
+            tools=_NEWS_TOOLS,
         )
 
     @agent

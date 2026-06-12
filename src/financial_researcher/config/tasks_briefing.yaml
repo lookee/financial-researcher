@@ -52,32 +52,24 @@ news_analysis_task:
     PRE-FETCHED HEADLINES (review FIRST — do not ignore):
     {prefetched_news_digest}
 
-    MANDATORY stock searches — run ALL queries below (in addition to prefetch):
-    {stock_news_queries}
-
-    MANDATORY ETF searches — run ALL queries below (in addition to prefetch):
-    {etf_news_queries}
-
     Use pre-loaded performance data to prioritise stories that explain recent moves:
     {market_pulse_table}
     Instrument profiles:
     {instrument_profile_table}
 
     Workflow (strict order):
-    1. Read prefetched_news_digest for every ticker (Yahoo + Italy + global + NASDAQ Serper).
-    2. Run ALL stock_news_queries and etf_news_queries using ALL THREE tools:
-       - Search Italian financial news with Serper → **Italy / local** queries
-       - Search recent financial news with Serper → **World / global** queries
-       - Search NASDAQ news with Serper → **NASDAQ / US** queries
-    3. Call YahooFinanceNewsTool once per ticker for supplemental headlines.
-    4. INSTITUTIONAL SCRAPE (mandatory): for every instrument flagged **HIGH** in
-       watchlist_material_news, and for any stock with a corporate action or
-       regulatory item, run ScrapeWebsiteTool on the OFFICIAL primary source
-       (Borsa Italiana news page, CONSOB, company IR / press-release) and extract
-       the core facts (what / when / figures), not just the snippet. Primary issuer
-       or regulator source takes precedence over secondary press.
-    5. Use ScrapeWebsiteTool on the best URL when any other snippet is incomplete.
-    6. Write the brief — include ALL material headlines (Italy AND world).
+    1. Read prefetched_news_digest for every ticker (Yahoo + Italy + global + NASDAQ
+       Serper already executed by prefetch). Use research_reference_seed numbers exactly.
+    2. Gap-filling tool searches ONLY when needed:
+       (a) Impact **HIGH** in watchlist_material_news — deepen with Serper and/or scrape;
+       (b) fewer than 2 dated headlines for the instrument in the digest;
+       (c) |1D| or |1W| > 2% in market_pulse_table without an explanatory headline.
+       Hard cap: 4 tool calls per instrument, 12 per run. Skip tools when prefetch is
+       sufficient. Follow institutional_sources_guide for official portals.
+    3. INSTITUTIONAL SCRAPE (mandatory for HIGH): ScrapeWebsiteTool on the OFFICIAL
+       primary source (Borsa Italiana, CONSOB, company IR) for core facts.
+    4. Scrape when any other material headline has an incomplete snippet.
+    5. Write the brief — include ALL material prefetch headlines plus gap-fill discoveries.
 
     Priority rules:
     1. Include every material headline from prefetched_news_digest with citation.
@@ -106,8 +98,7 @@ news_analysis_task:
     - [1]..[{last_citation}] are reserved for Yahoo Finance data per instrument.
     - Use the EXACT citation numbers from research_reference_seed for prefetch headlines.
     - Additional tool discoveries may use the next free number after the seed list.
-    - Every news fact must use [{next_citation}] or higher with Source, date, URL in References.
-    - End with a **References** block listing every [N] used (seed + new), one line per number.
+    - Additional tool discoveries use the next free number after the seed list.
 
     Search window: last 7 days (primary), up to 14 days if nothing recent.
   expected_output: >
@@ -126,9 +117,6 @@ news_analysis_task:
     - Any source contradiction surfaced explicitly in one sentence.
     - Correlated macro or sector news affecting multiple watchlist names with [N]
     - Risks or events to watch in the next session with [N]
-    - **References** section: every [N] cited in the brief (include all research_reference_seed
-      entries plus any additional tool sources), format: N. Source — title — YYYY-MM-DD — URL.
-      Deduplicated: one [N] per unique article.
   agent: news_analyst
 
 outlook_analysis_task:
