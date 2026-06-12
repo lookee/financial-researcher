@@ -26,7 +26,7 @@ See the [Sample briefings](../README.md#sample-briefings) section in the project
 
 ## Watchlist
 
-[`watchlist.example.yaml`](watchlist.example.yaml) mirrors `config/watchlist.yaml.example`.
+Use [`config/watchlist.yaml.example`](../config/watchlist.yaml.example) — copy to `config/watchlist.yaml`.
 
 ## Regenerate
 

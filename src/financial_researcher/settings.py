@@ -1,4 +1,4 @@
-"""Load application settings from config/settings.yaml and environment variables."""
+"""Load application settings from defaults/settings.yaml and environment variables."""
 
 from functools import lru_cache
 import os
@@ -11,7 +11,7 @@ try:
 except ImportError:
     load_dotenv = None
 
-_SETTINGS_PATH = Path(__file__).parent / "config" / "settings.yaml"
+_SETTINGS_PATH = Path(__file__).parent / "defaults" / "settings.yaml"
 
 if load_dotenv is not None:
     load_dotenv()
@@ -40,6 +40,25 @@ def get_default_language() -> str:
         return yaml_language.strip()
 
     return "English"
+
+
+def get_model_profile_name() -> str:
+    """Return the active model profile name.
+
+    Priority: FR_MODEL_PROFILE env > settings.yaml model_profile >
+    model_profiles.yaml default_profile > balanced.
+    """
+    env_profile = os.getenv("FR_MODEL_PROFILE", "").strip()
+    if env_profile:
+        return env_profile
+
+    yaml_profile = _load_yaml_settings().get("model_profile", "")
+    if isinstance(yaml_profile, str) and yaml_profile.strip():
+        return yaml_profile.strip()
+
+    from financial_researcher.agent_llm import get_default_profile_name
+
+    return get_default_profile_name()
 
 
 @lru_cache

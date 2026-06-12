@@ -14,6 +14,11 @@ import os
 import time
 from pathlib import Path
 
+from financial_researcher.agent_llm import (
+    describe_active_profile,
+    list_model_profile_names,
+    resolve_active_profile_name,
+)
 from financial_researcher.crew import WatchlistBriefingCrew
 from financial_researcher.paths import default_watchlist_path, ensure_runtime_dirs
 from financial_researcher.services.briefing_postprocess import postprocess_briefing
@@ -36,7 +41,7 @@ from financial_researcher.services.watchlist_pipeline import (
     VALID_SESSIONS,
     WatchlistPipeline,
 )
-from financial_researcher.settings import get_default_language
+from financial_researcher.settings import get_default_language, get_model_profile_name
 
 WATCHLIST_PATH = default_watchlist_path()
 
@@ -47,6 +52,7 @@ def run_briefing(
     language: str | None = None,
     force: bool = False,
     watchlist_path: Path | None = None,
+    model_profile: str | None = None,
 ) -> str:
     """Generate a unified executive briefing for the configured watchlist."""
     ensure_runtime_dirs()
@@ -57,7 +63,11 @@ def run_briefing(
             f"Choose from: {', '.join(VALID_SESSIONS)}"
         )
 
+    if model_profile:
+        os.environ["FR_MODEL_PROFILE"] = model_profile
+
     print(f"\n▸ Session: {chosen_session} (Milan)")
+    print(f"▸ Model profile: {describe_active_profile()}")
     print("▸ Loading watchlist market data...")
     pipeline = WatchlistPipeline()
     inputs = pipeline.collect(
@@ -93,6 +103,7 @@ def run_briefing(
         usage=usage,
         duration_seconds=duration_seconds,
         warnings=warnings + validation_warnings,
+        model_profile=resolve_active_profile_name(),
     )
     write_run_metrics(metrics_path, metrics_payload)
 
@@ -122,6 +133,7 @@ Examples:
   uv run briefing
   uv run briefing --session close
   uv run briefing --force --language Italian
+  uv run briefing --model-profile budget
         """,
     )
     parser.add_argument(
@@ -151,6 +163,17 @@ Examples:
         action="store_true",
         help="Hide CrewAI agent progress (default: show task/agent status). Same as BRIEFING_QUIET=1",
     )
+    profile_choices = list_model_profile_names()
+    parser.add_argument(
+        "--model-profile",
+        choices=profile_choices if profile_choices else None,
+        default=None,
+        help=(
+            f"Model lineup profile (default: {get_model_profile_name()}). "
+            f"Choices: {', '.join(profile_choices)}. "
+            "Same as FR_MODEL_PROFILE."
+        ),
+    )
     return parser
 
 
@@ -165,6 +188,7 @@ def cli(argv: list[str] | None = None) -> None:
         language=args.language,
         force=args.force,
         watchlist_path=args.watchlist,
+        model_profile=args.model_profile,
     )
 
 

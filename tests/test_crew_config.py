@@ -32,7 +32,7 @@ def test_watchlist_context_omits_redundant_news_query_blocks():
 
 
 def test_news_task_template_has_no_mandatory_query_placeholders():
-    tasks_path = Path(__file__).parents[1] / "src/financial_researcher/config/tasks_briefing.yaml"
+    tasks_path = Path(__file__).parents[1] / "src/financial_researcher/defaults/tasks_briefing.yaml"
     tasks = yaml.safe_load(tasks_path.read_text(encoding="utf-8"))
     description = tasks["news_analysis_task"]["description"]
     assert "{stock_news_queries}" not in description
@@ -41,7 +41,7 @@ def test_news_task_template_has_no_mandatory_query_placeholders():
 
 
 def test_news_analyst_yaml_has_prefetch_first_workflow():
-    agents_path = Path(__file__).parents[1] / "src/financial_researcher/config/agents_briefing.yaml"
+    agents_path = Path(__file__).parents[1] / "src/financial_researcher/defaults/agents_briefing.yaml"
     agents = yaml.safe_load(agents_path.read_text(encoding="utf-8"))
     instructions = agents["news_analyst"]["instructions"]
     assert "stock_news_queries" not in instructions
@@ -50,7 +50,7 @@ def test_news_analyst_yaml_has_prefetch_first_workflow():
 
 
 def test_analyst_tasks_have_word_caps():
-    tasks_path = Path(__file__).parents[1] / "src/financial_researcher/config/tasks_briefing.yaml"
+    tasks_path = Path(__file__).parents[1] / "src/financial_researcher/defaults/tasks_briefing.yaml"
     tasks = yaml.safe_load(tasks_path.read_text(encoding="utf-8"))
     assert "≤300 words" in tasks["market_analysis_task"]["description"]
     assert "≤450 words" in tasks["news_analysis_task"]["description"]
@@ -59,7 +59,7 @@ def test_analyst_tasks_have_word_caps():
 
 
 def test_agent_yaml_has_no_dynamic_placeholders():
-    agents_path = Path(__file__).parents[1] / "src/financial_researcher/config/agents_briefing.yaml"
+    agents_path = Path(__file__).parents[1] / "src/financial_researcher/defaults/agents_briefing.yaml"
     text = agents_path.read_text(encoding="utf-8")
     assert "{current_date}" not in text
     assert "{session_label}" not in text

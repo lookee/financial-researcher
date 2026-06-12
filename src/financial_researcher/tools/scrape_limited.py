@@ -117,7 +117,7 @@ class LimitedScrapeWebsiteTool(ScrapeWebsiteTool):
 
 
 def build_scrape_tool() -> ScrapeWebsiteTool:
-    """Return a scrape tool respecting config/settings.yaml scrape.truncate_enabled."""
+    """Return a scrape tool respecting defaults/settings.yaml scrape.truncate_enabled."""
     settings = get_scrape_settings()
     if settings["truncate_enabled"]:
         return LimitedScrapeWebsiteTool(max_chars=settings["max_chars"])

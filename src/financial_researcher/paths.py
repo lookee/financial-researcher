@@ -6,7 +6,15 @@ import os
 from pathlib import Path
 
 PACKAGE_DIR = Path(__file__).resolve().parent
-WATCHLIST_TEMPLATE = PACKAGE_DIR / "config" / "watchlist.example.yaml"
+
+
+def watchlist_template_path() -> Path:
+    """Watchlist template: ./config/watchlist.yaml.example in a dev checkout, else packaged copy."""
+    local_example = Path.cwd() / "config" / "watchlist.yaml.example"
+    if local_example.is_file():
+        return local_example
+    packaged = PACKAGE_DIR / "defaults" / "watchlist.yaml.example"
+    return packaged
 
 
 def project_home() -> Path:
@@ -95,9 +103,10 @@ def ensure_watchlist_exists(explicit: Path | None = None) -> Path:
         return watchlist_path
 
     watchlist_path.parent.mkdir(parents=True, exist_ok=True)
-    if WATCHLIST_TEMPLATE.is_file():
+    template = watchlist_template_path()
+    if template.is_file():
         watchlist_path.write_text(
-            WATCHLIST_TEMPLATE.read_text(encoding="utf-8"),
+            template.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
     else:

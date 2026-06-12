@@ -65,7 +65,7 @@ def localized_section_heading(section_key: str, language: str) -> str:
     return BRIEFING_SECTION_HEADINGS_EN[section_key]
 
 MILAN_TZ = ZoneInfo("Europe/Rome")
-SESSIONS_PATH = Path(__file__).parent.parent / "config" / "sessions_milan.yaml"
+SESSIONS_PATH = Path(__file__).parent.parent / "defaults" / "sessions_milan.yaml"
 
 SESSION_LABELS = {
     "pre_open": "Pre-open (Milan)",

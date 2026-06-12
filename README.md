@@ -63,7 +63,7 @@ uv run briefing            # session inferred from the Milan clock
 
 Use `uv run briefing` directly — avoid activating another project's `.venv` first, or `uv` may warn about a mismatched `VIRTUAL_ENV`. CrewAI agent/task progress is shown by default; add `--quiet` (or `BRIEFING_QUIET=1`) to hide it.
 
-The first run scaffolds `config/`, `output/briefings/`, and `data/`, and seeds `config/watchlist.yaml` from the example template.
+The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `data/`, and seeds `config/watchlist.yaml` from the example template.
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
@@ -75,6 +75,8 @@ The first run scaffolds `config/`, `output/briefings/`, and `data/`, and seeds `
 | `FINNHUB_NEWS_LOOKBACK_DAYS` | — | Days of Finnhub news history per instrument (default: `14`, max `30`) |
 | `OPENFIGI_API_KEY` | — | Higher ISIN-resolution rate limits |
 | `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
+| `FR_MODEL_PROFILE` | — | Model lineup: `balanced` · `frontier` · `budget` · `free` (see [`model_profiles.yaml`](src/financial_researcher/defaults/model_profiles.yaml)) |
+| `FR_MODEL_*` | — | Per-agent model override (e.g. `FR_MODEL_CHIEF`) — beats the active profile |
 | `WATCHLIST_PATH` | — | Override watchlist YAML location (default: `./config/watchlist.yaml`) |
 | `FINANCIAL_RESEARCHER_CONFIG_DIR` | — | Global user config directory (default: `~/.config/financial_researcher`) |
 | `FINANCIAL_RESEARCHER_HOME` | — | Base directory for `output/` and `data/` (default: current working directory) |
@@ -86,6 +88,7 @@ The first run scaffolds `config/`, `output/briefings/`, and `data/`, and seeds `
 uv run briefing                              # auto session, default language
 uv run briefing --session close              # explicit Milan session
 uv run briefing --force --language Italian   # refresh cache + language
+uv run briefing --model-profile frontier     # all gpt-5.5 lineup
 uv run briefing --watchlist path/to.yaml     # custom watchlist
 ```
 
@@ -95,18 +98,26 @@ uv run briefing --watchlist path/to.yaml     # custom watchlist
 | `--language LANG` | Briefing language (default: English) |
 | `--force` | Refresh cached identity and market data |
 | `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
+| `--model-profile` | `balanced` · `frontier` · `budget` · `free` (default: `balanced`) |
 | `--quiet` | Hide CrewAI agent/task progress (default: shown) |
 
 ## Configuration
 
-Application defaults live in `src/financial_researcher/config/settings.yaml` (language, scrape behaviour, etc.). `REPORT_LANGUAGE` in `.env` overrides `default_language`.
+Two directories — different roles:
+
+| Path | Role |
+|------|------|
+| **`./config/`** | Your data: `watchlist.yaml` ([`config/README.md`](config/README.md)) |
+| **`src/financial_researcher/defaults/`** | Shipped app defaults: agents, tasks, settings, model profiles, Milan sessions |
+
+Application defaults live in `src/financial_researcher/defaults/settings.yaml` (language, scrape behaviour, model profiles, etc.). Your watchlist lives in `./config/watchlist.yaml`. `REPORT_LANGUAGE` in `.env` overrides `default_language`.
 
 ### Website scrape truncation
 
 News, outlook and calendar agents use `ScrapeWebsiteTool` for institutional pages. By default, scraped text is **truncated to 2,500 characters** before it reaches the LLM: paragraphs matching the instrument name/ticker or query keywords are kept first; otherwise the start of the page is used. Trimmed output ends with `[...troncato]`.
 
 ```yaml
-# src/financial_researcher/config/settings.yaml
+# src/financial_researcher/defaults/settings.yaml
 serper:
   free_tier: true   # simplify site:/OR queries for Serper free plans (default)
 
@@ -136,7 +147,7 @@ Tokens: prompt=… completion=… | requests=… | warnings=…
 
 ### The four moments of the Milan day
 
-The briefing is **session-aware**: the same watchlist produces a different memo depending on where you are in the Borsa Italiana day (Europe/Rome). When `--session` is omitted, the CLI picks the most recently passed slot ([schedule](src/financial_researcher/config/sessions_milan.yaml)).
+The briefing is **session-aware**: the same watchlist produces a different memo depending on where you are in the Borsa Italiana day (Europe/Rome). When `--session` is omitted, the CLI picks the most recently passed slot ([schedule](src/financial_researcher/defaults/sessions_milan.yaml)).
 
 | Session | Clock | The memo's job | What it leans on |
 |---------|-------|----------------|------------------|
@@ -199,12 +210,28 @@ CrewAI  ├─ market_analyst ─┐
 | `calendar_analyst` | Catalysts in the next 2–4 weeks | gpt-5.4-mini | Serper · scraping |
 | `chief_strategist` | Synthesises the final executive memo | gpt-5.5 | — |
 
-Config: [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) · [`tasks_briefing.yaml`](src/financial_researcher/config/tasks_briefing.yaml) · model routing in [`agent_llm.py`](src/financial_researcher/agent_llm.py)
+Config: [`agents_briefing.yaml`](src/financial_researcher/defaults/agents_briefing.yaml) · [`tasks_briefing.yaml`](src/financial_researcher/defaults/tasks_briefing.yaml) · [`model_profiles.yaml`](src/financial_researcher/defaults/model_profiles.yaml) · [`agent_llm.py`](src/financial_researcher/agent_llm.py)
+
+### Model profiles
+
+| Profile | Use case | Lineup (summary) |
+|---------|----------|------------------|
+| `balanced` | **Default** — cost/quality mix | mini on market/calendar, `gpt-5.4` outlook, `gpt-5.5` news + chief |
+| `frontier` | Best quality, highest cost | all `gpt-5.5`, higher reasoning on news/chief |
+| `budget` | Cheapest OpenAI | mini on all analysts, `gpt-5.4` chief |
+| `free` | Groq free tier (`GROQ_API_KEY`) | Llama via LiteLLM — experimental |
+
+```bash
+uv run briefing --model-profile budget
+export FR_MODEL_PROFILE=frontier   # same as --model-profile
+```
+
+Set `model_profile: budget` in `settings.yaml` for a persistent default. Per-agent `FR_MODEL_*` env vars still override one slot in the active profile.
 
 > [!WARNING]
-> **Default lineup balances quality and cost.** Only `news_analyst` and `chief_strategist` use the frontier model (`gpt-5.5`); `outlook_analyst` uses `gpt-5.4`; `market_analyst` and `calendar_analyst` use `gpt-5.4-mini`. Analyst agents emit terse internal handoffs (not human prose), and reasoning effort is tuned per agent — together this typically cuts completion tokens by roughly half versus an all-frontier, verbose setup. A full run still makes many LLM calls plus news search and page scraping.
+> **Default profile (`balanced`) targets cost vs quality.** Analyst agents emit terse internal handoffs; reasoning effort is tuned per agent — together this typically cuts completion tokens by roughly half versus `frontier`. A full run still makes many LLM calls plus news search and page scraping.
 >
-> **Want all-frontier quality?** Set env overrides before running, e.g. `FR_MODEL_MARKET=openai/gpt-5.5 FR_MODEL_OUTLOOK=openai/gpt-5.5` (see `.env.sample`). Expect higher cost, especially on output/reasoning tokens.
+> **Want all-frontier quality?** Use `--model-profile frontier` or per-agent overrides (see `.env.sample`).
 
 **Prompt caching:** agent role/goal/backstory in `agents_briefing.yaml` are static (no dates or session placeholders). Run-specific tables and dates are appended at the end of each task description under `--- RUN CONTEXT ---`, so OpenAI can cache the shared instruction prefix across runs.
 
@@ -230,10 +257,10 @@ Title block → Executive Summary → Performance Snapshot → What's Driving th
 
 ```
 financial-researcher/
-├── config/watchlist.yaml(.example)   # User watchlist + committed template
+├── config/                 # Your watchlist (watchlist.yaml; see config/README.md)
 ├── src/financial_researcher/
 │   ├── main.py · crew.py · paths.py · settings.py · llm_compat.py · session_profiles.py
-│   ├── config/    # agents, tasks, sessions, settings, fallback watchlist template
+│   ├── defaults/           # Shipped app config: agents, tasks, settings, model profiles
 │   ├── models/    # instrument identity types
 │   ├── services/  # pipeline · context · isin_resolver · market_data · news_prefetch
 │   │              # news_ranking · briefing_postprocess · run_metrics

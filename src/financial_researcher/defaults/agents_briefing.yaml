@@ -1,4 +1,5 @@
-# Model tier and reasoning effort are set in agent_llm.py (override via FR_MODEL_* env vars).
+# Model tier and reasoning effort: defaults/model_profiles.yaml (profile via FR_MODEL_PROFILE).
+# Per-agent FR_MODEL_* env vars override the active profile for that agent.
 # Agent role/goal/backstory are static prefixes for OpenAI prompt caching — run-specific
 # values (dates, session, tables) live at the tail of each task description.
 

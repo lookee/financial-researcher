@@ -63,11 +63,12 @@ def build_run_metrics_payload(
     usage: dict[str, int],
     duration_seconds: float,
     warnings: list[str],
+    model_profile: str | None = None,
     timestamp: datetime | None = None,
 ) -> dict[str, Any]:
     """Assemble the JSON document written after each briefing run."""
     moment = timestamp or datetime.now(MILAN_TZ)
-    return {
+    payload: dict[str, Any] = {
         "timestamp": moment.isoformat(),
         "session": session,
         "language": language,
@@ -79,6 +80,9 @@ def build_run_metrics_payload(
         "duration_seconds": round(duration_seconds, 2),
         "postprocess_warnings": warnings,
     }
+    if model_profile:
+        payload["model_profile"] = model_profile
+    return payload
 
 
 def write_run_metrics(

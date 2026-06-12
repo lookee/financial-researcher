@@ -1,0 +1,46 @@
+# Model lineup profiles for the briefing crew.
+# Select: FR_MODEL_PROFILE env, model_profile in defaults/settings.yaml, or --model-profile.
+# Per-agent FR_MODEL_* env vars override the active profile for that agent only.
+
+default_profile: balanced
+
+profiles:
+  balanced:
+    description: >
+      Default cost/quality mix — frontier on news and chief only; mini on market/calendar.
+    agents:
+      market: { model: openai/gpt-5.4-mini, reasoning: low }
+      news: { model: openai/gpt-5.5, reasoning: medium }
+      outlook: { model: openai/gpt-5.4, reasoning: low }
+      calendar: { model: openai/gpt-5.4-mini, reasoning: low }
+      chief: { model: openai/gpt-5.5, reasoning: medium }
+
+  frontier:
+    description: >
+      All frontier OpenAI models — highest quality and cost; use for final memos.
+    agents:
+      market: { model: openai/gpt-5.5, reasoning: medium }
+      news: { model: openai/gpt-5.5, reasoning: high }
+      outlook: { model: openai/gpt-5.5, reasoning: medium }
+      calendar: { model: openai/gpt-5.5, reasoning: low }
+      chief: { model: openai/gpt-5.5, reasoning: high }
+
+  budget:
+    description: >
+      Low-cost OpenAI — mini on analysts, gpt-5.4 on chief; expect thinner synthesis.
+    agents:
+      market: { model: openai/gpt-5.4-mini, reasoning: low }
+      news: { model: openai/gpt-5.4-mini, reasoning: low }
+      outlook: { model: openai/gpt-5.4-mini, reasoning: low }
+      calendar: { model: openai/gpt-5.4-mini, reasoning: low }
+      chief: { model: openai/gpt-5.4, reasoning: medium }
+
+  free:
+    description: >
+      Groq free tier via LiteLLM (set GROQ_API_KEY). Experimental — weaker citations.
+    agents:
+      market: { model: groq/llama-3.1-8b-instant, reasoning: low }
+      news: { model: groq/llama-3.3-70b-versatile, reasoning: low }
+      outlook: { model: groq/llama-3.3-70b-versatile, reasoning: low }
+      calendar: { model: groq/llama-3.1-8b-instant, reasoning: low }
+      chief: { model: groq/llama-3.3-70b-versatile, reasoning: low }

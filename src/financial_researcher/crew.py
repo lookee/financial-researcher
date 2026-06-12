@@ -42,8 +42,8 @@ _NEWS_TOOLS = [
 class WatchlistBriefingCrew:
     """Four analysts in parallel, then chief strategist executive briefing."""
 
-    agents_config = "config/agents_briefing.yaml"
-    tasks_config = "config/tasks_briefing.yaml"
+    agents_config = "defaults/agents_briefing.yaml"
+    tasks_config = "defaults/tasks_briefing.yaml"
 
     @agent
     def market_analyst(self) -> Agent:

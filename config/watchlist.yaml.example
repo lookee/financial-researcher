@@ -5,7 +5,7 @@
 # semiconductor / AI bellwether stocks. NVIDIA trades on the Borsa Italiana
 # Global Equity Market (GEM) via the 1NVDA.MI line.
 
-# Optional: override default_language from config/settings.yaml for this batch only.
+# Optional: override default_language from defaults/settings.yaml for this batch only.
 # language: English
 
 instruments:
