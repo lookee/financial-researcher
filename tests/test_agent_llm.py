@@ -40,8 +40,17 @@ def test_list_model_profile_names():
     assert "balanced" in names
     assert "frontier" in names
     assert "budget" in names
+    assert "anthropic" in names
     assert "free_groq" in names
     assert "free_openrouter_nex" in names
+
+
+def test_anthropic_profile_models(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "anthropic")
+    assert resolve_agent_model("market") == "anthropic/claude-haiku-4-5"
+    assert resolve_agent_model("news") == "anthropic/claude-sonnet-4-6"
+    assert resolve_agent_model("chief") == "anthropic/claude-sonnet-4-6"
+    assert resolve_reasoning_effort("news") == "medium"
 
 
 def test_free_openrouter_nex_profile_models(monkeypatch):
