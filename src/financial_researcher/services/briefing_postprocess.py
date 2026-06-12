@@ -41,6 +41,8 @@ CALENDAR_HEADER_ALIASES: dict[str, int] = {
     "evento": 1,
     "affected tickers/themes": 2,
     "affected tickers / themes": 2,
+    "affected instruments / themes": 2,
+    "affected instruments/themes": 2,
     "instrument": 2,
     "theme": 2,
     "ticker": 2,
@@ -347,16 +349,12 @@ def _merge_references_section(
     merged = dict(seed_refs)
     merged.update(research_lines)
 
-    cited = {
-        int(value)
-        for value in CITATION_RE.findall(body)
-        if int(value) > instrument_count
-    }
-    ref_numbers = sorted(set(merged.keys()) | cited)
+    cited = {int(value) for value in CITATION_RE.findall(body)}
+    research_cited = sorted(number for number in cited if number > instrument_count)
 
     research_formatted = [
         f"{number}. {merged[number]}"
-        for number in ref_numbers
+        for number in research_cited
         if number in merged
     ]
     all_refs = yahoo_refs + research_formatted
@@ -427,11 +425,7 @@ def renumber_citations(
         seen.add(number)
         cited_order.append(number)
 
-    research_keys = {key for key in seed_refs if key > instrument_count}
     ordered_old = list(cited_order)
-    for number in sorted(research_keys):
-        if number not in seen:
-            ordered_old.append(number)
 
     mapping: dict[int, int] = {}
     next_number = instrument_count + 1
@@ -484,14 +478,22 @@ def _remap_calendar_headers(headers: list[str]) -> list[int] | None:
             return None
         source_to_canonical[source_idx] = canonical_idx
 
-    if len(source_to_canonical) != len(CANONICAL_CALENDAR_HEADERS):
+    if len(source_to_canonical) != len(headers):
         return None
-    if set(source_to_canonical.values()) != set(range(len(CANONICAL_CALENDAR_HEADERS))):
+
+    mapped_canonical = set(source_to_canonical.values())
+    if mapped_canonical == set(range(len(CANONICAL_CALENDAR_HEADERS))):
+        pad_citation_column = False
+    elif mapped_canonical == set(range(len(CANONICAL_CALENDAR_HEADERS) - 1)):
+        pad_citation_column = True
+    else:
         return None
 
     canonical_to_source = [0] * len(CANONICAL_CALENDAR_HEADERS)
     for source_idx, canonical_idx in source_to_canonical.items():
         canonical_to_source[canonical_idx] = source_idx
+    if pad_citation_column:
+        canonical_to_source[4] = -1
     return canonical_to_source
 
 
@@ -530,12 +532,15 @@ def normalize_calendar_table(content: str) -> str:
         cells = _parse_table_cells(row)
         if len(cells) != len(headers):
             continue
-        remapped = [
-            cells[column_map[canonical_index]]
-            if column_map[canonical_index] < len(cells)
-            else ""
-            for canonical_index in range(len(CANONICAL_CALENDAR_HEADERS))
-        ]
+        remapped = []
+        for canonical_index in range(len(CANONICAL_CALENDAR_HEADERS)):
+            source_idx = column_map[canonical_index]
+            if source_idx < 0:
+                remapped.append("")
+            elif source_idx < len(cells):
+                remapped.append(cells[source_idx])
+            else:
+                remapped.append("")
         canonical_rows.append("| " + " | ".join(remapped) + " |")
 
     new_table = "\n".join(canonical_rows)

@@ -102,6 +102,18 @@ class TestNormalizeCalendarTable:
         assert "| Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |" in updated
         assert "| 2026-06-15 | ECB meeting | SMH.MI | Central bank | [20] |" in updated
 
+    def test_remaps_affected_instruments_themes_header(self):
+        content = """\
+## Event Calendar
+
+| Date | Event | Affected instruments / themes | Impact |
+|------|-------|------------------------------|--------|
+| 2026-06-15 | U.S. retail sales | SMH.MI | Macro release |
+"""
+        updated = normalize_calendar_table(content)
+        assert "| Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |" in updated
+        assert calendar_table_normalization_warning(updated) is None
+
     def test_warning_when_headers_unmappable(self):
         content = """\
 ## Event Calendar

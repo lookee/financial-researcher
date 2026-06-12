@@ -107,7 +107,8 @@ calendar_analysis_task:
     OUTPUT CONTRACT (mandatory):
     - One markdown table + ≤3 catalyst bullets. No prose intro/outro.
     - HARD CAP: ≤250 words total (table rows count toward cap).
-    - Columns: | Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |
+    - Table header row MUST be exactly (copy verbatim):
+      | Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |
     - Impact ∈ {Earnings, Macro release, Central bank, Corporate action, Sector data, Regulatory}
     - Confirmed YYYY-MM-DD + source URL required; omit unverified events.
     - New sources from [{next_citation}]+. Sort by date ascending.
@@ -153,10 +154,14 @@ executive_briefing_task:
     3. Performance — heading + one leader/laggard sentence ONLY (no table)
     4. Drivers — one entry per instrument ({instrument_count})
     5. Outlook — Bull/Base/Bear with dated triggers
-    6. Calendar — forward events only (date >= today), closed Impact taxonomy
+    6. Calendar — copy the calendar analyst table verbatim with EXACT headers:
+       `Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N]`
+       Forward events only (date >= today); closed Impact taxonomy.
     7. Correlated themes · 8. Risks (≥3) · 9. References (injected) · 10. Disclaimer
 
     Citation rules: [1]..[{last_citation}] = Yahoo per instrument only; news/calendar [{next_citation}]+.
+    Use research_reference_seed citation numbers exactly — never cite [N] absent from the seed.
+    Do not write a References section (injected by the pipeline).
     No buy/sell/hold advice.
 
     Synthesise analyst task outputs (market, news, outlook, calendar) from task context.
