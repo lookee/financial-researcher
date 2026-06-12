@@ -220,6 +220,15 @@ executive_briefing_task:
     - Bold the instrument name on first mention in each section.
     - Skimmable: bullets over walls of text; the Executive Summary reads in under 3 minutes.
 
+    ANTI-REDUNDANCY (mandatory — keeps the memo concise):
+    - Each performance figure (e.g. "+5.66% 1D") may appear at most TWICE in the
+      entire memo: once in the performance table (injected by the pipeline) and once
+      in prose. Do not repeat the same % in Executive Summary, Drivers, Outlook and Risks.
+    - Each section must add NEW information not already stated in earlier sections.
+      Do not restate or paraphrase the Executive Summary in Drivers, Outlook or Risks.
+    - Target length: 1100–1400 words for narrative sections (exclude the performance
+      table and References). Prefer density over repetition.
+
     The Executive Summary is the centrepiece.
 
     Required sections — use EXACTLY these headings (pre-localized for {language}):
