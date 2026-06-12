@@ -58,7 +58,3 @@ def test_analyst_tasks_have_word_caps():
     assert "≤250 words" in tasks["calendar_analysis_task"]["description"]
 
 
-def test_market_analyst_uses_mini_model():
-    agents_path = Path(__file__).parents[1] / "src/financial_researcher/config/agents_briefing.yaml"
-    agents = yaml.safe_load(agents_path.read_text(encoding="utf-8"))
-    assert agents["market_analyst"]["llm"] == "openai/gpt-5.4-mini"

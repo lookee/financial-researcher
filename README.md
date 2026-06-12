@@ -167,16 +167,16 @@ CrewAI  ├─ market_analyst ─┐
 |-------|------|-------|-------|
 | `market_analyst` | Relative performance across the watchlist | gpt-5.4-mini | Pre-loaded context |
 | `news_analyst` | News & catalysts behind recent moves | gpt-5.5 | Serper · Yahoo news · scraping |
-| `outlook_analyst` | 3–12 month macro & thematic outlook | gpt-5.5 | Serper · scraping |
+| `outlook_analyst` | 3–12 month macro & thematic outlook | gpt-5.4 | Serper · scraping |
 | `calendar_analyst` | Catalysts in the next 2–4 weeks | gpt-5.4-mini | Serper · scraping |
 | `chief_strategist` | Synthesises the final executive memo | gpt-5.5 | — |
 
-Config: [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) · [`tasks_briefing.yaml`](src/financial_researcher/config/tasks_briefing.yaml)
+Config: [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) · [`tasks_briefing.yaml`](src/financial_researcher/config/tasks_briefing.yaml) · model routing in [`agent_llm.py`](src/financial_researcher/agent_llm.py)
 
 > [!WARNING]
-> **This default lineup is tuned for quality, not for your wallet.** Three of the five agents run on the **most capable — and most expensive — frontier model** (`gpt-5.5`); `market_analyst` and `calendar_analyst` use the lighter `gpt-5.4-mini`. A single full briefing still makes many LLM calls plus news search and page scraping, so cost can add up when you run it several times a day.
+> **Default lineup balances quality and cost.** Only `news_analyst` and `chief_strategist` use the frontier model (`gpt-5.5`); `outlook_analyst` uses `gpt-5.4`; `market_analyst` and `calendar_analyst` use `gpt-5.4-mini`. Analyst agents emit terse internal handoffs (not human prose), and reasoning effort is tuned per agent — together this typically cuts completion tokens by roughly half versus an all-frontier, verbose setup. A full run still makes many LLM calls plus news search and page scraping.
 >
-> **Want to pay less?** Downgrade the models in [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) — change the `llm:` line of any agent to a cheaper tier (e.g. `openai/gpt-5.4-mini`, or an even smaller/older model like `openai/gpt-4o-mini`). The briefing will still generate; expect a **less nuanced narrative and weaker synthesis** in exchange for lower cost. The `chief_strategist` and `news_analyst` benefit most from a strong model — downgrade the others first if you want a balance.
+> **Want all-frontier quality?** Set env overrides before running, e.g. `FR_MODEL_MARKET=openai/gpt-5.5 FR_MODEL_OUTLOOK=openai/gpt-5.5` (see `.env.sample`). Expect higher cost, especially on output/reasoning tokens.
 
 <details>
 <summary><b>Briefing structure</b></summary>

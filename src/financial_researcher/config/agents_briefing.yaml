@@ -1,5 +1,5 @@
-# Model routing: market_analyst, calendar_analyst → gpt-5.4-mini.
-# news_analyst, outlook_analyst, chief_strategist → gpt-5.5.
+# Model tier defaults (override via FR_MODEL_* env vars): see agent_llm.py.
+# market/calendar → gpt-5.4-mini; outlook → gpt-5.4; news/chief → gpt-5.5.
 
 market_analyst:
   role: >
@@ -31,7 +31,6 @@ market_analyst:
     this session phase (e.g. today's intraday performance during pre-market), DO NOT
     report it AND do NOT flag it as stale — it is simply not applicable to this phase.
     The 5-day recency rule applies only to metrics that ARE valid for this phase.
-  llm: openai/gpt-5.4-mini
 
 news_analyst:
   role: >
@@ -66,7 +65,6 @@ news_analyst:
     Primary window: {news_window}. Never use [1]..[{last_citation}] for news.
     SOURCE FRESHNESS: attribute 1D moves only to CAUSAL sources (≤3 trading days);
     BACKGROUND sources are context only — say so explicitly.
-  llm: openai/gpt-5.5
 
 outlook_analyst:
   role: >
@@ -93,7 +91,6 @@ outlook_analyst:
     citation [N] for the trigger it rests on.
     SESSION ADAPTATION: frame the medium-term view consistently with {session_orientation};
     in pre-market lean on overnight/futures signals as the near-term bridge to the 3–12m thesis.
-  llm: openai/gpt-5.5
 
 calendar_analyst:
   role: >
@@ -121,7 +118,6 @@ calendar_analyst:
     SESSION SPLIT (mandatory): apply {calendar_split} — separate events that have
     already occurred today from those still ahead, according to the session phase.
     Output a chronological markdown table sorted by date ascending.
-  llm: openai/gpt-5.4-mini
 
 chief_strategist:
   role: >
@@ -173,4 +169,3 @@ chief_strategist:
     item is a reference/profile page (metadata note), lead with performance + sector/theme.
     When a true HIGH exists, use headline facts in the opening sentence — never 'speculation'.
     Never cite a derivative source to explain an equity move.
-  llm: openai/gpt-5.5
