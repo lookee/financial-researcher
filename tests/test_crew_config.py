@@ -58,3 +58,9 @@ def test_analyst_tasks_have_word_caps():
     assert "≤250 words" in tasks["calendar_analysis_task"]["description"]
 
 
+def test_agent_yaml_has_no_dynamic_placeholders():
+    agents_path = Path(__file__).parents[1] / "src/financial_researcher/config/agents_briefing.yaml"
+    text = agents_path.read_text(encoding="utf-8")
+    assert "{current_date}" not in text
+    assert "{session_label}" not in text
+    assert "llm:" not in text

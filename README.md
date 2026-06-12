@@ -178,6 +178,8 @@ Config: [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing
 >
 > **Want all-frontier quality?** Set env overrides before running, e.g. `FR_MODEL_MARKET=openai/gpt-5.5 FR_MODEL_OUTLOOK=openai/gpt-5.5` (see `.env.sample`). Expect higher cost, especially on output/reasoning tokens.
 
+**Prompt caching:** agent role/goal/backstory in `agents_briefing.yaml` are static (no dates or session placeholders). Run-specific tables and dates are appended at the end of each task description under `--- RUN CONTEXT ---`, so OpenAI can cache the shared instruction prefix across runs.
+
 <details>
 <summary><b>Briefing structure</b></summary>
 
