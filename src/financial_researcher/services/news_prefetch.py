@@ -21,6 +21,7 @@ from financial_researcher.services.news_ranking import (
     is_reference_page,
 )
 from financial_researcher.services.watchlist_context import (
+    _fmt_pct,
     instrument_label,
     iter_etf_serper_query_sets,
     iter_nasdaq_news_query_sets,
@@ -385,6 +386,38 @@ def _seed_citation_for_headline(
     return None
 
 
+def _append_none_impact_block(
+    lines: list[str],
+    item: dict[str, Any],
+    *,
+    italian: bool,
+) -> None:
+    """Emit Impact NONE guidance when prefetch has no material headline."""
+    label = instrument_label(item)
+    ref = item.get("citation", "?")
+    perf = item.get("performance", {})
+    d1 = _fmt_pct(perf.get("1d"))
+    ytd = _fmt_pct(perf.get("ytd"))
+    lines.append(f"### {label} — Impact **NONE**")
+    if italian:
+        lines.append(
+            "- Nessuna notizia materiale in prefetch — NON citare schede/profili come headline."
+        )
+        lines.append(
+            f"- Spiegare il movimento SOLO con performance (1D: {d1}, YTD: {ytd}) "
+            f"e contesto tema/settore; citare [{ref}] per i dati di mercato."
+        )
+    else:
+        lines.append(
+            "- No material news in prefetch — do NOT cite profile/fact-sheet pages as headlines."
+        )
+        lines.append(
+            f"- Explain the move ONLY with performance (1D: {d1}, YTD: {ytd}) "
+            f"and theme/sector context; cite [{ref}] for market data."
+        )
+    lines.append("")
+
+
 def build_material_news_brief(
     instruments: list[dict[str, Any]],
     headlines_by_ticker: dict[str, list[dict[str, str]]],
@@ -417,17 +450,9 @@ def build_material_news_brief(
             for headline in news_headlines
             if headline_relevance_score(item, headline) >= MATERIALITY_THRESHOLD
         ]
-        if not material and ranked:
-            material = [ranked[0]]
-        label = instrument_label(item)
 
         if not material:
-            lines.append(f"### {label}")
-            if italian:
-                lines.append("- Nessuna notizia rilevante in prefetch.")
-            else:
-                lines.append("- No relevant headline in prefetch.")
-            lines.append("")
+            _append_none_impact_block(lines, item, italian=italian)
             continue
 
         top = material[0]
@@ -441,18 +466,6 @@ def build_material_news_brief(
         level = capped_levels[item["ticker"]]
         label = instrument_label(item)
         lines.append(f"### {label} — Impact **{level}**")
-
-        if is_reference_page(top):
-            if italian:
-                lines.append(
-                    "- **Nota**: fonte di scheda/profilo (metadata) — NON è una notizia. "
-                    "Non usare 🔴 HIGH; spiega il movimento con performance e tema settore."
-                )
-            else:
-                lines.append(
-                    "- **Note**: reference/profile page (metadata) — NOT news. "
-                    "Do not use 🔴 HIGH; explain the move with performance and sector/theme context."
-                )
 
         if italian:
             lines.append(f"- **Titolo da riportare**: {top['title']}")
