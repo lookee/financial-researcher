@@ -83,6 +83,12 @@ Several briefing guarantees are enforced in Python rather than in agent prompts:
 - **Performance table** — injected by the pipeline (price column, one `[N]` per row)
 - **News agent** — prefetch-first workflow with a hard cap on gap-filling tool calls (4 per instrument, 12 per run)
 
+After each run, token usage and post-process warnings are written to `output/metrics/run_{date}_{session}.json`, and a one-line summary is printed:
+
+```text
+Tokens: prompt=… completion=… | requests=… | warnings=…
+```
+
 ## Usage details
 
 ### The four moments of the Milan day

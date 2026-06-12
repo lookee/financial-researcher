@@ -7,11 +7,19 @@ https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
 
 import argparse
 import os
+import time
 from pathlib import Path
 
 from financial_researcher.crew import WatchlistBriefingCrew
 from financial_researcher.paths import default_watchlist_path
 from financial_researcher.services.briefing_postprocess import postprocess_briefing
+from financial_researcher.services.run_metrics import (
+    build_run_metrics_payload,
+    extract_usage_metrics,
+    format_metrics_summary,
+    metrics_output_path,
+    write_run_metrics,
+)
 from financial_researcher.services.watchlist_context import (
     briefing_output_path,
     infer_milan_session,
@@ -27,6 +35,7 @@ WATCHLIST_PATH = default_watchlist_path()
 
 def _ensure_dirs() -> None:
     os.makedirs("output/briefings", exist_ok=True)
+    os.makedirs("output/metrics", exist_ok=True)
     os.makedirs("data/identity", exist_ok=True)
     os.makedirs("data/market", exist_ok=True)
     os.makedirs("config", exist_ok=True)
@@ -61,15 +70,36 @@ def run_briefing(
     output_file = briefing_output_path(chosen_session)
     briefing_crew = WatchlistBriefingCrew()
     briefing_crew.executive_briefing_task().output_file = output_file
-    result = briefing_crew.crew().kickoff(inputs=inputs)
+    crew = briefing_crew.crew()
+    started_at = time.perf_counter()
+    result = crew.kickoff(inputs=inputs)
+    duration_seconds = time.perf_counter() - started_at
 
     output_path = Path(output_file)
     raw_markdown = output_path.read_text(encoding="utf-8") if output_path.exists() else (result.raw or "")
     processed, warnings = postprocess_briefing(raw_markdown, inputs)
     output_path.write_text(processed, encoding="utf-8")
 
+    usage = extract_usage_metrics(crew)
+    metrics_path = metrics_output_path(
+        date_str=inputs.get("current_date", ""),
+        session=chosen_session,
+    )
+    metrics_payload = build_run_metrics_payload(
+        session=chosen_session,
+        language=inputs.get("language", get_default_language()),
+        instrument_count=int(inputs.get("instrument_count", 0)),
+        usage=usage,
+        duration_seconds=duration_seconds,
+        warnings=warnings,
+    )
+    write_run_metrics(metrics_path, metrics_payload)
+
     for warning in warnings:
         print(f"Post-process warning: {warning}")
+
+    print(format_metrics_summary(usage, warnings=warnings))
+    print(f"Metrics saved to {metrics_path}")
 
     print(f"\n\n=== WATCHLIST BRIEFING ({chosen_session}) ===\n\n")
     print(processed)
