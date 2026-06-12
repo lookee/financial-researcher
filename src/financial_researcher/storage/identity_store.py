@@ -5,16 +5,15 @@ from datetime import date
 from pathlib import Path
 
 from financial_researcher.models.instrument import InstrumentIdentity
-
-DEFAULT_IDENTITY_DIR = Path("data/identity")
+from financial_researcher.paths import identity_data_dir
 VERIFY_AFTER_DAYS = 90
 
 
 class IdentityStore:
     """Read/write InstrumentIdentity records under data/identity/."""
 
-    def __init__(self, base_dir: Path | str = DEFAULT_IDENTITY_DIR):
-        self.base_dir = Path(base_dir)
+    def __init__(self, base_dir: Path | str | None = None):
+        self.base_dir = Path(base_dir) if base_dir is not None else identity_data_dir()
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def _path_for(self, isin: str) -> Path:

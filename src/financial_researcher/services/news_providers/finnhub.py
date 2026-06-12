@@ -10,6 +10,7 @@ from typing import Any
 import requests
 
 from financial_researcher.services.news_providers.base import NormalizedHeadline
+from financial_researcher.services.retry import with_retries
 
 FINNHUB_COMPANY_NEWS_URL = "https://finnhub.io/api/v1/company-news"
 DEFAULT_LOOKBACK_DAYS = 14
@@ -106,18 +107,21 @@ class FinnhubNewsProvider:
         start = end - timedelta(days=days)
 
         try:
-            response = requests.get(
-                FINNHUB_COMPANY_NEWS_URL,
-                params={
-                    "symbol": symbol,
-                    "from": start.isoformat(),
-                    "to": end.isoformat(),
-                    "token": self.api_key,
-                },
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            payload = response.json()
+            def _get_finnhub() -> list:
+                response = requests.get(
+                    FINNHUB_COMPANY_NEWS_URL,
+                    params={
+                        "symbol": symbol,
+                        "from": start.isoformat(),
+                        "to": end.isoformat(),
+                        "token": self.api_key,
+                    },
+                    timeout=self.timeout,
+                )
+                response.raise_for_status()
+                return response.json()
+
+            payload = with_retries(_get_finnhub)
         except (requests.RequestException, ValueError):
             return []
 

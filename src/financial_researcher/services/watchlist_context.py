@@ -846,7 +846,8 @@ def infer_milan_session(when: datetime | None = None) -> str:
 
 def briefing_output_path(session: str, when: datetime | None = None) -> str:
     """Path for the unified watchlist briefing file."""
+    from financial_researcher.paths import briefings_dir
+
     moment = when or datetime.now(MILAN_TZ)
-    return (
-        f"output/briefings/watchlist_{moment.date().isoformat()}_{session}.md"
-    )
+    filename = f"watchlist_{moment.date().isoformat()}_{session}.md"
+    return str(briefings_dir() / filename)

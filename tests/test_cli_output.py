@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from financial_researcher.cli_output import (
     configure_clean_cli_output,
     crew_quiet_enabled,
@@ -15,6 +17,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 
 class TestConfigureCleanCliOutput:
     def test_suppresses_pydantic_warnings_on_tool_import(self):
+        pytest.importorskip("crewai_tools")
         code = """
 from financial_researcher.cli_output import configure_clean_cli_output
 configure_clean_cli_output()

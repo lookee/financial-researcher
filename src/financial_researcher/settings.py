@@ -87,3 +87,19 @@ def get_serper_settings() -> dict[str, bool]:
         free_tier = free_tier.strip().lower() not in {"0", "false", "no", "off"}
 
     return {"free_tier": bool(free_tier)}
+
+
+@lru_cache
+def get_pipeline_settings() -> dict[str, int]:
+    """Pipeline parallelism from settings.yaml (max_workers defaults to 4)."""
+    pipeline = _load_yaml_settings().get("pipeline") or {}
+    if not isinstance(pipeline, dict):
+        pipeline = {}
+
+    max_workers = pipeline.get("max_workers", 4)
+    try:
+        max_workers = int(max_workers)
+    except (TypeError, ValueError):
+        max_workers = 4
+
+    return {"max_workers": max(1, min(max_workers, 16))}

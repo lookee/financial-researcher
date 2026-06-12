@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 
 from financial_researcher.crew import WatchlistBriefingCrew
-from financial_researcher.paths import default_watchlist_path
+from financial_researcher.paths import default_watchlist_path, ensure_runtime_dirs
 from financial_researcher.services.briefing_postprocess import postprocess_briefing
 from financial_researcher.services.run_metrics import (
     build_run_metrics_payload,
@@ -37,14 +37,6 @@ from financial_researcher.settings import get_default_language
 WATCHLIST_PATH = default_watchlist_path()
 
 
-def _ensure_dirs() -> None:
-    os.makedirs("output/briefings", exist_ok=True)
-    os.makedirs("output/metrics", exist_ok=True)
-    os.makedirs("data/identity", exist_ok=True)
-    os.makedirs("data/market", exist_ok=True)
-    os.makedirs("config", exist_ok=True)
-
-
 def run_briefing(
     *,
     session: str | None = None,
@@ -53,7 +45,7 @@ def run_briefing(
     watchlist_path: Path | None = None,
 ) -> str:
     """Generate a unified executive briefing for the configured watchlist."""
-    _ensure_dirs()
+    ensure_runtime_dirs()
     chosen_session = session or infer_milan_session()
     if chosen_session not in VALID_SESSIONS:
         raise ValueError(

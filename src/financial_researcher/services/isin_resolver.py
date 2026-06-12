@@ -7,6 +7,7 @@ import requests
 import yfinance as yf
 
 from financial_researcher.models.instrument import InstrumentIdentity, Listing
+from financial_researcher.services.retry import with_retries
 from financial_researcher.storage.identity_store import IdentityStore
 
 OPENFIGI_URL = "https://api.openfigi.com/v3/mapping"
@@ -82,13 +83,17 @@ class IsinResolver:
         if api_key:
             headers["X-OPENFIGI-APIKEY"] = api_key
 
-        response = requests.post(
-            OPENFIGI_URL,
-            headers=headers,
-            json=[{"idType": "ID_ISIN", "idValue": isin}],
-            timeout=15,
-        )
-        response.raise_for_status()
+        def _post_openfigi() -> requests.Response:
+            response = requests.post(
+                OPENFIGI_URL,
+                headers=headers,
+                json=[{"idType": "ID_ISIN", "idValue": isin}],
+                timeout=15,
+            )
+            response.raise_for_status()
+            return response
+
+        response = with_retries(_post_openfigi)
         payload = response.json()
         if not payload or not payload[0].get("data"):
             raise ValueError(f"OpenFIGI returned no results for {isin}")
@@ -169,9 +174,12 @@ class IsinResolver:
         info: dict = {}
         working_ticker = identity.primary_ticker
 
+        def _ticker_info(symbol: str) -> dict:
+            return with_retries(lambda: yf.Ticker(symbol).info or {})
+
         if identity.instrument_type == "etf":
             for candidate in self._yahoo_candidates(identity):
-                candidate_info = yf.Ticker(candidate).info or {}
+                candidate_info = _ticker_info(candidate)
                 quote_type = (candidate_info.get("quoteType") or "").upper()
                 has_price = bool(
                     candidate_info.get("regularMarketPrice")
@@ -184,7 +192,7 @@ class IsinResolver:
 
         if not info:
             for candidate in self._yahoo_candidates(identity):
-                candidate_info = yf.Ticker(candidate).info or {}
+                candidate_info = _ticker_info(candidate)
                 quote_type = (candidate_info.get("quoteType") or "").upper()
                 if (
                     identity.instrument_type == "etf"

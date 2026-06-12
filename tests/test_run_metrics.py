@@ -1,12 +1,12 @@
 """Tests for briefing run metrics."""
 
 import json
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from crewai.types.usage_metrics import UsageMetrics
-
+from financial_researcher.paths import metrics_dir
 from financial_researcher.services.run_metrics import (
     build_run_metrics_payload,
     extract_usage_metrics,
@@ -16,6 +16,14 @@ from financial_researcher.services.run_metrics import (
 )
 
 
+@dataclass
+class _UsageStub:
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    successful_requests: int
+
+
 class _StubCrew:
     def __init__(self, usage_metrics):
         self.usage_metrics = usage_metrics
@@ -23,7 +31,7 @@ class _StubCrew:
 
 class TestExtractUsageMetrics:
     def test_reads_usage_metrics_model(self):
-        usage = UsageMetrics(
+        usage = _UsageStub(
             prompt_tokens=100,
             completion_tokens=50,
             total_tokens=150,
@@ -70,8 +78,8 @@ class TestRunMetricsPersistence:
         assert loaded["duration_seconds"] == 42.5
 
     def test_metrics_output_path(self):
-        assert metrics_output_path(date_str="2026-06-12", session="post_open") == Path(
-            "output/metrics/run_2026-06-12_post_open.json"
+        assert metrics_output_path(date_str="2026-06-12", session="post_open") == (
+            metrics_dir() / "run_2026-06-12_post_open.json"
         )
 
 

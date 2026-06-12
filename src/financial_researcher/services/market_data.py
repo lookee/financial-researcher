@@ -7,6 +7,7 @@ import pandas as pd
 import yfinance as yf
 
 from financial_researcher.models.instrument import InstrumentIdentity
+from financial_researcher.services.retry import with_retries
 from financial_researcher.storage.market_cache import MarketCache
 
 ONE_D_INCONSISTENCY_THRESHOLD_PP = 0.5
@@ -56,9 +57,10 @@ class MarketDataService:
         return snapshot
 
     def _fetch_snapshot(self, identity: InstrumentIdentity) -> dict[str, Any]:
-        ticker = yf.Ticker(identity.primary_ticker)
-        info = ticker.info or {}
-        history = ticker.history(period="1y", auto_adjust=True)
+        symbol = identity.primary_ticker
+        ticker = yf.Ticker(symbol)
+        info = with_retries(lambda: ticker.info or {})
+        history = with_retries(lambda: ticker.history(period="1y", auto_adjust=True))
 
         performance = self._calculate_performance(history)
         current = info.get("currentPrice") or info.get("regularMarketPrice")

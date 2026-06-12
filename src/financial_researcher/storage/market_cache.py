@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-DEFAULT_MARKET_DIR = Path("data/market")
+from financial_researcher.paths import market_data_dir
 DEFAULT_TTL_MINUTES = 60
 
 
@@ -14,10 +14,10 @@ class MarketCache:
 
     def __init__(
         self,
-        base_dir: Path | str = DEFAULT_MARKET_DIR,
+        base_dir: Path | str | None = None,
         ttl_minutes: int = DEFAULT_TTL_MINUTES,
     ):
-        self.base_dir = Path(base_dir)
+        self.base_dir = Path(base_dir) if base_dir is not None else market_data_dir()
         self.ttl = timedelta(minutes=ttl_minutes)
 
     def _path_for(self, isin: str) -> Path:

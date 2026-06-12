@@ -1,5 +1,8 @@
 """Load watchlist, resolve instruments, and fetch market data."""
 
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +16,7 @@ from financial_researcher.services.watchlist_context import (
     attach_prefetched_news,
     build_watchlist_context,
 )
-from financial_researcher.settings import get_default_language
+from financial_researcher.settings import get_default_language, get_pipeline_settings
 
 VALID_SESSIONS = ("pre_open", "post_open", "midday", "close")
 
@@ -35,6 +38,30 @@ class WatchlistPipeline:
         self.resolver = resolver or IsinResolver()
         self.market = market or MarketDataService()
 
+    def _collect_one(
+        self,
+        item: dict[str, Any],
+        *,
+        force: bool,
+    ) -> tuple[InstrumentIdentity, dict[str, Any]]:
+        if not item.get("isin"):
+            raise ValueError("Each watchlist entry must include isin.")
+        if not item.get("ticker"):
+            raise ValueError(
+                f"Each watchlist entry must include ticker (ISIN {item['isin']})."
+            )
+
+        identity = self.resolver.resolve(
+            isin=item["isin"],
+            force_refresh=force,
+            preferred_ticker=item.get("ticker"),
+            manual_ticker=item.get("ticker"),
+            manual_type=item.get("type"),
+        )
+        snapshot = self.market.get_snapshot(identity, use_cache=not force)
+        print(f"  ▸ {identity.primary_ticker} ({identity.name})")
+        return identity, snapshot
+
     def collect(
         self,
         watchlist_path: Path | None = None,
@@ -52,31 +79,25 @@ class WatchlistPipeline:
                 f"Choose from: {', '.join(VALID_SESSIONS)}"
             )
 
-        identities: list[InstrumentIdentity] = []
-        snapshots: list[dict[str, Any]] = []
-
-        for item in config.get("instruments", []):
-            if not item.get("isin"):
-                raise ValueError("Each watchlist entry must include isin.")
-            if not item.get("ticker"):
-                raise ValueError(
-                    f"Each watchlist entry must include ticker (ISIN {item['isin']})."
-                )
-
-            identity = self.resolver.resolve(
-                isin=item["isin"],
-                force_refresh=force,
-                preferred_ticker=item.get("ticker"),
-                manual_ticker=item.get("ticker"),
-                manual_type=item.get("type"),
-            )
-            snapshot = self.market.get_snapshot(identity, use_cache=not force)
-            identities.append(identity)
-            snapshots.append(snapshot)
-            print(f"  ▸ {identity.primary_ticker} ({identity.name})")
-
-        if not identities:
+        items: list[dict[str, Any]] = list(config.get("instruments", []))
+        if not items:
             raise ValueError("Watchlist contains no instruments.")
+
+        max_workers = min(get_pipeline_settings()["max_workers"], len(items))
+        results: list[tuple[InstrumentIdentity, dict[str, Any]] | None] = [None] * len(
+            items
+        )
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(self._collect_one, item, force=force): index
+                for index, item in enumerate(items)
+            }
+            for future, index in futures.items():
+                results[index] = future.result()
+
+        identities = [pair[0] for pair in results if pair is not None]
+        snapshots = [pair[1] for pair in results if pair is not None]
 
         context = build_watchlist_context(
             identities,

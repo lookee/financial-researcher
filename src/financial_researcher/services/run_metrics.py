@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from financial_researcher.paths import metrics_dir
+
 MILAN_TZ = ZoneInfo("Europe/Rome")
 
 
@@ -50,7 +52,7 @@ def extract_usage_metrics(crew: Any) -> dict[str, int]:
 
 def metrics_output_path(*, date_str: str, session: str) -> Path:
     """Path for a run metrics JSON file."""
-    return Path("output/metrics") / f"run_{date_str}_{session}.json"
+    return metrics_dir() / f"run_{date_str}_{session}.json"
 
 
 def build_run_metrics_payload(

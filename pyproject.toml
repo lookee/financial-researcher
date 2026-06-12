@@ -7,6 +7,7 @@ license = { text = "Unlicense" }
 authors = [{ name = "Luca Amore", email = "luca.amore@gmail.com" }]
 requires-python = ">=3.10,<3.13"
 dependencies = [
+    # Pinned: llm_compat.py monkey-patches crewai.LLM private methods (_prepare_completion_params, supports_stop_words).
     "crewai[tools]>=0.114.0,<0.120.0",
     "yfinance>=0.2.0",
     "pyyaml>=6.0",
@@ -26,8 +27,8 @@ dev = ["pytest>=8.0"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = [
-    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
-    "ignore::pydantic.warnings.ArbitraryTypeWarning",
+    "ignore:Support for class-based `config` is deprecated:DeprecationWarning",
+    "ignore:.*is not a Python type.*:UserWarning",
 ]
 
 [tool.crewai]

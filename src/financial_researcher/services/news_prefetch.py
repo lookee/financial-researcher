@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 import requests
 import yfinance as yf
 
+from financial_researcher.services.retry import with_retries
 from financial_researcher.settings import get_serper_settings
 from financial_researcher.services.news_providers import FinnhubNewsProvider, dedupe_headlines
 from financial_researcher.tools.serper_query import sanitize_serper_query
@@ -106,14 +107,17 @@ def _serper_news(
         payload["hl"] = locale
 
     try:
-        response = requests.post(
-            SERPER_NEWS_URL,
-            headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
-            json=payload,
-            timeout=12,
-        )
-        response.raise_for_status()
-        data = response.json()
+        def _post_serper() -> dict:
+            response = requests.post(
+                SERPER_NEWS_URL,
+                headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+                json=payload,
+                timeout=12,
+            )
+            response.raise_for_status()
+            return response.json()
+
+        data = with_retries(_post_serper)
     except requests.RequestException:
         return []
 

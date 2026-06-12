@@ -1,11 +1,19 @@
 """Tests for deterministic briefing post-processing."""
 
+import json
+
 from financial_researcher.services.briefing_postprocess import (
     calendar_table_normalization_warning,
     enforce_high_tag_cap,
     normalize_calendar_table,
     renumber_citations,
     validate_citations,
+    validate_material_news_prominence,
+)
+
+MATERIAL_HIGH_DOMINANT = (
+    "### STMicroelectronics N.V. (STMMI.MI) — Impact **HIGH**\n"
+    "**Dominant watchlist story:** STM announces fab expansion.\n"
 )
 
 MATERIAL_HIGH_TWO = (
@@ -111,3 +119,107 @@ class TestValidateCitations:
             instrument_count=6,
         )
         assert any("gaps" in warning for warning in warnings)
+
+
+class TestValidateMaterialNewsProminence:
+    def _seed(self, *, ticker: str, title: str, url: str) -> str:
+        return json.dumps(
+            [
+                {
+                    "citation": 7,
+                    "ticker": ticker,
+                    "title": title,
+                    "url": url,
+                    "source": "Borsa Italiana",
+                    "date": "2026-06-12",
+                }
+            ]
+        )
+
+    def test_institutional_headline_present_no_warning(self):
+        title = "STM announces new fab investment in Italy"
+        content = f"Executive summary covers {title[:40]} with facts [7]."
+        warnings = validate_material_news_prominence(
+            content,
+            {
+                "watchlist_material_news": MATERIAL_HIGH_DOMINANT,
+                "research_reference_seed_json": self._seed(
+                    ticker="STMMI.MI",
+                    title=title,
+                    url="https://www.borsaitaliana.it/comunicati/example",
+                ),
+            },
+        )
+        assert warnings == []
+
+    def test_institutional_headline_absent_warns_with_ticker(self):
+        title = "STM announces new fab investment in Italy"
+        warnings = validate_material_news_prominence(
+            "Briefing discusses sector themes only.",
+            {
+                "watchlist_material_news": MATERIAL_HIGH_DOMINANT,
+                "research_reference_seed_json": self._seed(
+                    ticker="STMMI.MI",
+                    title=title,
+                    url="https://www.borsaitaliana.it/comunicati/example",
+                ),
+            },
+        )
+        assert len(warnings) == 1
+        assert "STMMI.MI" in warnings[0]
+        assert "institutional source" in warnings[0]
+
+    def test_non_institutional_url_no_warning(self):
+        title = "Chip stocks rally on AI demand"
+        warnings = validate_material_news_prominence(
+            "No mention of the prefetch headline.",
+            {
+                "watchlist_material_news": MATERIAL_HIGH_DOMINANT,
+                "research_reference_seed_json": self._seed(
+                    ticker="SMH.MI",
+                    title=title,
+                    url="https://www.reuters.com/markets/example",
+                ),
+            },
+        )
+        assert warnings == []
+
+    def test_malformed_seed_json_no_crash(self):
+        warnings = validate_material_news_prominence(
+            "Any briefing body.",
+            {
+                "watchlist_material_news": MATERIAL_HIGH_DOMINANT,
+                "research_reference_seed_json": "not-valid-json",
+            },
+        )
+        assert warnings == []
+
+    def test_empty_seed_json_no_warning(self):
+        warnings = validate_material_news_prominence(
+            "Any briefing body.",
+            {
+                "watchlist_material_news": MATERIAL_HIGH_DOMINANT,
+                "research_reference_seed_json": "",
+            },
+        )
+        assert warnings == []
+
+    def test_vague_english_language_warning_when_dominant_high(self):
+        warnings = validate_material_news_prominence(
+            "Moves reflect sector uncertainty amid competition.",
+            {"watchlist_material_news": MATERIAL_HIGH_DOMINANT},
+        )
+        assert len(warnings) == 1
+        assert "vague sector/speculation language" in warnings[0]
+
+    def test_vague_italian_language_warning_when_dominant_high(self):
+        material = (
+            "### STMicroelectronics N.V. (STMMI.MI) — Impact **HIGH**\n"
+            "**Notizia dominante:** espansione del fab.\n"
+        )
+        warnings = validate_material_news_prominence(
+            "Il titolo riflette speculazioni e incertezze nel settore.",
+            {"watchlist_material_news": material},
+        )
+        assert len(warnings) == 1
+        assert "vague sector/speculation language" in warnings[0]

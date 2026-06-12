@@ -2,6 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10--3.12-3776AB?logo=python&logoColor=white)
 ![CrewAI](https://img.shields.io/badge/CrewAI-multi--agent-8957E5?logo=openai&logoColor=white)
+![CI](https://github.com/lookee/financial-researcher/actions/workflows/ci.yml/badge.svg)
 ![Status](https://img.shields.io/badge/status-experimental-red)
 
 > One **executive briefing** for your whole **watchlist** — not one report per ticker.
@@ -48,6 +49,7 @@ The first run scaffolds `config/`, `output/briefings/`, and `data/`, and seeds `
 | `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
 | `WATCHLIST_PATH` | — | Override watchlist YAML location (default: `./config/watchlist.yaml`) |
 | `FINANCIAL_RESEARCHER_CONFIG_DIR` | — | Global user config directory (default: `~/.config/financial_researcher`) |
+| `FINANCIAL_RESEARCHER_HOME` | — | Base directory for `output/` and `data/` (default: current working directory) |
 | `BRIEFING_QUIET` | — | Set `1` to hide CrewAI agent/task progress (same as `--quiet`) |
 
 ## Usage

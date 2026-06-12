@@ -1,8 +1,13 @@
 """Tests for scrape text truncation."""
 
+import pytest
+
+pytest.importorskip("crewai_tools")
+
+from crewai_tools import ScrapeWebsiteTool
+
 from financial_researcher.settings import get_scrape_settings
 from financial_researcher.tools.scrape_limited import TRUNCATION_SUFFIX, truncate_scraped_text
-from crewai_tools import ScrapeWebsiteTool
 
 
 class TestTruncateScrapedText:

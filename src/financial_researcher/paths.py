@@ -9,6 +9,47 @@ PACKAGE_DIR = Path(__file__).resolve().parent
 WATCHLIST_TEMPLATE = PACKAGE_DIR / "config" / "watchlist.example.yaml"
 
 
+def project_home() -> Path:
+    """Base directory for runtime output and data (default: current working directory)."""
+    override = os.getenv("FINANCIAL_RESEARCHER_HOME", "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
+    return Path.cwd()
+
+
+def output_dir() -> Path:
+    return project_home() / "output"
+
+
+def briefings_dir() -> Path:
+    return output_dir() / "briefings"
+
+
+def metrics_dir() -> Path:
+    return output_dir() / "metrics"
+
+
+def data_dir() -> Path:
+    return project_home() / "data"
+
+
+def identity_data_dir() -> Path:
+    return data_dir() / "identity"
+
+
+def market_data_dir() -> Path:
+    return data_dir() / "market"
+
+
+def ensure_runtime_dirs() -> None:
+    """Create output, data, and project config directories if missing."""
+    briefings_dir().mkdir(parents=True, exist_ok=True)
+    metrics_dir().mkdir(parents=True, exist_ok=True)
+    identity_data_dir().mkdir(parents=True, exist_ok=True)
+    market_data_dir().mkdir(parents=True, exist_ok=True)
+    project_config_dir().mkdir(parents=True, exist_ok=True)
+
+
 def user_config_dir() -> Path:
     """Global per-user config directory (~/.config/financial_researcher)."""
     override = os.getenv("FINANCIAL_RESEARCHER_CONFIG_DIR", "").strip()

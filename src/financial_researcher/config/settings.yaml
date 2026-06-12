@@ -10,6 +10,10 @@ serper:
   # Free Serper plans reject site: and long OR queries — auto-simplify (default true).
   free_tier: true
 
+# Watchlist data pipeline (parallel ISIN resolve + market snapshots).
+pipeline:
+  max_workers: 4
+
 # Website scrape tool (ScrapeWebsiteTool used by news/outlook/calendar agents).
 scrape:
   # When true (default), scraped pages are truncated before reaching the LLM.
