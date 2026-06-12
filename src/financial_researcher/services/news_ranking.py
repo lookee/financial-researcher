@@ -215,6 +215,8 @@ def headline_relevance_score(item: dict[str, Any], headline: dict[str, str]) -> 
         score += 12
     if headline.get("region") == "Yahoo":
         score += 10
+    if headline.get("region") == "Finnhub":
+        score += 8
     if headline.get("region") == "Serper NASDAQ":
         score += 6
 

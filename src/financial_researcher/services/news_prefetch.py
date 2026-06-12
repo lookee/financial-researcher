@@ -1,15 +1,16 @@
-"""Deterministic news prefetch (Yahoo + Serper) for the news analyst."""
+"""Deterministic news prefetch (Finnhub + Yahoo + Serper) for the news analyst."""
 
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
 import requests
 import yfinance as yf
 
+from financial_researcher.services.news_providers import FinnhubNewsProvider, dedupe_headlines
 from financial_researcher.services.news_ranking import (
     MATERIALITY_THRESHOLD,
     cap_high_impact_levels,
@@ -229,16 +230,16 @@ def _fetch_nasdaq_serper(
     return items
 
 
-def _dedupe_headlines(items: list[dict[str, str]]) -> list[dict[str, str]]:
-    seen: set[str] = set()
-    unique: list[dict[str, str]] = []
-    for item in items:
-        key = item.get("url") or item.get("title", "").lower()
-        if not key or key in seen:
-            continue
-        seen.add(key)
-        unique.append(item)
-    return unique
+def fetch_finnhub_news(
+    item: dict[str, Any],
+    *,
+    end_date: date | None = None,
+) -> list[dict[str, str]]:
+    """Fetch Finnhub company news when FINNHUB_API_KEY is configured."""
+    provider = FinnhubNewsProvider()
+    if not provider.available:
+        return []
+    return [headline.to_dict() for headline in provider.fetch(item, end_date=end_date)]
 
 
 def _prioritize_headlines(
@@ -246,7 +247,7 @@ def _prioritize_headlines(
     *,
     instrument: dict[str, Any],
 ) -> list[dict[str, str]]:
-    deduped = _dedupe_headlines(items)
+    deduped = dedupe_headlines(items)
     return sorted(
         deduped,
         key=lambda headline: (
@@ -268,6 +269,7 @@ def collect_instrument_headlines(
     """Fetch and rank headlines for one watchlist instrument."""
     ticker = item["ticker"]
     yahoo_items = fetch_yahoo_news(ticker)
+    finnhub_items = fetch_finnhub_news(item)
     serper_items: list[dict[str, str]] = []
 
     if os.getenv("SERPER_API_KEY", "").strip():
@@ -288,7 +290,9 @@ def collect_instrument_headlines(
             )
         )
 
-    return _prioritize_headlines(yahoo_items + serper_items, instrument=item)[:max_headlines]
+    return _prioritize_headlines(
+        finnhub_items + yahoo_items + serper_items, instrument=item
+    )[:max_headlines]
 
 
 def _format_headline_line(instrument: dict[str, Any], headline: dict[str, str]) -> str:
@@ -562,6 +566,7 @@ def prefetch_watchlist_news_bundle(
     digest_lines = [
         "Pre-fetched headlines (deterministic). Ranked by structural relevance:",
         "recency, match on instrument name/ticker, source tier, document type.",
+        "Providers: Finnhub (when configured), Yahoo Finance, Serper (IT/global/NASDAQ).",
         "Tags: **OFFICIAL SOURCE** (Borsa Italiana news), **INSTITUTIONAL SOURCE**, "
         "**MATERIAL NEWS**.",
         "",

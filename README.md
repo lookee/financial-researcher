@@ -38,6 +38,7 @@ The first run scaffolds `config/`, `output/briefings/`, and `data/`, and seeds `
 |----------|----------|---------|
 | `OPENAI_API_KEY` | ✅ | LLM backend for the agents |
 | `SERPER_API_KEY` | ✅ | News and web search |
+| `FINNHUB_API_KEY` | — | Company news prefetch (merged with Yahoo/Serper) |
 | `OPENFIGI_API_KEY` | — | Higher ISIN-resolution rate limits |
 | `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
 
