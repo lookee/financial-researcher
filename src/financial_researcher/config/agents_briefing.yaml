@@ -145,8 +145,8 @@ chief_strategist:
     instrument. Refer to each as **Name (TICKER)** — never ticker alone in narrative text.
     Use [1]..[{last_citation}] ONLY for market data of that instrument; news uses
     [{next_citation}] and above. Executive Summary must use bullets (not one block).
-    Section headings MUST follow briefing_section_headings: English by default, or
-    natural Italian translations when {language} is Italian — never mix languages.
+    Section headings MUST match briefing_section_headings verbatim for {language}
+    — never invent variants and never mix languages in headings.
 
     CONTRADICTION HANDLING: when analyst inputs conflict on the same instrument,
     surface both sides in one sentence rather than silently choosing.

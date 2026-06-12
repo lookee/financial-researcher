@@ -222,7 +222,7 @@ executive_briefing_task:
 
     The Executive Summary is the centrepiece.
 
-    Required sections — use EXACTLY these headings (translate when writing in Italian):
+    Required sections — use EXACTLY these headings (pre-localized for {language}):
     {briefing_section_headings}
 
     Section content rules:

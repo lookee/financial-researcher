@@ -16,7 +16,13 @@ MATERIAL_IMPACT_RE = re.compile(
 TABLE_ROW_RE = re.compile(r"^\|(.+)\|\s*$", re.MULTILINE)
 
 from financial_researcher.services.news_ranking import OFFICIAL_DOMAINS
-from financial_researcher.services.watchlist_context import instrument_label
+from financial_researcher.services.watchlist_context import (
+    BRIEFING_SECTION_HEADINGS_EN,
+    BRIEFING_SECTION_HEADINGS_IT,
+    instrument_label,
+    is_italian_language,
+    localized_section_heading,
+)
 
 CANONICAL_CALENDAR_HEADERS = [
     "Date (YYYY-MM-DD)",
@@ -65,6 +71,7 @@ SECTION_ALIASES: dict[str, str] = {
     "executive summary": "executive_summary",
     "sommario esecutivo": "executive_summary",
     "watchlist performance snapshot": "performance",
+    "snapshot della performance watchlist": "performance",
     "scatto della performance della watchlist": "performance",
     "prestazioni della watchlist": "performance",
     "what's driving the moves": "drivers",
@@ -87,8 +94,8 @@ SECTION_ALIASES: dict[str, str] = {
 }
 
 
-def section_title(section_key: str) -> str:
-    return SECTION_HEADINGS[section_key]
+def section_title(section_key: str, *, language: str = "English") -> str:
+    return localized_section_heading(section_key, language)
 
 
 def _section_title_keys(section_key: str) -> set[str]:
@@ -117,6 +124,45 @@ def calendar_section_titles() -> set[str]:
 
 def _normalize_title(title: str) -> str:
     return title.strip().lower()
+
+
+def _remove_duplicate_sections(content: str, section_key: str) -> str:
+    """Keep the first section matching section_key; drop later duplicates."""
+    keys = _section_title_keys(section_key)
+    sections = _find_sections(content)
+    matches = [
+        (start, end, level, title)
+        for start, end, level, title in sections
+        if _normalize_title(title) in keys
+    ]
+    if len(matches) <= 1:
+        return content
+    updated = content
+    for start, end, _, _ in reversed(matches[1:]):
+        updated = updated[:start] + updated[end:]
+    return updated
+
+
+def _rename_section_heading(
+    content: str,
+    section_key: str,
+    *,
+    language: str,
+) -> str:
+    """Normalize the first matching section heading to the canonical localized title."""
+    canonical = localized_section_heading(section_key, language)
+    keys = _section_title_keys(section_key)
+    sections = _find_sections(content)
+    for start, end, level, title in sections:
+        if _normalize_title(title) not in keys:
+            continue
+        if title.strip() == canonical:
+            return content
+        marker = "#" * level
+        old_heading = f"{marker} {title}"
+        new_heading = f"{marker} {canonical}"
+        return content.replace(old_heading, new_heading, 1)
+    return content
 
 
 def _heading_level(marker: str) -> int:
@@ -628,11 +674,14 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
         performance_body = f"{highlights}\n\n{performance_table}"
 
     before_perf = updated
+    updated = _remove_duplicate_sections(updated, "performance")
     updated = _replace_section_body(
         updated,
         title_keys=performance_section_titles(),
         new_body=performance_body,
     )
+    updated = _rename_section_heading(updated, "performance", language=language)
+    updated = _remove_duplicate_sections(updated, "performance")
 
     updated = enforce_high_tag_cap(
         updated, inputs.get("watchlist_material_news", "")
@@ -645,7 +694,7 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
         for start, end, level, title in sections:
             if _normalize_title(title) not in exec_keys:
                 continue
-            perf_heading = f"## {section_title('performance')}"
+            perf_heading = f"## {section_title('performance', language=language)}"
             insert = f"\n\n{perf_heading}\n\n{performance_body.strip()}\n\n"
             updated = updated[:end].rstrip() + insert + updated[end:].lstrip("\n")
             break

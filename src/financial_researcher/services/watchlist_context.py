@@ -36,6 +36,29 @@ BRIEFING_SECTION_HEADINGS_EN: dict[str, str] = {
     "disclaimer": "Disclaimer",
 }
 
+BRIEFING_SECTION_HEADINGS_IT: dict[str, str] = {
+    "executive_summary": "Sommario Esecutivo",
+    "performance": "Snapshot della Performance Watchlist",
+    "drivers": "Cosa Guida i Movimenti",
+    "outlook": "Prospettive di Medio Termine",
+    "calendar": "Calendario Eventi",
+    "themes": "Temi Correlati",
+    "risks": "Rischi e Punti di Attenzione",
+    "references": "Riferimenti",
+    "disclaimer": "Disclaimer",
+}
+
+
+def is_italian_language(language: str) -> bool:
+    return language.lower().startswith("ital")
+
+
+def localized_section_heading(section_key: str, language: str) -> str:
+    """Single localized ## heading for a briefing section key."""
+    if is_italian_language(language):
+        return BRIEFING_SECTION_HEADINGS_IT[section_key]
+    return BRIEFING_SECTION_HEADINGS_EN[section_key]
+
 MILAN_TZ = ZoneInfo("Europe/Rome")
 SESSIONS_PATH = Path(__file__).parent.parent / "config" / "sessions_milan.yaml"
 
@@ -53,10 +76,12 @@ def _fmt_num(value: float | int | None, decimals: int = 2) -> str:
     return f"{value:,.{decimals}f}"
 
 
-def _fmt_pct(value: float | None) -> str:
+def _fmt_pct(value: float | None, *, italian: bool = False) -> str:
     if value is None:
         return "n/a"
-    return f"{_fmt_num(value)}%"
+    if italian:
+        return f"{value:.2f}".replace(".", ",") + "%"
+    return f"{value:.2f}%"
 
 
 def _fmt_price(
@@ -657,24 +682,17 @@ def build_watchlist_summary_checklist(instruments: list[dict[str, Any]]) -> str:
 
 
 def build_briefing_section_headings(language: str) -> str:
-    """Markdown checklist of ## headings for the chief strategist."""
+    """Markdown checklist of ## headings for the chief strategist (one language only)."""
     lines = [
-        "Use EXACTLY these ## section headings in this order (English canonical titles):",
+        "Use EXACTLY these ## section headings in this order — copy verbatim, no variants:",
         "",
     ]
     for index, key in enumerate(BRIEFING_SECTION_ORDER, start=2):
-        lines.append(f"{index}. ## {BRIEFING_SECTION_HEADINGS_EN[key]}")
-    if language.lower().startswith("ital"):
-        lines.extend(
-            [
-                "",
-                "Write the briefing body in Italian. Translate each section heading into "
-                "natural Italian (e.g. Sommario Esecutivo, Cosa Guida i Movimenti). "
-                "Do not mix English and Italian headings in the same briefing.",
-            ]
-        )
+        lines.append(f"{index}. ## {localized_section_heading(key, language)}")
+    lines.append("")
+    if is_italian_language(language):
+        lines.append("Write the briefing body in Italian. Do not use English section headings.")
     else:
-        lines.append("")
         lines.append("Keep all section headings in English.")
     return "\n".join(lines)
 

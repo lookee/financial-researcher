@@ -3,9 +3,11 @@
 import json
 
 from financial_researcher.services.briefing_postprocess import (
+    _remove_duplicate_sections,
     calendar_table_normalization_warning,
     enforce_high_tag_cap,
     normalize_calendar_table,
+    postprocess_briefing,
     renumber_citations,
     validate_citations,
     validate_material_news_prominence,
@@ -119,6 +121,42 @@ class TestValidateCitations:
             instrument_count=6,
         )
         assert any("gaps" in warning for warning in warnings)
+
+
+class TestDuplicatePerformanceSection:
+    def test_postprocess_removes_duplicate_performance_sections(self):
+        content = """\
+# Title
+
+## Sommario Esecutivo
+
+Summary.
+
+## Watchlist Performance Snapshot
+
+Stale English block.
+
+## Snapshot della Performance Watchlist
+
+Leader line in Italian.
+
+## Cosa Guida i Movimenti
+
+Drivers.
+"""
+        inputs = {
+            "language": "Italian",
+            "watchlist_context": (
+                '{"instruments": [{"citation": 1, "name": "ETF", "ticker": "X.MI", '
+                '"performance": {"1d": 1.0}, "price": {"last": 10}, "currency": "EUR"}]}'
+            ),
+            "watchlist_performance_table": "| table |",
+            "current_date": "2026-06-12",
+        }
+        processed, _ = postprocess_briefing(content, inputs)
+        assert processed.count("## Snapshot della Performance Watchlist") == 1
+        assert "## Watchlist Performance Snapshot" not in processed
+        assert "| table |" in processed
 
 
 class TestValidateMaterialNewsProminence:
