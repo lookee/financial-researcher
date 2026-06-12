@@ -9,8 +9,43 @@ from typing import Any
 HEADING_RE = re.compile(r"^(#{1,3})\s+(.+?)\s*$", re.MULTILINE)
 CITATION_RE = re.compile(r"\[(\d+)\]")
 NUMBERED_REF_RE = re.compile(r"^(\d+)\.\s+(.+)$", re.MULTILINE)
+MATERIAL_IMPACT_RE = re.compile(
+    r"^### (.+?) — Impact \*\*(HIGH|MEDIUM|LOW|NONE)\*\*",
+    re.MULTILINE,
+)
+TABLE_ROW_RE = re.compile(r"^\|(.+)\|\s*$", re.MULTILINE)
 
 from financial_researcher.services.watchlist_context import instrument_label
+
+CANONICAL_CALENDAR_HEADERS = [
+    "Date (YYYY-MM-DD)",
+    "Event",
+    "Affected tickers/themes",
+    "Impact",
+    "[N]",
+]
+
+CALENDAR_HEADER_ALIASES: dict[str, int] = {
+    "date": 0,
+    "date (yyyy-mm-dd)": 0,
+    "data": 0,
+    "data (yyyy-mm-dd)": 0,
+    "event": 1,
+    "evento": 1,
+    "affected tickers/themes": 2,
+    "affected tickers / themes": 2,
+    "instrument": 2,
+    "theme": 2,
+    "ticker": 2,
+    "strumento": 2,
+    "tema": 2,
+    "impact": 3,
+    "impatto": 3,
+    "source": 4,
+    "[n]": 4,
+    "ref": 4,
+    "citazione": 4,
+}
 
 # Canonical English headings (prompt template). Post-process matches EN + IT aliases.
 SECTION_HEADINGS: dict[str, str] = {
@@ -73,6 +108,10 @@ def references_section_titles() -> set[str]:
 
 def disclaimer_section_titles() -> set[str]:
     return {"disclaimer", "note legali"}
+
+
+def calendar_section_titles() -> set[str]:
+    return _section_title_keys("calendar")
 
 
 def _normalize_title(title: str) -> str:
@@ -280,7 +319,213 @@ def _merge_references_section(
     return before.rstrip() + "\n\n" + refs_text + "\n"
 
 
-def validate_citations(content: str, *, reference_count: int) -> list[str]:
+def parse_material_impacts(
+    material_news_input: str,
+) -> tuple[list[str], list[str]]:
+    """Return instrument labels marked HIGH and MEDIUM in prefetch material brief."""
+    high: list[str] = []
+    medium: list[str] = []
+    for match in MATERIAL_IMPACT_RE.finditer(material_news_input):
+        label, level = match.group(1), match.group(2)
+        if level == "HIGH":
+            high.append(label)
+        elif level == "MEDIUM":
+            medium.append(label)
+    return high[:2], medium
+
+
+def enforce_high_tag_cap(content: str, material_news_input: str) -> str:
+    """Cap 🔴 tags to HIGH-impact instruments (max 2) when the model over-tags."""
+    if content.count("🔴") <= 2:
+        return content
+
+    high_labels, medium_labels = parse_material_impacts(material_news_input)
+    kept_high = 0
+    updated_lines: list[str] = []
+
+    for line in content.splitlines():
+        if "🔴" not in line:
+            updated_lines.append(line)
+            continue
+
+        is_high = any(label in line for label in high_labels)
+        is_medium = any(label in line for label in medium_labels)
+
+        if is_high and kept_high < 2:
+            kept_high += 1
+            updated_lines.append(line)
+            continue
+
+        new_line = line.replace("🔴", "🟠" if is_medium else "", 1)
+        if not is_medium:
+            new_line = re.sub(r"\s*HIGH\s*—\s*", " ", new_line)
+        new_line = re.sub(r"\s{2,}", " ", new_line).strip()
+        updated_lines.append(new_line)
+
+    return "\n".join(updated_lines)
+
+
+def renumber_citations(
+    content: str,
+    instrument_count: int,
+    seed_refs: dict[int, str],
+) -> tuple[str, dict[int, int]]:
+    """Renumber research citations (> instrument_count) without gaps."""
+    cited_order: list[int] = []
+    seen: set[int] = set()
+    for match in CITATION_RE.finditer(content):
+        number = int(match.group(1))
+        if number <= instrument_count or number in seen:
+            continue
+        seen.add(number)
+        cited_order.append(number)
+
+    research_keys = {key for key in seed_refs if key > instrument_count}
+    ordered_old = list(cited_order)
+    for number in sorted(research_keys):
+        if number not in seen:
+            ordered_old.append(number)
+
+    mapping: dict[int, int] = {}
+    next_number = instrument_count + 1
+    for old in ordered_old:
+        mapping[old] = next_number
+        next_number += 1
+
+    if not mapping or all(old == new for old, new in mapping.items()):
+        return content, {}
+
+    def _replace_citations(text: str) -> str:
+        def repl(match: re.Match[str]) -> str:
+            number = int(match.group(1))
+            if number in mapping:
+                return f"[{mapping[number]}]"
+            return match.group(0)
+
+        return CITATION_RE.sub(repl, text)
+
+    updated = _replace_citations(content)
+
+    def _renumber_ref_line(match: re.Match[str]) -> str:
+        number = int(match.group(1))
+        if number in mapping:
+            return f"{mapping[number]}. {match.group(2)}"
+        return match.group(0)
+
+    updated = NUMBERED_REF_RE.sub(_renumber_ref_line, updated)
+    return updated, mapping
+
+
+def _parse_table_cells(row: str) -> list[str]:
+    return [cell.strip() for cell in row.strip().strip("|").split("|")]
+
+
+def _headers_match_canonical(headers: list[str]) -> bool:
+    normalized = [header.strip().lower() for header in headers]
+    canonical = [header.lower() for header in CANONICAL_CALENDAR_HEADERS]
+    return normalized == canonical
+
+
+def _remap_calendar_headers(headers: list[str]) -> list[int] | None:
+    """Return source-column index for each canonical column, or None if unmappable."""
+    source_to_canonical: dict[int, int] = {}
+    for source_idx, header in enumerate(headers):
+        canonical_idx = CALENDAR_HEADER_ALIASES.get(header.strip().lower())
+        if canonical_idx is None:
+            return None
+        if canonical_idx in source_to_canonical.values():
+            return None
+        source_to_canonical[source_idx] = canonical_idx
+
+    if len(source_to_canonical) != len(CANONICAL_CALENDAR_HEADERS):
+        return None
+    if set(source_to_canonical.values()) != set(range(len(CANONICAL_CALENDAR_HEADERS))):
+        return None
+
+    canonical_to_source = [0] * len(CANONICAL_CALENDAR_HEADERS)
+    for source_idx, canonical_idx in source_to_canonical.items():
+        canonical_to_source[canonical_idx] = source_idx
+    return canonical_to_source
+
+
+def normalize_calendar_table(content: str) -> str:
+    """Normalize Event Calendar markdown tables to canonical column names."""
+    _, calendar_block, _ = _split_before_section(content, calendar_section_titles())
+    if not calendar_block:
+        return content
+
+    table_match = re.search(
+        r"(^\|.+\|\s*\n\|[-:| ]+\|\s*\n(?:^\|.+\|\s*\n?)+)",
+        calendar_block,
+        re.MULTILINE,
+    )
+    if not table_match:
+        return content
+
+    table_text = table_match.group(1)
+    rows = [row for row in table_text.splitlines() if row.strip()]
+    if len(rows) < 2:
+        return content
+
+    headers = _parse_table_cells(rows[0])
+    if _headers_match_canonical(headers):
+        return content
+
+    column_map = _remap_calendar_headers(headers)
+    if column_map is None:
+        return content
+
+    canonical_rows = [
+        "| " + " | ".join(CANONICAL_CALENDAR_HEADERS) + " |",
+        "| " + " | ".join("---" for _ in CANONICAL_CALENDAR_HEADERS) + " |",
+    ]
+    for row in rows[2:]:
+        cells = _parse_table_cells(row)
+        if len(cells) != len(headers):
+            continue
+        remapped = [
+            cells[column_map[canonical_index]]
+            if column_map[canonical_index] < len(cells)
+            else ""
+            for canonical_index in range(len(CANONICAL_CALENDAR_HEADERS))
+        ]
+        canonical_rows.append("| " + " | ".join(remapped) + " |")
+
+    new_table = "\n".join(canonical_rows)
+    return content.replace(table_text, new_table, 1)
+
+
+def calendar_table_normalization_warning(content: str) -> str | None:
+    """Return a warning when the calendar table headers could not be normalized."""
+    _, calendar_block, _ = _split_before_section(content, calendar_section_titles())
+    if not calendar_block:
+        return None
+
+    table_match = re.search(
+        r"(^\|.+\|\s*\n\|[-:| ]+\|\s*\n(?:^\|.+\|\s*\n?)+)",
+        calendar_block,
+        re.MULTILINE,
+    )
+    if not table_match:
+        return None
+
+    headers = _parse_table_cells(table_match.group(1).splitlines()[0])
+    if _headers_match_canonical(headers):
+        return None
+    if _remap_calendar_headers(headers) is not None:
+        return None
+    return (
+        "Event Calendar table headers could not be mapped to canonical columns; "
+        f"found: {headers}"
+    )
+
+
+def validate_citations(
+    content: str,
+    *,
+    reference_count: int,
+    instrument_count: int = 0,
+) -> list[str]:
     """Return human-readable warnings for citation/reference mismatches."""
     warnings: list[str] = []
     used = {int(value) for value in CITATION_RE.findall(content)}
@@ -297,6 +542,18 @@ def validate_citations(content: str, *, reference_count: int) -> list[str]:
     missing = sorted(number for number in range(1, reference_count + 1) if number not in used)
     if missing and len(missing) <= 6:
         warnings.append(f"Market-data citations never used in body: {missing}")
+
+    if instrument_count > 0:
+        research_used = sorted(number for number in used if number > instrument_count)
+        if research_used:
+            expected = list(
+                range(instrument_count + 1, instrument_count + 1 + len(research_used))
+            )
+            if research_used != expected:
+                warnings.append(
+                    "Research citation numbering has gaps: "
+                    f"found {research_used}, expected {expected}"
+                )
 
     return warnings
 
@@ -363,6 +620,12 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
         title_keys=performance_section_titles(),
         new_body=performance_body,
     )
+
+    updated = enforce_high_tag_cap(
+        updated, inputs.get("watchlist_material_news", "")
+    )
+    updated = normalize_calendar_table(updated)
+    calendar_warning = calendar_table_normalization_warning(updated)
     if updated == before_perf and performance_table:
         exec_keys = _section_title_keys("executive_summary")
         sections = _find_sections(updated)
@@ -376,6 +639,15 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
 
     yahoo_refs = build_market_data_references(instruments, date_str=date_str)
     seed_refs = _load_seed_references(inputs)
+    updated, citation_remap = renumber_citations(
+        updated, instrument_count, seed_refs
+    )
+    if citation_remap:
+        seed_refs = {
+            citation_remap.get(old, old): text
+            for old, text in seed_refs.items()
+        }
+
     body_before_refs, _, _ = _split_before_section(updated, references_section_titles())
     updated = _merge_references_section(
         updated,
@@ -387,6 +659,12 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
 
     body, refs_block, _ = _split_before_section(updated, references_section_titles())
     reference_count = len(NUMBERED_REF_RE.findall(refs_block or ""))
-    warnings = validate_citations(body or updated, reference_count=reference_count)
+    warnings = validate_citations(
+        body or updated,
+        reference_count=reference_count,
+        instrument_count=instrument_count,
+    )
+    if calendar_warning:
+        warnings.append(calendar_warning)
     warnings.extend(validate_material_news_prominence(updated, inputs))
     return updated, warnings

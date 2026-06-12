@@ -228,8 +228,8 @@ executive_briefing_task:
     - Open with a single vivid "market mood" line (one sentence) before the summary bullets.
     - Active, confident prose; varied sentence length; concrete verbs over hedging.
     - Consistent visual vocabulary used sparingly for scanning, never decoration:
-      ▲ up · ▼ down · ► flat for moves; 🔴 HIGH at most twice in the whole memo;
-      🟠 MEDIUM where useful; no emoji on reference pages or LOW-impact items.
+      ▲ up · ▼ down · ► flat for moves; 🟠 MEDIUM where useful; no emoji on
+      reference pages or LOW-impact items.
     - Bold the instrument name on first mention in each section.
     - Skimmable: bullets over walls of text; the Executive Summary reads in under 3 minutes.
 
@@ -247,11 +247,9 @@ executive_briefing_task:
          the FIRST sentence must state that event with specific facts and [N]; then leader/laggard
          1D and nearest catalyst. Never open only with performance if a stock has HIGH issuer news.
        - Then {instrument_count} bullets — one per instrument as **Name (TICKER)** with 1D or 1W
-         move (prefix ▲/▼/►) + headline. Prefix 🔴 ONLY when watchlist_material_news shows
-         Impact **HIGH** for that instrument (max 2 🔴 in the full Executive Summary including
-         the opening). Impact **MEDIUM** may use 🟠 or no tag. Reference/profile pages: no 🔴 —
-         use performance + sector/theme with [N]. HIGH bullets MUST lead with headline facts
-         (cite [N]) — not 'speculation' or generic sector talk.
+         move (prefix ▲/▼/►) + headline. Impact **MEDIUM** may use 🟠 or no tag.
+         Impact **NONE**: use performance + sector/theme with [N] only. HIGH bullets MUST lead
+         with headline facts (cite [N]) — not 'speculation' or generic sector talk.
        MANDATORY: mention every instrument — none skipped:
        {watchlist_summary_checklist}
        Reserve [1]..[{last_citation}] for that instrument's market figures only.
@@ -268,8 +266,7 @@ executive_briefing_task:
     4. Drivers section — one entry per instrument as **Name (TICKER)** with news-linked explanation [N]:
        MANDATORY full coverage checklist (one entry per instrument, none skipped):
        {watchlist_driver_checklist}
-       For Impact **HIGH** instruments only (max 2 🔴 in the entire briefing), repeat the
-       headline substance before interpretation. Do not prefix 🔴 on every driver entry.
+       For Impact **HIGH** instruments, repeat the headline substance before interpretation.
        For each stock, cite specific
        issuer events before sector generalities. Never replace a sourced headline with vague
        words ('speculation', 'sector uncertainty') when a concrete title/source exists.
@@ -285,10 +282,8 @@ executive_briefing_task:
     7. Correlated themes section — cross-instrument links with [N]; cover tech cluster and
        non-tech names (e.g. banks) where relevant.
     8. Risks section — at least 3 cited bullets spanning macro and watchlist names.
-    9. References section — Yahoo Finance [1]..[{last_citation}] are injected automatically.
-       You MUST also list every research_reference_seed entry and every additional [N] cited
-       in the body (format: N. Source — title — YYYY-MM-DD — URL). Deduplicate (one [N] per
-       unique article; same piece in two languages is one source). Do not omit seed refs.
+    9. References section — Yahoo Finance [1]..[{last_citation}] and research citations are
+       injected automatically by the pipeline. Cite [{next_citation}]+ in the body as needed.
     10. Disclaimer — informational only, not investment advice.
 
     Citation rules:
@@ -312,8 +307,7 @@ executive_briefing_task:
     entries — one per instrument as Name (TICKER), including stocks (e.g. Intesa Sanpaolo (ISP.MI))
     and every ETF. Verify against watchlist_driver_checklist before finishing.
     Event Calendar section must preserve exact YYYY-MM-DD dates and the closed Impact taxonomy.
-    References: Yahoo [1]..[{last_citation}] are injected automatically; include every
-    research_reference_seed entry plus any extra sources cited in the body, deduplicated, with URL.
+    References are injected automatically by the pipeline.
   agent: chief_strategist
   context:
     - market_analysis_task

@@ -160,12 +160,9 @@ chief_strategist:
     {session_orientation} (a pre-market memo opens with what the day faces, not with
     "the session saw…"; a close memo recaps the completed session). Use confident, active
     prose; vary sentence length; prefer concrete verbs over hedging. Use a small,
-    consistent visual vocabulary: ▲ / ▼ / ► for up / down / flat moves and an
-    emoji severity tag for material news — used sparingly, never decoratively:
-    🔴 HIGH at most twice in the entire memo (opening dominant story + one instrument
-    bullet, OR two instrument bullets); 🟠 MEDIUM for other material items; no emoji
-    for LOW or reference/profile pages. Never tag ETF fact sheets (borsaitaliana.it/scheda)
-    or company profiles as HIGH. Bold the instrument name on first mention in each section.
+    consistent visual vocabulary: ▲ / ▼ / ► for up / down / flat moves; 🟠 MEDIUM
+    where useful; no emoji for LOW or reference/profile pages. Bold the instrument
+    name on first mention in each section.
     Keep it skimmable: bullets over walls of text.
 
     In the Executive Summary AND in "What's Driving the Moves" you NEVER skip an
@@ -183,19 +180,13 @@ chief_strategist:
   instructions: >
     Before finalising, verify Executive Summary has {instrument_count} instrument bullets
     as Name (TICKER) (watchlist_summary_checklist) and section 4 has one entry per instrument
-    (watchlist_driver_checklist). Every body citation >= [{next_citation}] must appear
-    in References with URL. Missing instruments (e.g. Intesa Sanpaolo (ISP.MI)) are
+    (watchlist_driver_checklist). Missing instruments (e.g. Intesa Sanpaolo (ISP.MI)) are
     unacceptable — add them using news research or market/sector context with [N].
     If a stock has material official issuer or regulatory news (corporate announcements,
     market operations, fines/sanctions/investigations), it MUST appear in the Executive
     Summary, Drivers, and Calendar — never buried or replaced by generic sector talk.
-    IMPACT TAG RULES (mandatory): read Impact **HIGH/MEDIUM/LOW** from watchlist_material_news.
-    Only the **dominant watchlist story** (if any) and at most ONE other HIGH instrument
-    may use 🔴 in the Executive Summary. All other instruments: no 🔴 (use 🟠 for MEDIUM
-    or no tag). In "What's Driving the Moves", 🔴 only on entries whose prefetch Impact
-    is HIGH — never on every instrument. If the top prefetch item is a reference/profile
-    page (metadata note), lead with performance + sector/theme — do NOT invent a HIGH tag.
+    Read Impact **HIGH/MEDIUM/LOW/NONE** from watchlist_material_news. If the top prefetch
+    item is a reference/profile page (metadata note), lead with performance + sector/theme.
     When a true HIGH exists, use headline facts in the opening sentence — never 'speculation'.
-    Deduplicate references (same article in two languages = one [N]); never cite a
-    derivative source to explain an equity move.
+    Never cite a derivative source to explain an equity move.
   llm: openai/gpt-5.5
