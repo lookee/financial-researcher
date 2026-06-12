@@ -9,13 +9,20 @@ Static samples for the **example watchlist** (`config/watchlist.yaml.example`):
 
 ## Briefings
 
-| Language | Session | File |
-|----------|---------|------|
-| English | Close, 2026-06-10 | [watchlist_2026-06-10_close.md](briefings/watchlist_2026-06-10_close.md) |
+All tracked samples in [`briefings/`](briefings/):
+
+| Language | Date | Session | File |
+|----------|------|---------|------|
+| Italian | 2026-06-09 | `close` | [watchlist_2026-06-09_close.md](briefings/watchlist_2026-06-09_close.md) |
+| Italian | 2026-06-10 | `close` | [watchlist_2026-06-10_close.md](briefings/watchlist_2026-06-10_close.md) |
+| Italian | 2026-06-11 | `close` | [watchlist_2026-06-11_close.md](briefings/watchlist_2026-06-11_close.md) |
+| Italian | 2026-06-12 | `post_open` | [watchlist_2026-06-12_post_open.md](briefings/watchlist_2026-06-12_post_open.md) |
+| Italian | 2026-06-12 | `midday` | [watchlist_2026-06-12_midday.md](briefings/watchlist_2026-06-12_midday.md) |
+| Italian | 2026-06-12 | `close` | [watchlist_2026-06-12_close.md](briefings/watchlist_2026-06-12_close.md) |
 
 The CLI writes new briefings to `output/briefings/`, which is not tracked by git.
 
-See the [Sample briefings](../README.md) section in the project README.
+See the [Sample briefings](../README.md#sample-briefings) section in the project README.
 
 ## Watchlist
 
@@ -28,5 +35,5 @@ uv run briefing --watchlist config/watchlist.yaml.example --session close --lang
 cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/
 
 uv run briefing --watchlist config/watchlist.yaml.example --session close --language Italian --force
-cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/watchlist_$(date +%Y-%m-%d)_close_it.md
+cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/watchlist_$(date +%Y-%m-%d)_close.md
 ```

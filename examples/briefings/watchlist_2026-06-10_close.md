@@ -1,130 +1,168 @@
-# Milan Close Watchlist Briefing — 10 June 2026, 17:45 Europe/Rome  
-**Market:** Borsa Italiana | **Session:** Close | **Instruments:** 4
+# Chiusura Milano — 10 giugno 2026, 17:45 — Borsa Italiana · Watchlist 6 strumenti
 
-*The AI-chip trade closed the session split: local strength in STMicroelectronics, broader fatigue in global AI leaders, and a calendar with few confirmed near-term anchors.*
+La seduta si è chiusa con un mercato a due velocità: rimbalzo selettivo nei temi più speculativi, prese di profitto ancora evidenti su AI, semiconduttori e banche.
 
-## Executive Summary
+## Sommario Esecutivo
 
-🔴 **HIGH — Borsa Italiana/Teleborsa reported that European markets were mixed while selling hit Piazza Affari, weighed down by STMicroelectronics N.V. (STMMI.MI), making STMicroelectronics N.V. (STMMI.MI) the dominant watchlist story into the Milan close [11].** The session still ended with **STMicroelectronics N.V. (STMMI.MI)** as the clear momentum leader on the supplied performance fields, at ▲ **+4.04% 1D**, ▲ **+10.20% 1W** and ▲ **+179.86% YTD**, though the 1D figure is flagged as internally inconsistent versus the structured previous-close fields [4]. The nearest confirmed calendar catalyst is limited: the calendar input reports **no further confirmed dated events in the next 2–4 weeks**, so the next sessions are likely to trade on AI sentiment, semiconductor newsflow and FX/rate sensitivity rather than a dated corporate event.
+La giornata ha confermato una rotazione interna alla watchlist: **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)** è stato il migliore a 1D con ▲ +0,33%, mentre **Intesa Sanpaolo S.p.A. (ISP.MI)** è stata il fanalino di coda con ▼ -0,90% [4][6]. Il prossimo snodo macro è ravvicinato: decisione BCE il 2026-06-11 e FOMC il 2026-06-17, due eventi che pesano su multipli growth, cambio EUR/USD e banche europee [41][42]. Nel medio termine, la watchlist resta dominata da tre assi: AI/semiconduttori ad alta beta, qualità globale più difensiva, e rischio specifico su Intesa Sanpaolo S.p.A. (ISP.MI) legato all’OPAS su MPS [17][18][27].
 
-- 🔴 **HIGH — VanEck Semiconductor UCITS ETF (SMH.MI):** Borsa Italiana identifies **VanEck Semiconductor UCITS ETF (SMH.MI)** as an indexed ETF issued by **VanEck UCITS ETFs PLC** with benchmark **MVIS US Listed Semiconductor** [5]. On the supplied market data, **VanEck Semiconductor UCITS ETF (SMH.MI)** closed at ▲ **+1.99% 1D**, ▼ **-0.68% 1W** and ▲ **+75.66% YTD**, preserving strong medium-term semiconductor momentum despite a softer week [1].
+- **L&G Artificial Intelligence UCITS ETF (AIAI.MI)**: ▼ 1D -0,31%, ▼ 1W -8,08%, ▲ YTD +32,02%; la correzione settimanale pesa, ma il trend annuale resta forte e il profilo è coerente con prese di profitto sul tema AI dopo una fase di forte rivalutazione [1]. Il riferimento extraETF è una scheda prodotto, non un catalizzatore fresco; il driver più recente è l’interesse continuo per infrastrutture AI e monetizzazione del settore [7][19][20].
 
-- 🔴 **HIGH — WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI):** Borsa Italiana identifies **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** as an indexed ETF issued by **WisdomTree Issuer ICAV** with benchmark **NASDAQ CTA Artificial Intelligence** [7]. On the supplied market data, **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** closed at ▲ **+0.70% 1D**, ▼ **-3.88% 1W** and ▲ **+42.01% YTD**, signalling near-term AI-theme pressure inside a still-positive year-to-date trend [2].
+- **VanEck Semiconductor UCITS ETF (SMH.MI)**: ▼ 1D -0,08%, ▼ 1W -9,21%, ▲ YTD +68,92%; resta il leader strutturale della watchlist, ma la settimana negativa segnala una fase di “whiplash” tra domanda AI-chip e sensibilità macro [2][21]. Il riferimento eToro è una pagina quotazione/profilo e non una notizia operativa recente [9].
 
-- 🔴 **HIGH — NVIDIA Corporation (1NVDA.MI):** Borsa Italiana’s company profile describes **NVIDIA Corporation (1NVDA.MI)** as a global leader in the design, development and commercialization of programmable graphics processors [9]. On the supplied market data, **NVIDIA Corporation (1NVDA.MI)** closed at ▼ **-0.41% 1D**, ▼ **-4.85% 1W** and ▲ **+11.43% YTD**, leaving **NVIDIA Corporation (1NVDA.MI)** the relative laggard in this watchlist despite its central role in the AI hardware ecosystem [3].
+- 🟠 **iShares Edge MSCI World Quality Factor UCITS ETF USD (Acc) (IWQU.MI)**: ▲ 1D +0,28%, ▼ 1W -0,30%, ▲ YTD +8,74%; è stato il miglior difensivo relativo della settimana, con volatilità molto più contenuta rispetto ai temi AI e semiconduttori [3]. La notizia su SpaceX, OpenAI e Anthropic indica che i grandi nomi AI privati peseranno meno del previsto negli ETF globali per via di flottanti e regole d’indice, riducendo l’impatto immediato su esposizioni MSCI World-linked [11].
 
-- 🔴 **HIGH — STMicroelectronics N.V. (STMMI.MI):** Borsa Italiana/Teleborsa reported that selling hit Piazza Affari, weighed down by **STMicroelectronics N.V. (STMMI.MI)** [11], while a separate Borsa Italiana/Teleborsa item reported that UBS raised its target price on **STMicroelectronics N.V. (STMMI.MI)** to **€80** [12]. On the supplied market data, **STMicroelectronics N.V. (STMMI.MI)** closed at ▲ **+4.04% 1D**, ▲ **+10.20% 1W** and ▲ **+179.86% YTD**, making **STMicroelectronics N.V. (STMMI.MI)** the dominant performance leader across the short and medium horizons [4].
+- 🟠 **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)**: ▲ 1D +0,33%, ▼ 1W -10,35%, ▲ YTD +24,81%; il rimbalzo giornaliero non cancella la fragilità settimanale, ma la notizia diretta sull’indice è rilevante: l’ETF aggiungerà esposizione a Cina e India e ridurrà il peso massimo dei titoli sviluppati dal 8% al 4,5% [4][24]. La scheda justETF resta il riferimento prodotto di base [13].
+
+- **iShares MSCI China A UCITS ETF (36BZ.DE)**: ▼ 1D -0,23%, ▼ 1W -3,42%, ▲ YTD +5,57%; il tono resta debole su breve e mese, coerente con un mercato A-share misto, afflussi su tecnologia/semiconduttori ma pressione da property e negoziati USA-Cina [5][25]. La pagina justETF citata è un profilo prodotto e non un catalizzatore di mercato [15].
+
+- 🟠 **Intesa Sanpaolo S.p.A. (ISP.MI)**: ▼ 1D -0,90%, ▼ 1W -0,85%, ▼ YTD -2,84%; il titolo ha sottoperformato nella seduta mentre il mercato digerisce l’OPAS su MPS, la possibile risposta a controfferte e l’aumento di capitale collegato all’assemblea straordinaria del 2026-09-10 [6][17][27]. La lettura è bifronte: management presenta l’operazione come strategica e preparata da tempo, ma il prezzo incorpora rischio di esecuzione, diluizione e concorrenza su MPS [17][18][28].
+
+---
 
 ## Watchlist Performance Snapshot
 
-**1D leader:** STMicroelectronics N.V. (STMMI.MI) (4.04%) · **1D laggard:** NVIDIA Corporation (1NVDA.MI) (-0.41%)
+**Leader 1D:** iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE) (0.33%) · **Laggard 1D:** Intesa Sanpaolo S.p.A. (ISP.MI) (-0.90%)
 
-| Ref | Instrument | Ticker | 1D | 1W | 1M | YTD |
-|-----|------------|--------|----|----|----|-----|
-| [1] | VanEck Semiconductor UCITS ETF | SMH.MI | 1.99% [1] | -0.68% [1] | 11.19% [1] | 75.66% [1] |
-| [2] | WisdomTree Artificial Intelligence UCITS ETF - USD Acc | WTAI.MI | 0.70% [2] | -3.88% [2] | 12.32% [2] | 42.01% [2] |
-| [3] | NVIDIA Corporation | 1NVDA.MI | -0.41% [3] | -4.85% [3] | -2.23% [3] | 11.43% [3] |
-| [4] | STMicroelectronics N.V. | STMMI.MI | 4.04% [4] | 10.20% [4] | 33.31% [4] | 179.86% [4] |
+| Ref | Strumento | Ticker | Giornaliera | Settimanale | Mensile | Annuale (YTD) |
+|-----|-----------|--------|-------------|-------------|---------|---------------|
+| [1] | L&G Artificial Intelligence UCITS ETF | AIAI.MI | -0.31% [1] | -8.08% [1] | 9.27% [1] | 32.02% [1] |
+| [2] | VanEck Semiconductor UCITS ETF | SMH.MI | -0.08% [2] | -9.21% [2] | 8.12% [2] | 68.92% [2] |
+| [3] | iShares Edge MSCI World Quality Factor UCITS ETF USD (Acc) | IWQU.MI | 0.28% [3] | -0.30% [3] | 2.63% [3] | 8.74% [3] |
+| [4] | iShares Quantum Computing UCITS ETF USD (Acc) | QOMP.DE | 0.33% [4] | -10.35% [4] | 1.96% [4] | 24.81% [4] |
+| [5] | iShares MSCI China A UCITS ETF | 36BZ.DE | -0.23% [5] | -3.42% [5] | -3.37% [5] | 5.57% [5] |
+| [6] | Intesa Sanpaolo S.p.A. | ISP.MI | -0.90% [6] | -0.85% [6] | 0.19% [6] | -2.84% [6] |
 
-## What's Driving the Moves
+## Snapshot della Performance della Watchlist
 
-1. **VanEck Semiconductor UCITS ETF (SMH.MI)**  
-   🔴 **HIGH — Headline fact:** Borsa Italiana lists **VanEck Semiconductor UCITS ETF (SMH.MI)** as an indexed ETF issued by **VanEck UCITS ETFs PLC** and linked to the **MVIS US Listed Semiconductor** benchmark [5]. The move profile — ▲ **+1.99% 1D**, ▼ **-0.68% 1W**, ▲ **+11.19% 1M** and ▲ **+75.66% YTD** — points to short-term consolidation within a powerful semiconductor trend, reinforced by broader AI infrastructure and semiconductor-cycle narratives [1][15][16].
+Leader di seduta: **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)** ▲ +0,33%; laggard: **Intesa Sanpaolo S.p.A. (ISP.MI)** ▼ -0,90% [4][6]. Su YTD, **VanEck Semiconductor UCITS ETF (SMH.MI)** domina con ▲ +68,92%, mentre **Intesa Sanpaolo S.p.A. (ISP.MI)** resta l’unico strumento negativo [2][6].
 
-2. **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)**  
-   🔴 **HIGH — Headline fact:** Borsa Italiana lists **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** as an indexed ETF issued by **WisdomTree Issuer ICAV** and linked to the **NASDAQ CTA Artificial Intelligence** benchmark [7]. The supplied performance — ▲ **+0.70% 1D**, ▼ **-3.88% 1W**, ▲ **+12.32% 1M** and ▲ **+42.01% YTD** — is consistent with renewed volatility in AI equities after reports that artificial-intelligence stocks resumed selling pressure, while structural AI enthusiasm remains intact [2][17][18].
+| Ref | Instrument | Ticker | Price (ccy) | 1D | 1W | 1M | YTD | Source |
+|---:|---|---|---:|---:|---:|---:|---:|---|
+| [1] | L&G Artificial Intelligence UCITS ETF | AIAI.MI | 31,93 EUR | -0,31% | -8,08% | +9,27% | +32,02% | Yahoo Finance [1] |
+| [2] | VanEck Semiconductor UCITS ETF | SMH.MI | 92,38 EUR | -0,08% | -9,21% | +8,12% | +68,92% | Yahoo Finance [2] |
+| [3] | iShares Edge MSCI World Quality Factor UCITS ETF USD (Acc) | IWQU.MI | 74,01 EUR | +0,28% | -0,30% | +2,63% | +8,74% | Yahoo Finance [3] |
+| [4] | iShares Quantum Computing UCITS ETF USD (Acc) | QOMP.DE | 5,456 EUR | +0,33% | -10,35% | +1,96% | +24,81% | Yahoo Finance [4] |
+| [5] | iShares MSCI China A UCITS ETF | 36BZ.DE | 5,249 EUR | -0,23% | -3,42% | -3,37% | +5,57% | Yahoo Finance [5] |
+| [6] | Intesa Sanpaolo S.p.A. | ISP.MI | 5,595 EUR | -0,90% | -0,85% | +0,19% | -2,84% | Yahoo Finance [6] |
 
-3. **NVIDIA Corporation (1NVDA.MI)**  
-   🔴 **HIGH — Headline fact:** Borsa Italiana describes **NVIDIA Corporation (1NVDA.MI)** as a global leader in programmable graphics processors [9]. **NVIDIA Corporation (1NVDA.MI)** closed ▼ **-0.41% 1D**, ▼ **-4.85% 1W**, ▼ **-2.23% 1M** and ▲ **+11.43% YTD**, with recent pressure aligned with reporting that investors are watching June events for the AI high-flyer, while the strategic read-through from NVIDIA and TSMC bringing AI into semiconductor foundries remains positive for the supply chain [3][19][20].
+Nessuna quotazione è stata marcata come stale nel dataset fornito per la chiusura del 2026-06-10 [1][2][3][4][5][6].
 
-4. **STMicroelectronics N.V. (STMMI.MI)**  
-   🔴 **HIGH — Headline fact:** Borsa Italiana/Teleborsa reported that selling hit Piazza Affari, weighed down by **STMicroelectronics N.V. (STMMI.MI)** [11]. The same news cycle also carried a positive counterweight: Borsa Italiana/Teleborsa reported that UBS raised its target price on **STMicroelectronics N.V. (STMMI.MI)** to **€80** [12], while STMicroelectronics reported higher data-center revenue ambitions amid strong AI-infrastructure demand [13]. The supplied performance — ▲ **+4.04% 1D**, ▲ **+10.20% 1W**, ▲ **+33.31% 1M** and ▲ **+179.86% YTD** — shows a powerful rerating, but also raises sensitivity to profit-taking and earnings-confirmation risk [4].
+---
 
-## Medium-Term Outlook
+## Cosa Guida i Movimenti
 
-**Base message:** The 3–12 month setup remains constructive for AI infrastructure and semiconductors, but less forgiving after sharp gains in **STMicroelectronics N.V. (STMMI.MI)**, **VanEck Semiconductor UCITS ETF (SMH.MI)** and **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** [1][2][4]. **NVIDIA Corporation (1NVDA.MI)** remains the ecosystem anchor, but recent relative underperformance shows that investors are rotating within the AI complex rather than rewarding all AI exposure equally [3][8][19].
+1. **L&G Artificial Intelligence UCITS ETF (AIAI.MI)** — La seduta negativa e il -8,08% settimanale riflettono una fase di consolidamento del tema AI dopo un forte +32,02% YTD [1]. Non emerge una notizia issuer-specific recente; la scheda extraETF è un riferimento prodotto, mentre il contesto settoriale resta sostenuto dal lancio di nuovi ETF AI-infrastructure e dalla progressiva monetizzazione dell’AI generativa [7][19][20].
 
-- **Bull scenario — AI capex extends and breadth improves.**  
-  **VanEck Semiconductor UCITS ETF (SMH.MI)** benefits if semiconductor demand broadens beyond a narrow set of AI leaders, **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** benefits if AI leadership shifts into software and applications, **NVIDIA Corporation (1NVDA.MI)** benefits if data-center demand continues to validate AI infrastructure spending, and **STMicroelectronics N.V. (STMMI.MI)** benefits if its data-center ambitions and industrial AI products translate into order momentum [1][2][3][4][13][14][26].
+2. **VanEck Semiconductor UCITS ETF (SMH.MI)** — Il calo settimanale del -9,21% si inserisce in una settimana di forte volatilità per i chip, con notizie che descrivono un contrasto tra domanda AI, delusioni su singoli nomi e sensibilità ai dati macro USA [2][21][22]. Il profilo eToro resta una fonte di quotazione/prodotto, mentre il rally di aprile era stato collegato al recupero dei growth stock dopo vendite precedenti [9][10].
 
-- **Base scenario — earnings remain solid, but valuations cap upside.**  
-  The likely middle path is continued thematic support with higher volatility: **VanEck Semiconductor UCITS ETF (SMH.MI)** and **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** remain backed by AI and chip-cycle demand, **NVIDIA Corporation (1NVDA.MI)** needs continued execution to regain relative momentum, and **STMicroelectronics N.V. (STMMI.MI)** must confirm that the recent rerating is matched by revenue, margin and order evidence [1][2][3][4][7][9][10][13].
+3. **iShares Edge MSCI World Quality Factor UCITS ETF USD (Acc) (IWQU.MI)** — La tenuta a 1W, pari a -0,30%, conferma il ruolo relativamente più difensivo rispetto agli ETF tematici ad alta beta [3]. La notizia di Borsa Italiana/Teleborsa su SpaceX, OpenAI e Anthropic segnala che le società AI private potrebbero avere un peso inferiore alle attese negli indici globali per via di flottante e regole di inclusione, riducendo l’effetto immediato su fondi MSCI World-linked [11].
 
-- **Bear scenario — AI multiples meet macro or earnings disappointment.**  
-  The watchlist would be vulnerable if AI capex expectations reset lower, US real yields rise, the euro strengthens against the US dollar, or semiconductor demand outside AI fails to recover; those risks would pressure **VanEck Semiconductor UCITS ETF (SMH.MI)**, **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** and **NVIDIA Corporation (1NVDA.MI)** directly, while **STMicroelectronics N.V. (STMMI.MI)** would also face automotive and industrial-cycle risk after a very extended YTD move [1][2][3][4][23][24][25].
+4. **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)** — Il +0,33% giornaliero è un rimbalzo dentro una settimana ancora pesante a -10,35% [4]. Il catalizzatore diretto è la modifica dell’indice: l’ETF aggiungerà esposizione a Cina e India e abbasserà il peso massimo dei titoli sviluppati al 4,5%, cambiando profilo geografico e concentrazione [24]. La scheda justETF conferma il riferimento prodotto, ma non spiega il movimento recente [13].
 
-## Event Calendar
+5. **iShares MSCI China A UCITS ETF (36BZ.DE)** — La debolezza a 1D, 1W e 1M è coerente con un mercato A-share divergente: afflussi istituzionali su elettronica, chimica e semiconduttori, ma sentiment frenato da negoziati USA-Cina e dati deboli sul finanziamento immobiliare [5][25]. Le pagine justETF sono riferimenti prodotto per la famiglia China A UCITS e non catalizzatori recenti [15][16].
 
-**Calendar analysis status:** No further confirmed dated events were provided for the next 2–4 weeks, and no upcoming watchlist-specific corporate calendar item with a confirmed **YYYY-MM-DD** date and source URL was supplied.
+6. **Intesa Sanpaolo S.p.A. (ISP.MI)** — Il -0,90% di seduta riflette cautela sull’OPAS su MPS, più che un deterioramento ordinario del business bancario [6][17][18]. Le fonti riportano che Carlo Messina si dice pronto a rispondere a eventuali controfferte e che l’operazione non sarebbe una reazione a Banco BPM, mentre ANSA indica il corrispettivo di 1,00 euro cash più 0,40 nuove azioni Intesa per ogni azione MPS conferita [17][18][28]. La tensione è chiara: razionale strategico e scala wealth da un lato, rischio diluitivo/esecutivo dall’altro [27][37].
 
-| Date | Instrument / Theme | Event | Source | Watchpoint |
-|---|---|---|---|---|
-| — | Watchlist | No confirmed upcoming dated events in the supplied 2–4 week calendar window | Calendar analysis supplied in prompt | Next sessions likely trade on AI sentiment, rates, FX and semiconductor newsflow rather than a confirmed dated catalyst |
+---
 
-**Recent dated material items to carry into the next sessions:**
+## Prospettive di Medio Termine
 
-| Date | Instrument / Theme | Event | Source | Watchpoint |
-|---|---|---|---|---|
-| 2026-06-04 | **STMicroelectronics N.V. (STMMI.MI)** | Borsa Italiana/Teleborsa reported that selling hit Piazza Affari, weighed down by **STMicroelectronics N.V. (STMMI.MI)** | [11] | Dominant volatility marker for the Milan close narrative |
-| 2026-06-04 | **STMicroelectronics N.V. (STMMI.MI)** | Borsa Italiana/Teleborsa reported that UBS raised the target price on **STMicroelectronics N.V. (STMMI.MI)** to **€80** | [12] | Positive analyst catalyst set against stretched performance |
-| 2026-06-03 | **STMicroelectronics N.V. (STMMI.MI)** | STMicroelectronics reported higher revenue ambition for data centers amid strong AI-infrastructure demand | [13] | Structural validation for the AI/data-center rerating |
-| 2026-06-04 | **STMicroelectronics N.V. (STMMI.MI)** | STMicroelectronics announced a high-performance vibration sensor with in-sensor AI for industrial condition monitoring | [14] | Product pipeline support for industrial AI narrative |
-| 2026-06-10 | **NVIDIA Corporation (1NVDA.MI)** | Recent reporting described **NVIDIA Corporation (1NVDA.MI)** as an AI high-flyer under pressure as investors watch June events | [19] | Near-term sentiment driver for AI and semiconductor exposure |
+- **Scenario Bull — trigger chiave: BCE 2026-06-11 e FOMC 2026-06-17.** Se la BCE segnala un percorso accomodante senza implicare recessione e la Fed apre a tagli ordinati nel secondo semestre, i multipli growth possono stabilizzarsi e sostenere **L&G Artificial Intelligence UCITS ETF (AIAI.MI)**, **VanEck Semiconductor UCITS ETF (SMH.MI)** e **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)** dopo la correzione settimanale [1][2][4][41][42]. In questo scenario, **Intesa Sanpaolo S.p.A. (ISP.MI)** beneficia soprattutto se lo spread sovrano resta contenuto e il mercato assorbe il rischio OPAS senza stress sul capitale [6][27].
 
-## Correlated Themes
+- **Scenario Base — trigger chiave: FOMC 2026-06-17.** La Fed resta prudente, la BCE procede in modo graduale e gli utili AI/semiconduttori confermano domanda alta ma non accelerano oltre le attese [41][42]. In questa traiettoria, **iShares Edge MSCI World Quality Factor UCITS ETF USD (Acc) (IWQU.MI)** mantiene un profilo di volatilità inferiore rispetto ai tematici, mentre **iShares MSCI China A UCITS ETF (36BZ.DE)** resta dipendente da stimolo cinese, property e renminbi [3][5][25].
 
-- **AI infrastructure is the common spine.** **VanEck Semiconductor UCITS ETF (SMH.MI)**, **NVIDIA Corporation (1NVDA.MI)** and **STMicroelectronics N.V. (STMMI.MI)** are all linked to AI infrastructure through semiconductors, data centers, accelerated computing or enabling industrial products [5][9][13][14][20].
+- **Scenario Bear — trigger chiave: FOMC 2026-06-17.** Una Fed più rigida, rendimenti reali USA elevati o delusioni sugli ordini AI/data center aumenterebbero il rischio di de-rating per **VanEck Semiconductor UCITS ETF (SMH.MI)** e **L&G Artificial Intelligence UCITS ETF (AIAI.MI)**, già reduci da cali settimanali marcati [1][2][21][42]. **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)** sarebbe il più vulnerabile per beta tematico e dimensione più ridotta, mentre **Intesa Sanpaolo S.p.A. (ISP.MI)** soffrirebbe se l’OPAS su MPS diventasse più costosa o più incerta [4][17][27][28].
 
-- **AI breadth versus AI concentration matters.** **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** offers broader AI exposure, while **NVIDIA Corporation (1NVDA.MI)** remains a concentrated benchmark for AI hardware expectations; recent reports of dispersion among AI winners reinforce the importance of leadership rotation within the theme [2][3][8].
+---
 
-- **Semiconductor ETFs are not immune to single-stock shocks.** **VanEck Semiconductor UCITS ETF (SMH.MI)** is benchmarked to US-listed semiconductors, so moves in megacap AI and chip names can dominate even when the vehicle is diversified [5][6][9].
+## Calendario Eventi
 
-- **Milan-listed global tech adds FX sensitivity.** **VanEck Semiconductor UCITS ETF (SMH.MI)**, **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** and **NVIDIA Corporation (1NVDA.MI)** trade in EUR on Milan but carry substantial USD-linked economic exposure, making EUR/USD an important translation variable for Italian investors [1][2][3].
+L’analisi calendario fornita non ha restituito una lista completa di eventi issuer-specific verificati nei prossimi 2–4 settimane; per coerenza, vengono riportati solo gli eventi con data confermata, fonte e rilevanza diretta o macro per la watchlist [41][42]. L’assemblea straordinaria di **Intesa Sanpaolo S.p.A. (ISP.MI)** è inclusa come data societaria confermata ma fuori dalla finestra 2–4 settimane [27].
 
-- **Non-tech correlation note:** No banks or non-tech instruments were included in the supplied watchlist, so cross-sector correlations with Milan financials cannot be assessed from the provided instrument set.
+| Data | Evento | Strumenti interessati | Impatto | Perché conta | Fonte |
+|---|---|---|---|---|---|
+| 2026-06-10 | Modifiche all’indice di iShares Quantum Computing UCITS ETF con nuova esposizione Cina/India e limite peso titoli sviluppati al 4,5% | iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE) | MEDIUM | Cambia concentrazione e profilo geografico del prodotto | [24] |
+| 2026-06-11 | Decisione di politica monetaria BCE | Intesa Sanpaolo S.p.A. (ISP.MI); ETF globali quotati in EUR | MEDIUM | Influenza margine d’interesse bancario, costo del capitale e appetito per rischio europeo | [41] |
+| 2026-06-17 | Riunione FOMC | L&G Artificial Intelligence UCITS ETF (AIAI.MI); VanEck Semiconductor UCITS ETF (SMH.MI); iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE); iShares Edge MSCI World Quality Factor UCITS ETF USD (Acc) (IWQU.MI) | MEDIUM | Guida tassi reali USA, multipli growth e cambio EUR/USD | [42] |
+| 2026-09-10 | Assemblea straordinaria Intesa Sanpaolo per aumento di capitale collegato all’OPAS su MPS | Intesa Sanpaolo S.p.A. (ISP.MI) | MEDIUM | Data di governance centrale per struttura finanziaria e rischio diluitivo; fuori finestra 2–4 settimane | [27] |
 
-## Risks & Watchpoints
+---
 
-- **Data integrity risk — 1D performance is to verify.** The supplied 1D performance fields show ▲ **+1.99%** for **VanEck Semiconductor UCITS ETF (SMH.MI)**, ▲ **+0.70%** for **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)**, ▼ **-0.41%** for **NVIDIA Corporation (1NVDA.MI)** and ▲ **+4.04%** for **STMicroelectronics N.V. (STMMI.MI)**, but the structured last-price versus previous-close fields imply different moves, so 1D figures should be verified before use in trading or attribution [1][2][3][4].
+## Temi Correlati
 
-- **STMicroelectronics N.V. (STMMI.MI) rerating risk.** **STMicroelectronics N.V. (STMMI.MI)** is ▲ **+179.86% YTD** and ▲ **+33.31% 1M**, so the stock is highly sensitive to any disappointment in data-center ambitions, automotive/industrial demand or margin evidence after the latest positive catalysts [4][12][13].
+- **Cluster AI–semiconduttori–quantum:** **L&G Artificial Intelligence UCITS ETF (AIAI.MI)**, **VanEck Semiconductor UCITS ETF (SMH.MI)** e **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)** condividono esposizione a duration equity, capex AI e sentiment sui titoli tecnologici ad alta crescita [1][2][4][19][21][24]. La divergenza è nella maturità: semiconduttori hanno utili e domanda più visibili, quantum resta più legato a roadmap e flussi tematici [21][24][34].
 
-- **NVIDIA Corporation (1NVDA.MI) expectation risk.** **NVIDIA Corporation (1NVDA.MI)** is negative over 1W and 1M in the supplied data, while recent reporting highlights pressure around June events; any disappointment in AI demand, product transition or supply-chain execution could spill over into **VanEck Semiconductor UCITS ETF (SMH.MI)** and **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** [1][2][3][19][20].
+- **Quality come ammortizzatore:** **iShares Edge MSCI World Quality Factor UCITS ETF USD (Acc) (IWQU.MI)** ha perso solo -0,30% a 1W mentre gli ETF AI, chip e quantum hanno corretto tra -8,08% e -10,35% [1][2][3][4]. La notizia sui pesi ridotti di SpaceX, OpenAI e Anthropic negli ETF globali riduce l’idea di un’accelerazione immediata e meccanica dell’esposizione AI nei benchmark globali [11].
 
-- **AI-theme drawdown risk.** **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** is down ▼ **-3.88% 1W** despite being up ▲ **+42.01% YTD**, and recent reports of renewed AI-stock selling show that the theme remains vulnerable to sharp sentiment reversals [2][17].
+- **Cina come diversificazione ma non ancora stabilizzatore pieno:** **iShares MSCI China A UCITS ETF (36BZ.DE)** offre una fonte di rendimento meno legata ai mega-cap USA, ma resta esposto a property, fiducia interna, renminbi e tensioni USA-Cina [5][25]. L’inclusione di Cina e India nel profilo di **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)** aggiunge un nuovo ponte tra tecnologia tematica e rischio mercati emergenti [24].
 
-- **Rates and FX risk for Milan investors.** **VanEck Semiconductor UCITS ETF (SMH.MI)**, **WisdomTree Artificial Intelligence UCITS ETF - USD Acc (WTAI.MI)** and **NVIDIA Corporation (1NVDA.MI)** carry USD-linked global technology exposure, so a stronger euro or higher real yields could compress EUR returns and valuation multiples [1][2][3][23][24].
+- **Banche italiane e tassi:** **Intesa Sanpaolo S.p.A. (ISP.MI)** è guidata da una combinazione diversa rispetto agli ETF: curva dei tassi, margine d’interesse, spread sovrano, capitale e M&A domestico [6][17][27]. La seduta negativa segnala che il mercato valuta l’OPAS su MPS non solo come crescita strategica, ma anche come rischio di esecuzione [17][28].
 
-- **Data limitations.** ETF category fields, current holdings weights and updated analyst forecasts were not provided for all instruments, no confirmed dated events were supplied for the next 2–4 weeks, and no analyst forecast package was supplied for **NVIDIA Corporation (1NVDA.MI)** or **STMicroelectronics N.V. (STMMI.MI)** in the market dataset [1][2][3][4].
+---
 
-## References
+## Rischi e Punti di Attenzione
+
+- **Rischio tassi USA su growth:** una Fed meno accomodante al FOMC del 2026-06-17 aumenterebbe pressione su multipli e duration equity, con impatto maggiore su **L&G Artificial Intelligence UCITS ETF (AIAI.MI)**, **VanEck Semiconductor UCITS ETF (SMH.MI)** e **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)** [1][2][4][42].
+
+- **Rischio concentrazione semiconduttori:** **VanEck Semiconductor UCITS ETF (SMH.MI)** ha guadagnato +68,92% YTD e +140,51% a 1 anno, quindi resta esposto a prese di profitto se guidance, ordini AI o dati macro deludono [2][21][22].
+
+- **Rischio indice e liquidità su quantum:** **iShares Quantum Computing UCITS ETF USD (Acc) (QOMP.DE)** ha corretto -10,35% a 1W e affronta modifiche di indice che aumentano esposizione a Cina/India e riducono la concentrazione sui titoli sviluppati [4][24]. Questo può migliorare diversificazione ma introduce rischio paese e rischio flussi [24].
+
+- **Rischio Cina A:** **iShares MSCI China A UCITS ETF (36BZ.DE)** resta vulnerabile a debolezza property, incertezza USA-Cina e breadth domestica non uniforme, nonostante performance positive da inizio anno e a 12 mesi [5][25].
+
+- **Rischio OPAS Intesa/MPS:** **Intesa Sanpaolo S.p.A. (ISP.MI)** incorpora rischio di controfferte, governance, aumento di capitale e diluizione; la data societaria del 2026-09-10 è il prossimo riferimento formale già confermato per l’operazione [17][27][28].
+
+- **Limitazioni dei dati:** non sono state fornite categorie ETF complete per gli strumenti ETF, l’AUM non è disponibile per **iShares MSCI China A UCITS ETF (36BZ.DE)**, e l’analisi calendario non ha prodotto una lista completa di eventi verificati nella finestra 2–4 settimane oltre agli eventi macro e societari datati sopra [1][2][3][4][5][6][41][42].
+
+---
+
+## Riferimenti
 
 
-1. Yahoo Finance — SMH.MI (VanEck Semiconductor UCITS ETF) — 2026-06-10 — https://finance.yahoo.com/quote/SMH.MI
-2. Yahoo Finance — WTAI.MI (WisdomTree Artificial Intelligence UCITS ETF - USD Acc) — 2026-06-10 — https://finance.yahoo.com/quote/WTAI.MI
-3. Yahoo Finance — 1NVDA.MI (NVIDIA Corporation) — 2026-06-10 — https://finance.yahoo.com/quote/1NVDA.MI
-4. Yahoo Finance — STMMI.MI (STMicroelectronics N.V.) — 2026-06-10 — https://finance.yahoo.com/quote/STMMI.MI
-5. Borsa Italiana — Vaneck Semiconductor Ucits Etf quotazioni in tempo reale \| IE00BMC38736 — 2026-01-10 — https://www.borsaitaliana.it/borsa/etf/scheda/IE00BMC38736-ETFP.html?lang=it
-6. Nasdaq — VanEck Semiconductor ETF (SMH) Holdings and Performance Recap: Q2 2023 — 2024-02-01 — https://www.nasdaq.com/articles/vaneck-semiconductor-etf-smh-holdings-and-performance-recap%3A-q2-2023
-7. Borsa Italiana — Wisdomtree Artif Intel Ucits Etf Usd Acc quotazioni in tempo reale \| IE00BDVPNG13 — 2026-01-10 — https://www.borsaitaliana.it/borsa/etf/scheda/IE00BDVPNG13-ETFP.html?lang=it
-8. The Motley Fool — These Artificial Intelligence (AI) Stocks Have Crushed Nvidia in 2026 With Gains of 67% and 121%. They Can Still Soar Higher — 2026-05-30 — https://www.fool.com/investing/2026/05/30/these-artificial-intelligence-ai-stocks-have-crush/
-9. Borsa Italiana — Azioni Nvidia Corp: Profilo Societario — 2026-01-10 — https://www.borsaitaliana.it/borsa/azioni/profilo-societa-dettaglio.html?isin=US67066G1040&mic=BGEM&lang=it
-10. Nasdaq — NVIDIA Corporation Common Stock (NVDA) Earnings Report Date — 2020-08-16 — https://www.nasdaq.com/es/market-activity/stocks/nvda/earnings
-11. Borsa Italiana — Europa procede mista, mentre le vendite colpiscono Piazza Affari appesantita da STMicroelectronics — 2026-06-04 — https://www.borsaitaliana.it/borsa/notizie/teleborsa/commenti/europa-procede-mista-mentre-le-vendite-colpiscono-piazza-affari-appesantita-da-stmicroelectronics-111_2026-06-04_TLB.html?lang=it
-12. Borsa Italiana — STMicroelectronics, UBS alza il target price a 80 euro — 2026-06-04 — https://www.borsaitaliana.it/borsa/notizie/teleborsa/finanza/stmicroelectronics-ubs-alza-il-target-price-a-80-euro-57_2026-06-04_TLB.html?lang=it
-13. Nasdaq — STMicroelectronics raises its revenue ambition for Data Centers amidst continued strong demand for AI infrastructure — 2026-06-03 — https://www.nasdaq.com/press-release/stmicroelectronics-raises-its-revenue-ambition-data-centers-amidst-continued-strong
-14. Nasdaq — STMicroelectronics high-performance vibration sensor with in-sensor AI offers a compelling alternative to piezosensor to fast-growing industrial condition-monitoring market — 2026-06-04 — https://www.nasdaq.com/press-release/stmicroelectronics-high-performance-vibration-sensor-sensor-ai-offers-compelling
-15. Nasdaq — VanEck Launches Data Center Supply Chain ETF (RACK) to Capture AI Infrastructure Buildout — 2026-06-03 — https://www.nasdaq.com/press-release/vaneck-launches-data-center-supply-chain-etf-rack-capture-ai-infrastructure-buildout
-16. The Motley Fool — Why the VanEck Semiconductor ETF Rallied Over 30% in April — 2026-05-05 — https://www.fool.com/investing/2026/05/05/why-the-vaneck-semiconductor-etf-rallied-over-30-i/
-17. KTVB / Associated Press — S&P 500 drops 2% as artificial-intelligence stocks resume their sell-off — 2026-06-09 — https://www.ktvb.com/article/syndication/associatedpress/sp-500-drops-2-as-artificial-intelligence-stocks-resume-their-sell-off/616-0ddb9783-ed43-4610-b399-ff0817828c4c
-18. BBC — OpenAI plans stock market debut, setting up new race with Anthropic — 2026-06-09 — https://www.bbc.com/news/articles/cd958eqg1n5o
-19. AD HOC NEWS — NVIDIA Corporation stock (US67066G1040): AI high-flyer under pressure as investors eye June events — 2026-06-10 — https://www.ad-hoc-news.de/boerse/news/ueberblick/nvidia-corporation-stock-us67066g1040-ai-high-flyer-under-pressure-as/69510672
-20. MarketScreener Italia — NVIDIA Corporation e TSMC portano l’IA nelle fonderie per far progredire il design e la produzione di semiconduttori — 2026-06-03 — http://it.marketscreener.com/notizie/nvidia-corporation-e-tsmc-portano-l-ia-nelle-fonderie-per-far-progredire-il-design-e-la-produzione-d-ce7f5dd9de81ff23
-23. European Central Bank — Monetary policy decisions — 2025-06-05 — https://www.ecb.europa.eu/press/pr/date/2025/html/ecb.mp250605~148c36684d.en.html
-24. Board of Governors of the Federal Reserve System — FOMC calendars, statements and projections — 2025-06-18 — https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
-25. World Semiconductor Trade Statistics — WSTS Semiconductor Market Forecast — 2025-12-02 — https://www.wsts.org/
-26. NVIDIA Corporation — Quarterly results and investor financial information — 2025-11-19 — https://investor.nvidia.com/financial-info/quarterly-results/default.aspx
+1. Yahoo Finance — AIAI.MI (L&G Artificial Intelligence UCITS ETF) — 2026-06-10 — https://finance.yahoo.com/quote/AIAI.MI
+2. Yahoo Finance — SMH.MI (VanEck Semiconductor UCITS ETF) — 2026-06-10 — https://finance.yahoo.com/quote/SMH.MI
+3. Yahoo Finance — IWQU.MI (iShares Edge MSCI World Quality Factor UCITS ETF USD (Acc)) — 2026-06-10 — https://finance.yahoo.com/quote/IWQU.MI
+4. Yahoo Finance — QOMP.DE (iShares Quantum Computing UCITS ETF USD (Acc)) — 2026-06-10 — https://finance.yahoo.com/quote/QOMP.DE
+5. Yahoo Finance — 36BZ.DE (iShares MSCI China A UCITS ETF) — 2026-06-10 — https://finance.yahoo.com/quote/36BZ.DE
+6. Yahoo Finance — ISP.MI (Intesa Sanpaolo S.p.A.) — 2026-06-10 — https://finance.yahoo.com/quote/ISP.MI
+7. extraETF — L&G Artificial Intelligence UCITS ETF | IE00BK5BCD43 | A2PM50 — 2023-08-29 — https://extraetf.com/it/etf-profile/IE00BK5BCD43
+8. Affari Miei — L&G Artificial Intelligence ETF: IE00BK5BCD43 Opinioni — 2025-06-19 — https://www.affarimiei.biz/lg-artificial-intelligence-etf/76105
+9. eToro — VVSM.DE ETF Oggi | VanEck Semiconductor UCITS ETF Grafico e Quotazione — 2023-10-17 — https://www.etoro.com/it/markets/vvsm.de
+10. The Motley Fool — Why the VanEck Semiconductor ETF Rallied Over 30% in April — 2026-05-05 — https://www.fool.com/investing/2026/05/05/why-the-vaneck-semiconductor-etf-rallied-over-30-i/
+11. Borsa Italiana — SpaceX, OpenAI e Anthropic peseranno meno del previsto negli ETF globali — 2026-05-27 — https://www.borsaitaliana.it/borsa/notizie/teleborsa/finanza/spacex-openai-e-anthropic-peseranno-meno-del-previsto-negli-etf-globali-135_2026-05-27_TLB.html
+12. Nasdaq — Sizing Up Different Quality ETFs — 2019-08-12 — https://www.nasdaq.com/articles/sizing-up-different-quality-etfs-2019-08-12
+13. justETF — iShares Quantum Computing UCITS ETF USD (Acc) | A41HPW | IE000C6ITGC8 — 2026-01-03 — https://www.justetf.com/at/etf-profile.html?isin=IE000C6ITGC8
+14. justETF — iShares Quantum Computing UCITS ETF USD (Acc) | A41HPW | IE000C6ITGC8 — 2025-12-03 — https://www.justetf.com/en/etf-profile.html?isin=IE000C6ITGC8
+15. justETF — iShares MSCI China A UCITS ETF EUR Hedged (Acc) | CNYE | IE00099GAJC6 — 2022-04-01 — https://www.justetf.com/fr/etf-profile.html?isin=IE00099GAJC6
+16. justETF — iShares MSCI China A UCITS ETF EUR Hedged (Acc) | A3DENH | IE00099GAJC6 — 2022-04-04 — https://www.justetf.com/de/etf-profile.html?isin=IE00099GAJC6
+17. Borsa Italiana — Intesa Sanpaolo, Messina: pronti a rispondere a qualsiasi controfferta per MPS — 2026-06-09 — https://www.borsaitaliana.it/borsa/notizie/teleborsa/finanza/intesa-sanpaolo-messina-pronti-a-rispondere-a-qualsiasi-controfferta-per-mps-75_2026-06-09_TLB.html
+18. Borsa Italiana — Intesa Sanpaolo, Messina: OPAS su MPS non è risposta a Banco BPM, lavorata da tempo — 2026-06-08 — https://www.borsaitaliana.it/borsa/notizie/teleborsa/finanza/intesa-sanpaolo-messinaopas-su-mps-non-e-risposta-a-banco-bpm-lavorata-da-tempo-61_2026-06-08_TLB.html?lang=it
+19. ETF Stream — WisdomTree launches AI Infrastructure ETF — 2026-06-10 — https://www.etfstream.com/articles/wisdomtree-launches-ai-infrastructure-etf
+20. Reuters — OpenAI names Slack CEO Denise Dresser as first chief of revenue — 2026-06-10 — https://www.reuters.com/business/openai-names-slack-ceo-denise-dresser-first-chief-revenue-2026-06-10/
+21. AD HOC NEWS — VanEck Chip ETF’s Whiplash Week: AI Demand Collides with Macro Reality — 2026-06-09 — https://www.ad-hoc-news.de/boerse/news/ueberblick/vaneck-chip-etf-s-whiplash-week-ai-demand-collides-with-macro-reality/69509567
+22. AD HOC NEWS — Weekend Whiplash: VanEck Chip ETF Drops 7.5% on Friday, Rebounds by Monday After Twin Shocks — 2026-06-09 — https://www.ad-hoc-news.de/boerse/news/ueberblick/weekend-whiplash-vaneck-chip-etf-drops-7-5-percent-on-friday-rebounds/69504965
+23. Trustnet — The global equity funds with the highest correlation to quality stocks — 2026-06-03 — https://www.trustnet.com/news/13477560/the-global-equity-funds-with-the-highest-correlation-to-quality-stocks
+24. Investing.com — iShares quantum computing ETF to add China, India exposure — 2026-06-10 — https://www.investing.com/news/company-news/ishares-quantum-computing-etf-to-add-china-india-exposure-93CH-4735275
+25. AInvest — A-Share Market Diverges as CSI 500/1000 Climb, Institutional Inflows Support Tech and Semiconductors — 2026-06-10 — https://www.ainvest.com/news/share-market-diverges-csi-500-1000-climb-institutional-inflows-support-tech-semiconductors-2506/
+26. Borsa Italiana — Intesa Sanpaolo lancia l’Opas su MPS-Mediobanca e scalza Banco BPM — 2026-06-08 — https://www.borsaitaliana.it/borsa/notizie/teleborsa/finanza/intesa-sanpaolo-lancia-l-opas-su-mpsmediobanca-e-scalza-banco-bpm-5_2026-06-08_TLB.html?lang=it
+27. Borsa Italiana — Intesa Sanpaolo convoca assemblea straordinaria per il 10 settembre — 2026-06-08 — https://www.borsaitaliana.it/borsa/notizie/teleborsa/finanza/intesa-sanpaolo-convoca-assemblea-straordinaria-per-il-10-settembre-85_2026-06-08_TLB.html?lang=it
+28. ANSA — Intesa Sanpaolo: lancia OPAS volontaria su MPS — 2026-06-08 — https://www.ansa.it/sito/notizie/economia/2026/06/08/intesa-sanpaolo-lancia-opas-volontaria-su-mps_2d8144d1-0f7e-42c9-8a60-6c8d79bddc41.html
+29. Euronews — Intesa Sanpaolo launches bid for Mps bank, merger set for December 2026 — 2026-06-08 — https://www.euronews.com/business/2026/06/08/intesa-sanpaolo-launches-bid-for-mps-bank-merger-set-for-december-2026
+30. Milano Finanza — I semiconduttori europei e Usa affondano in Borsa. Deboli i Magnifici 7 mentre la Cina fa il pieno di chip H20 Nvidia — 2026-06-06 — https://www.milanofinanza.it/news/i-semiconduttori-europei-e-usa-affondano-in-borsa-deboli-i-magnifici-7-mentre-la-cina-fa-il-pieno-202606061205058471
+31. Nasdaq — VanEck Launches Data Center Supply Chain ETF (RACK) to Capture AI Infrastructure Buildout — 2026-06-03 — https://www.nasdaq.com/press-release/vaneck-launches-data-center-supply-chain-etf-rack-capture-ai-infrastructure-buildout
+32. La Stampa/Teleborsa — Azioni Europa caute, Piazza Affari debole con banche in ordine sparso — 2026-06-10 — https://finanza.lastampa.it/News/2026/06/10/azioni-europa-caute-piazza-affari-debole-con-banche-in-ordine-sparso/MzFfMjAyNi0wNi0xMF9UTEI
+33. AInvest — Chinese Stocks Rally Around Quantum Momentum and AI Lab Buzz — But Can the Sector Sustain the Pop? — 2026-06-08 — https://www.ainvest.com/news/chinese-stocks-rally-quantum-momentum-ai-lab-buzz-sector-sustain-pop-2506/
+34. AInvest — Quantum Stocks: Strangeworks™ and Rigetti Computing Lead Gains; IonQ Slips Amid FDA Setback — 2026-06-06 — https://www.ainvest.com/news/quantum-stocks-strangeworks-rigetti-computing-lead-gains-ionq-slips-fda-setback-2506/
+35. ETF Daily News — iShares MSCI China A ETF (CNYA) Shares Sold by Aberdeen Group plc — 2026-06-10 — https://www.etfdailynews.com/2026/06/10/ishares-msci-china-a-etf-cnya-shares-sold-by-aberdeen-group-plc/
+36. Stock Traders Daily — Precision Trading with Ishares Msci China A Etf (CNYA) Risk Zones — 2026-06-08 — https://news.stocktradersdaily.com/news_release/22/Precision_Trading_with_Ishares_Msci_China_A_Etf_CNYA_Risk_Zones_060826121002_1780891802.html
+37. Borsa Italiana — Intesa Sanpaolo, Messina: con MPS nascerà una banca wealth da 2.000 miliardi — 2026-06-08 — https://www.borsaitaliana.it/borsa/notizie/teleborsa/finanza/intesa-sanpaolo-messina-con-mps-nascera-una-banca-wealth-da-2000-miliardi-49_2026-06-08_TLB.html?lang=it
+38. Milano Finanza — Intesa Sanpaolo: a fine settembre assemblea per delibera su aumento capitale per OPAS Mps — 2026-06-09 — https://www.milanofinanza.it/news/intesa-sanpaolo-a-fine-settembre-assemblea-per-delibera-su-aumento-capitale-per-opas-mps-202606090755288465
+39. Nasdaq — Nasdaq and Intesa Sanpaolo Join Forces to Distribute Innovative Alternative Investment Products in Italy and Europe — 2026-06-08 — https://www.nasdaq.com/press-release/nasdaq-and-intesa-sanpaolo-join-forces-distribute-innovative-alternative-investment
+40. La Stampa/Teleborsa — Intesa Sanpaolo: utile netto 1° trimestre a 2,6 miliardi di euro, confermata guidance 2026 — 2026-05-02 — https://finanza.lastampa.it/News/2026/05/02/intesa-sanpaolo-utile-netto-1-trimestre-a-2-6-miliardi-di-euro-confermata-guidance-2026/MTU3XzIwMjYtMDUtMDJfVExC
+41. European Central Bank — Monetary policy decisions / Governing Council calendar — accessed 2026-06-10 — https://www.ecb.europa.eu/press/govcdec/mopo/html/index.en.html
+42. Federal Reserve — FOMC calendars and monetary policy materials — accessed 2026-06-10 — https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
 
 ## Disclaimer
 
-This briefing is for informational purposes only and does not constitute investment advice, a recommendation, or an offer to buy or sell any financial instrument. Investors should verify market data, issuer documents, fund factsheets, calendar dates and risk disclosures before making decisions.
+Questo briefing è fornito esclusivamente a scopo informativo e di analisi di mercato. Non costituisce consulenza finanziaria, raccomandazione personalizzata, sollecitazione all’investimento o indicazione di acquisto, vendita o mantenimento di strumenti finanziari. Le decisioni operative richiedono valutazioni indipendenti su obiettivi, orizzonte temporale, rischio e situazione patrimoniale.
