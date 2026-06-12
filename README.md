@@ -41,9 +41,14 @@ The first run scaffolds `config/`, `output/briefings/`, and `data/`, and seeds `
 | `OPENAI_API_KEY` | ✅ | LLM backend for the agents |
 | `SERPER_API_KEY` | ✅ | News and web search |
 | `SERPER_FREE_TIER` | — | Set `0` if you have a paid Serper plan (keeps `site:` queries) |
-| `FINNHUB_API_KEY` | — | Company news prefetch (merged with Yahoo/Serper) |
+| `FINNHUB_API_KEY` | — | Optional Finnhub company-news prefetch (merged with Yahoo/Serper) |
+| `FINNHUB_ENABLED` | — | Set `false` to disable Finnhub even when a key is set (default: `true`) |
+| `FINNHUB_NEWS_LOOKBACK_DAYS` | — | Days of Finnhub news history per instrument (default: `14`, max `30`) |
 | `OPENFIGI_API_KEY` | — | Higher ISIN-resolution rate limits |
 | `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
+| `WATCHLIST_PATH` | — | Override watchlist YAML location (default: `./config/watchlist.yaml`) |
+| `FINANCIAL_RESEARCHER_CONFIG_DIR` | — | Global user config directory (default: `~/.config/financial_researcher`) |
+| `BRIEFING_QUIET` | — | Set `1` to hide CrewAI agent/task progress (same as `--quiet`) |
 
 ## Usage
 
@@ -89,6 +94,7 @@ Several briefing guarantees are enforced in Python rather than in agent prompts:
 - **Post-process** — cap on `🔴` tags, continuous research citation numbering, calendar table column normalisation
 - **Performance table** — injected by the pipeline (price column, one `[N]` per row)
 - **News agent** — prefetch-first workflow with a hard cap on gap-filling tool calls (4 per instrument, 12 per run)
+- **Finnhub prefetch** — when `FINNHUB_API_KEY` is set and `FINNHUB_ENABLED` is not disabled, company news is fetched per stock and merged into the deterministic prefetch layer alongside Yahoo and Serper headlines
 
 After each run, token usage and post-process warnings are written to `output/metrics/run_{date}_{session}.json`, and a one-line summary is printed:
 
@@ -157,7 +163,7 @@ CrewAI  ├─ market_analyst ─┐
 
 | Agent | Role | Model | Tools |
 |-------|------|-------|-------|
-| `market_analyst` | Relative performance across the watchlist | gpt-5.5 | Pre-loaded context |
+| `market_analyst` | Relative performance across the watchlist | gpt-5.4-mini | Pre-loaded context |
 | `news_analyst` | News & catalysts behind recent moves | gpt-5.5 | Serper · Yahoo news · scraping |
 | `outlook_analyst` | 3–12 month macro & thematic outlook | gpt-5.5 | Serper · scraping |
 | `calendar_analyst` | Catalysts in the next 2–4 weeks | gpt-5.4-mini | Serper · scraping |
@@ -166,9 +172,9 @@ CrewAI  ├─ market_analyst ─┐
 Config: [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) · [`tasks_briefing.yaml`](src/financial_researcher/config/tasks_briefing.yaml)
 
 > [!WARNING]
-> **This default lineup is tuned for quality, not for your wallet.** Four of the five agents run on the **most capable — and most expensive — frontier model** (`gpt-5.5`). A single full briefing makes many LLM calls plus news search and page scraping, so cost adds up quickly when you run it several times a day.
+> **This default lineup is tuned for quality, not for your wallet.** Three of the five agents run on the **most capable — and most expensive — frontier model** (`gpt-5.5`); `market_analyst` and `calendar_analyst` use the lighter `gpt-5.4-mini`. A single full briefing still makes many LLM calls plus news search and page scraping, so cost can add up when you run it several times a day.
 >
-> **Want to pay less?** Downgrade the models in [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) — change the `llm:` line of any agent to a cheaper tier (e.g. `openai/gpt-5.4-mini`, or an even smaller/older model like `openai/gpt-4o-mini`). The briefing will still generate; expect a **less nuanced narrative and weaker synthesis** in exchange for materially lower cost. The `chief_strategist` and `news_analyst` benefit most from a strong model — downgrade the others first if you want a balance.
+> **Want to pay less?** Downgrade the models in [`agents_briefing.yaml`](src/financial_researcher/config/agents_briefing.yaml) — change the `llm:` line of any agent to a cheaper tier (e.g. `openai/gpt-5.4-mini`, or an even smaller/older model like `openai/gpt-4o-mini`). The briefing will still generate; expect a **less nuanced narrative and weaker synthesis** in exchange for lower cost. The `chief_strategist` and `news_analyst` benefit most from a strong model — downgrade the others first if you want a balance.
 
 <details>
 <summary><b>Briefing structure</b></summary>
@@ -182,6 +188,7 @@ Title block → Executive Summary → Performance Snapshot → What's Driving th
 | Path | Description |
 |------|-------------|
 | `output/briefings/watchlist_{DATE}_{SESSION}.md` | Unified briefing (gitignored) |
+| `output/metrics/run_{DATE}_{SESSION}.json` | Token usage and post-process warnings per run (gitignored) |
 | `data/identity/{ISIN}.json` | Cached instrument identity |
 | `data/market/{ISIN}/latest.json` | Cached market snapshot (1 h TTL) |
 </details>
@@ -193,13 +200,18 @@ Title block → Executive Summary → Performance Snapshot → What's Driving th
 financial-researcher/
 ├── config/watchlist.yaml(.example)   # User watchlist + committed template
 ├── src/financial_researcher/
-│   ├── main.py · crew.py · paths.py · settings.py
-│   ├── config/    # agents, tasks, sessions, settings, fallback watchlist
-│   ├── services/  # pipeline · context · isin_resolver · market_data
+│   ├── main.py · crew.py · paths.py · settings.py · llm_compat.py · session_profiles.py
+│   ├── config/    # agents, tasks, sessions, settings, fallback watchlist template
+│   ├── models/    # instrument identity types
+│   ├── services/  # pipeline · context · isin_resolver · market_data · news_prefetch
+│   │              # news_ranking · briefing_postprocess · run_metrics
+│   │              # news_providers/ (Finnhub + merge)
 │   ├── storage/   # local JSON caches
-│   └── tools/     # Serper news tools
+│   └── tools/     # Serper news/search tools · limited scrape
+├── tests/                # pytest suite
 ├── examples/briefings/   # Sample output (tracked)
 ├── output/briefings/     # Generated briefings (gitignored)
+├── output/metrics/       # Per-run token/warning JSON (gitignored)
 └── data/                 # Runtime cache (gitignored)
 ```
 </details>

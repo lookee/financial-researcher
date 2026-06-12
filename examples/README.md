@@ -4,8 +4,8 @@ Static samples for the **example watchlist** (`config/watchlist.yaml.example`):
 
 | Asset class | Tickers |
 |-------------|---------|
-| ETFs | AIAI.MI, SMH.MI, IWQU.MI |
-| Italian stocks | STMMI.MI, ENI.MI, RACE.MI, 1AAPL.MI (Apple, GEM) |
+| ETFs | SMH.MI, WTAI.MI |
+| Stocks | 1NVDA.MI (NVIDIA, GEM), STMMI.MI |
 
 ## Briefings
 

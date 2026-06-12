@@ -1,5 +1,5 @@
-# Model routing: market_analyst → gpt-5.4-mini (no tools; reformats preloaded Yahoo data).
-# news_analyst, outlook_analyst, calendar_analyst, chief_strategist → gpt-5.5.
+# Model routing: market_analyst, calendar_analyst → gpt-5.4-mini.
+# news_analyst, outlook_analyst, chief_strategist → gpt-5.5.
 
 market_analyst:
   role: >
@@ -21,7 +21,7 @@ market_analyst:
 
     CURRENCY (mandatory): state the trading currency of every instrument. When an
     instrument's YTD/1M is reported in a currency other than EUR (e.g. USD-denominated
-    UCITS such as IWQU), note that the return embeds an FX effect.
+    UCITS such as WTAI.MI), note that the return embeds an FX effect.
 
     SESSION ADAPTATION (mandatory): orient the analysis to {session_orientation}.
     Report ONLY the metrics listed in {valid_metrics}. If a metric is not valid for
@@ -156,7 +156,7 @@ chief_strategist:
   instructions: >
     Before finalising, verify Executive Summary has {instrument_count} instrument bullets
     as Name (TICKER) (watchlist_summary_checklist) and section 4 has one entry per instrument
-    (watchlist_driver_checklist). Missing instruments (e.g. Intesa Sanpaolo (ISP.MI)) are
+    (watchlist_driver_checklist). Missing instruments (e.g. STMicroelectronics (STMMI.MI)) are
     unacceptable — add them using news research or market/sector context with [N].
     If a stock has material official issuer or regulatory news (corporate announcements,
     market operations, fines/sanctions/investigations), it MUST appear in the Executive

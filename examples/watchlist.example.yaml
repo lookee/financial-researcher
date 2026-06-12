@@ -1,31 +1,24 @@
-# Example watchlist bundled with the project (same as config/watchlist.yaml.example).
-# Copy to config/watchlist.yaml before running: cp config/watchlist.yaml.example config/watchlist.yaml
+# Same as config/watchlist.yaml.example — that file is the single source of truth.
+# Copy to config/watchlist.yaml: cp config/watchlist.yaml.example config/watchlist.yaml
+
+# Optional: override default_language from config/settings.yaml for this batch only.
+# language: English
 
 instruments:
-  - isin: IE00BK5BCD43
-    ticker: AIAI.MI
-    type: etf
-
+  # --- ETFs (Borsa Italiana) ---
   - isin: IE00BMC38736
     ticker: SMH.MI
     type: etf
 
-  - isin: IE00BP3QZ601
-    ticker: IWQU.MI
+  - isin: IE00BDVPNG13
+    ticker: WTAI.MI
     type: etf
+
+  # --- Equities (Borsa Italiana) ---
+  - isin: US67066G1040
+    ticker: 1NVDA.MI
+    type: stock
 
   - isin: NL0000226223
     ticker: STMMI.MI
-    type: stock
-
-  - isin: IT0003132476
-    ticker: ENI.MI
-    type: stock
-
-  - isin: NL0011585146
-    ticker: RACE.MI
-    type: stock
-
-  - isin: US0378331005
-    ticker: 1AAPL.MI
     type: stock

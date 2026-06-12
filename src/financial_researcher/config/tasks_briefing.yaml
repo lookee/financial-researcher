@@ -98,7 +98,6 @@ news_analysis_task:
     - [1]..[{last_citation}] are reserved for Yahoo Finance data per instrument.
     - Use the EXACT citation numbers from research_reference_seed for prefetch headlines.
     - Additional tool discoveries may use the next free number after the seed list.
-    - Additional tool discoveries use the next free number after the seed list.
 
     Search window: last 7 days (primary), up to 14 days if nothing recent.
   expected_output: >
@@ -262,7 +261,7 @@ executive_briefing_task:
        and news research with [N]. NEVER list an event without a confirmed YYYY-MM-DD and source URL.
        If calendar analysis has no dated events, write that explicitly.
     7. Correlated themes section — cross-instrument links with [N]; cover tech cluster and
-       non-tech names (e.g. banks) where relevant.
+       non-tech names where relevant.
     8. Risks section — at least 3 cited bullets spanning macro and watchlist names.
     9. References section — Yahoo Finance [1]..[{last_citation}] and research citations are
        injected automatically by the pipeline. Cite [{next_citation}]+ in the body as needed.
@@ -286,7 +285,7 @@ executive_briefing_task:
     The Performance section must include a one-line leader/laggard summary; the table is
     injected by post-processing.
     Section 4 (What's Driving the Moves) MUST contain exactly {instrument_count}
-    entries — one per instrument as Name (TICKER), including stocks (e.g. Intesa Sanpaolo (ISP.MI))
+    entries — one per instrument as Name (TICKER), including stocks (e.g. STMicroelectronics (STMMI.MI))
     and every ETF. Verify against watchlist_driver_checklist before finishing.
     Event Calendar section must preserve exact YYYY-MM-DD dates and the closed Impact taxonomy.
     References are injected automatically by the pipeline.

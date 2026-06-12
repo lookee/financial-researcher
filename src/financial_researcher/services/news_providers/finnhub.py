@@ -14,12 +14,14 @@ from financial_researcher.services.news_providers.base import NormalizedHeadline
 FINNHUB_COMPANY_NEWS_URL = "https://finnhub.io/api/v1/company-news"
 DEFAULT_LOOKBACK_DAYS = 14
 
-# Milan tickers that need a US/global Finnhub symbol (local code != Finnhub symbol).
+# Best-effort map from Milan (or local) ticker bases to Finnhub company-news symbols.
+# Finnhub indexes US/global listings; .MI codes often differ (e.g. STMMI → STM, GEM 1NVDA → NVDA).
+# Extend this dict when prefetch misses news for a Milan stock — keys are uppercase bases without .MI.
 MILAN_FINNHUB_SYMBOLS: dict[str, str] = {
     "STMMI": "STM",
     "ENI": "E",
     "RACE": "RACE",
-    "ISP": "ISNPY",  # Intesa Sanpaolo ADR when available
+    "ISP": "ISNPY",
 }
 
 _GEM_TICKER_RE = re.compile(r"^1([A-Z]{2,6})\.MI$", re.IGNORECASE)

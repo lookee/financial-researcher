@@ -105,7 +105,15 @@ class WatchlistBriefingCrew:
 
     @task
     def executive_briefing_task(self) -> Task:
-        return Task(config=self.tasks_config["executive_briefing_task"])
+        return Task(
+            config=self.tasks_config["executive_briefing_task"],
+            context=[
+                self.market_analysis_task(),
+                self.news_analysis_task(),
+                self.outlook_analysis_task(),
+                self.calendar_analysis_task(),
+            ],
+        )
 
     @crew
     def crew(self) -> Crew:

@@ -15,6 +15,7 @@ MATERIAL_IMPACT_RE = re.compile(
 )
 TABLE_ROW_RE = re.compile(r"^\|(.+)\|\s*$", re.MULTILINE)
 
+from financial_researcher.services.news_ranking import OFFICIAL_DOMAINS
 from financial_researcher.services.watchlist_context import instrument_label
 
 CANONICAL_CALENDAR_HEADERS = [
@@ -566,7 +567,14 @@ def validate_material_news_prominence(content: str, inputs: dict[str, str]) -> l
 
     warnings: list[str] = []
     lowered = content.lower()
-    vague_markers = ("speculaz", "incertezze nel settore", "competizione nel settore")
+    vague_markers = (
+        "speculaz",
+        "speculation",
+        "incertezze nel settore",
+        "sector uncertainty",
+        "competizione nel settore",
+        "sector competition",
+    )
     if any(marker in lowered for marker in vague_markers) and (
         "notizia dominante" in material.lower() or "dominant watchlist story" in material.lower()
     ):
@@ -582,18 +590,23 @@ def validate_material_news_prominence(content: str, inputs: dict[str, str]) -> l
             seed = json.loads(raw_seed)
         except json.JSONDecodeError:
             seed = []
+        seen_tickers: set[str] = set()
         for entry in seed:
-            url = (entry.get("url") or "").lower()
-            title = (entry.get("title") or "").lower()
-            ticker = entry.get("ticker", "")
-            if "borsaitaliana.it" not in url or ticker.upper() != "ISP.MI":
+            ticker = (entry.get("ticker") or "").strip()
+            if not ticker or ticker in seen_tickers:
                 continue
-            if title and title[:40] not in lowered and "bancaditalia" in lowered:
+            seen_tickers.add(ticker)
+            url = (entry.get("url") or "").lower()
+            title = (entry.get("title") or "").strip()
+            if not title or not any(domain in url for domain in OFFICIAL_DOMAINS):
+                continue
+            title_snippet = title[:40].lower()
+            if title_snippet and title_snippet not in lowered:
                 warnings.append(
-                    "Prefetch top ISP headline is from Borsa Italiana but briefing emphasises "
-                    "Banca d'Italia — verify the correct issuer story is reported."
+                    f"Prefetch top headline for {ticker} is from an institutional source "
+                    f"({entry.get('url', '')}) but its title does not appear in the briefing — "
+                    "verify the correct issuer story is reported."
                 )
-                break
 
     return warnings
 
