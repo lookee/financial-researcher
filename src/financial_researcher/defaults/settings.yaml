@@ -5,7 +5,7 @@
 # Default language for generated briefings (e.g. English, Italian).
 default_language: English
 
-# Model lineup profile (balanced, frontier, budget, free). Overridden by FR_MODEL_PROFILE.
+# Model lineup profile (balanced, frontier, budget, free_groq, free_openrouter_nex). Overridden by FR_MODEL_PROFILE.
 # model_profile: balanced
 
 # Serper news/search (prefetch + agent tools).

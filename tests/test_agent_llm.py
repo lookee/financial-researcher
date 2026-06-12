@@ -40,7 +40,16 @@ def test_list_model_profile_names():
     assert "balanced" in names
     assert "frontier" in names
     assert "budget" in names
-    assert "free" in names
+    assert "free_groq" in names
+    assert "free_openrouter_nex" in names
+
+
+def test_free_openrouter_nex_profile_models(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "free_openrouter_nex")
+    model = resolve_agent_model("chief")
+    assert model == "openrouter/nex-agi/nex-n2-pro:free"
+    assert resolve_reasoning_effort("chief") == "medium"
+    assert resolve_agent_model("market") == model
 
 
 def test_default_balanced_profile_models():
@@ -65,8 +74,8 @@ def test_budget_profile_models(monkeypatch):
     assert resolve_agent_model("chief") == "openai/gpt-5.4"
 
 
-def test_free_profile_uses_groq(monkeypatch):
-    monkeypatch.setenv("FR_MODEL_PROFILE", "free")
+def test_free_groq_profile_uses_groq(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "free_groq")
     assert resolve_agent_model("market").startswith("groq/")
 
 

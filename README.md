@@ -67,7 +67,7 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `OPENAI_API_KEY` | ✅ | LLM backend for the agents |
+| `OPENAI_API_KEY` | ✅* | LLM for `balanced`, `frontier`, `budget` profiles |
 | `SERPER_API_KEY` | ✅ | News and web search |
 | `SERPER_FREE_TIER` | — | Set `0` if you have a paid Serper plan (keeps `site:` queries) |
 | `FINNHUB_API_KEY` | — | Optional Finnhub company-news prefetch (merged with Yahoo/Serper) |
@@ -75,12 +75,16 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 | `FINNHUB_NEWS_LOOKBACK_DAYS` | — | Days of Finnhub news history per instrument (default: `14`, max `30`) |
 | `OPENFIGI_API_KEY` | — | Higher ISIN-resolution rate limits |
 | `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
-| `FR_MODEL_PROFILE` | — | Model lineup: `balanced` · `frontier` · `budget` · `free` (see [`model_profiles.yaml`](src/financial_researcher/defaults/model_profiles.yaml)) |
+| `FR_MODEL_PROFILE` | — | Model lineup: `balanced` · `frontier` · `budget` · `free_groq` · `free_openrouter_nex` (see [`model_profiles.yaml`](src/financial_researcher/defaults/model_profiles.yaml)) |
+| `GROQ_API_KEY` | — | Required for `--model-profile free_groq` (no OpenAI key needed) |
+| `OPENROUTER_API_KEY` | — | Required for `--model-profile free_openrouter_nex` (no OpenAI key needed) |
 | `FR_MODEL_*` | — | Per-agent model override (e.g. `FR_MODEL_CHIEF`) — beats the active profile |
 | `WATCHLIST_PATH` | — | Override watchlist YAML location (default: `./config/watchlist.yaml`) |
 | `FINANCIAL_RESEARCHER_CONFIG_DIR` | — | Global user config directory (default: `~/.config/financial_researcher`) |
 | `FINANCIAL_RESEARCHER_HOME` | — | Base directory for `output/` and `data/` (default: current working directory) |
 | `BRIEFING_QUIET` | — | Set `1` to hide CrewAI agent/task progress (same as `--quiet`) |
+
+\*Not required when using a `free_*` model profile (Groq or OpenRouter only).
 
 ## Usage
 
@@ -98,7 +102,7 @@ uv run briefing --watchlist path/to.yaml     # custom watchlist
 | `--language LANG` | Briefing language (default: English) |
 | `--force` | Refresh cached identity and market data |
 | `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
-| `--model-profile` | `balanced` · `frontier` · `budget` · `free` (default: `balanced`) |
+| `--model-profile` | `balanced` · `frontier` · `budget` · `free_groq` · `free_openrouter_nex` (default: `balanced`) |
 | `--quiet` | Hide CrewAI agent/task progress (default: shown) |
 
 ## Configuration
@@ -219,14 +223,20 @@ Config: [`agents_briefing.yaml`](src/financial_researcher/defaults/agents_briefi
 | `balanced` | **Default** — cost/quality mix | mini on market/calendar, `gpt-5.4` outlook, `gpt-5.5` news + chief |
 | `frontier` | Best quality, highest cost | all `gpt-5.5`, higher reasoning on news/chief |
 | `budget` | Cheapest OpenAI | mini on all analysts, `gpt-5.4` chief |
-| `free` | Groq free tier (`GROQ_API_KEY`) | Llama via LiteLLM — experimental |
+| `free_groq` | Groq free tier (`GROQ_API_KEY`) | Llama via LiteLLM — experimental |
+| `free_openrouter_nex` | OpenRouter free (`OPENROUTER_API_KEY`) | [Nex-N2-Pro (free)](https://openrouter.ai/nex-agi/nex-n2-pro:free) on all agents — experimental |
 
 ```bash
+uv run briefing --model-profile free_openrouter_nex   # OpenRouter Nex-N2-Pro (free)
+uv run briefing --model-profile free_groq             # Groq Llama (free)
 uv run briefing --model-profile budget
 export FR_MODEL_PROFILE=frontier   # same as --model-profile
 ```
 
-Set `model_profile: budget` in `settings.yaml` for a persistent default. Per-agent `FR_MODEL_*` env vars still override one slot in the active profile.
+Set `model_profile: budget` in `defaults/settings.yaml` for a persistent default. Per-agent `FR_MODEL_*` env vars still override one slot in the active profile.
+
+> [!NOTE]
+> **`free_groq`** and **`free_openrouter_nex`** are experimental: weaker citations and synthesis than `balanced`. They replace `OPENAI_API_KEY` with `GROQ_API_KEY` or `OPENROUTER_API_KEY` respectively (see `.env.sample`).
 
 > [!WARNING]
 > **Default profile (`balanced`) targets cost vs quality.** Analyst agents emit terse internal handoffs; reasoning effort is tuned per agent — together this typically cuts completion tokens by roughly half versus `frontier`. A full run still makes many LLM calls plus news search and page scraping.

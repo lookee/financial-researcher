@@ -35,7 +35,7 @@ profiles:
       calendar: { model: openai/gpt-5.4-mini, reasoning: low }
       chief: { model: openai/gpt-5.4, reasoning: medium }
 
-  free:
+  free_groq:
     description: >
       Groq free tier via LiteLLM (set GROQ_API_KEY). Experimental — weaker citations.
     agents:
@@ -44,3 +44,13 @@ profiles:
       outlook: { model: groq/llama-3.3-70b-versatile, reasoning: low }
       calendar: { model: groq/llama-3.1-8b-instant, reasoning: low }
       chief: { model: groq/llama-3.3-70b-versatile, reasoning: low }
+
+  free_openrouter_nex:
+    description: >
+      OpenRouter free tier — Nex AGI Nex-N2-Pro (set OPENROUTER_API_KEY). Experimental.
+    agents:
+      market: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
+      news: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
+      outlook: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
+      calendar: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
+      chief: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: medium }
