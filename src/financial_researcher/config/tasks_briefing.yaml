@@ -1,203 +1,131 @@
 market_analysis_task:
   async_execution: true
   description: >
-    Analyse the full watchlist for session {session_label} on {current_date} at
-    {current_time} (Europe/Rome, Borsa Italiana).
-    Pre-loaded data — do not invent numbers:
+    INTERNAL HANDOFF to chief_strategist — NOT human-facing prose.
+
+    OUTPUT CONTRACT (mandatory):
+    - Compact bullets or `key: value` lines ONLY. No paragraphs, introductions, or conclusions.
+    - Do NOT repeat prices or % moves already in market_pulse_table (strategist has the table).
+    - HARD CAP: ≤300 words total.
+    - Every line: TICKER | fact | number | [N]. Cite market data with instrument [N] only.
+    - Flag stale quotes and FX effects in one line each under `limitations:`.
+    - No hedging filler ("it is worth noting", "overall", "in summary", etc.).
+    - Express alpha vs benchmark rows; name leader/laggard by 1D with [N].
+
+    Cover every instrument ({instrument_count}). Include forecasts/AUM only when non-null in JSON.
+
+    --- RUN CONTEXT ---
+    Session: {session_label} · {current_date} {current_time} · {language}
+    Valid metrics this phase: {valid_metrics}
+    Session orientation: {session_orientation}
     {market_pulse_table}
-    Benchmark reference rows (alpha vs beta):
     {benchmark_context}
-    Full structured context (JSON):
     {watchlist_context}
-    Requirements:
-    - Compare instruments on 1D, 1W, 1M, 1Y and YTD performance.
-    - Report the ABSOLUTE closing price AND trading currency for every instrument
-      (e.g. "23,45 EUR", "612,30 USD"). When YTD/1M is in a non-EUR currency, note
-      the embedded FX effect.
-    - DATA RECENCY: anchor every figure to a source dated within 5 calendar days of
-      {current_date}. If the only source is older, label it "price source not
-      up to date (source date: YYYY-MM-DD)" and list it under Data limitations —
-      never present a stale quote as a session price.
-    - Identify leaders, laggards, and divergences within the watchlist.
-    - Express watchlist moves relative to the benchmark rows (alpha vs beta).
-    - For stocks with forecasts in the JSON, summarise street view (targets, ratings).
-    - For ETFs, note AUM/category context when relevant to performance.
-    - Cite every figure with [N] matching the instrument citation in the table.
-    - Write in {language}.
   expected_output: >
-    A market analysis brief with:
-    - Session headline (2-3 lines) with citations
-    - Watchlist performance overview (relative ranking, key moves) with citations
-    - Per-instrument highlights for EVERY instrument ({instrument_count}) — use Name (TICKER),
-      none omitted — with ABSOLUTE price + currency, 1D/1W/1M/YTD performance, forecasts if available
-    - Cross-instrument observations (sector/theme links) with citations
-    - Data limitations: any missing field in watchlist_context AND any stale-source flag
+    ≤300 words. Bullet/kv blocks only:
+    - `leader_1d:` TICKER pct [N]
+    - `laggard_1d:` TICKER pct [N]
+    - `alpha_vs_benchmark:` one line
+    - Per TICKER: one bullet (divergence, forecast, FX flag, or "no extra") with [N]
+    - `limitations:` stale/missing fields or "none"
+    No prose paragraphs.
   agent: market_analyst
 
 news_analysis_task:
   async_execution: true
   description: >
-    Research news and catalysts for the watchlist: {watchlist_names}
-    (tickers: {watchlist_tickers}).
-    Watchlist stocks (issuer-specific priority): {watchlist_stocks}
-    Watchlist ETFs (fund/theme priority): {watchlist_etfs}
-    Session: {session_label} · {current_date} · Milan market focus.
+    INTERNAL HANDOFF to chief_strategist — NOT human-facing prose.
 
-    Official issuer/regulatory sources (check for stocks):
+    OUTPUT CONTRACT (mandatory):
+    - Compact bullets or `TICKER:` blocks ONLY. No paragraphs, introductions, or conclusions.
+    - Do NOT restate performance figures from market_pulse_table.
+    - HARD CAP: ≤450 words total.
+    - Every headline line: TICKER | title | YYYY-MM-DD | [N] or new [N] | url
+    - Preserve ALL citations — compact [N] or `url + date` so References can be built.
+    - No hedging filler. Information-dense only.
+
+    Workflow:
+    1. Mine prefetched_news_digest; use research_reference_seed [N] exactly.
+    2. Tools ONLY for HIGH gaps, <2 headlines, or |1D|/|1W|>2% unexplained.
+       Hard cap: 4 tool calls per instrument, 12 per run.
+    3. Scrape OFFICIAL source for HIGH stocks.
+    4. CAUSAL sources only for 1D attribution; label BACKGROUND explicitly.
+    5. Never use [1]..[{last_citation}] for news.
+
+    --- RUN CONTEXT ---
+    Session: {session_label} · {current_date} · Milan
+    Stocks: {watchlist_stocks} · ETFs: {watchlist_etfs}
     {institutional_sources_guide}
-
-    Material news ranking from prefetch (baseline impact — extend with tools):
     {watchlist_material_news}
-
-    Deterministic research citations for prefetch headlines (use EXACT numbers):
     {research_reference_seed}
-
-    PRE-FETCHED HEADLINES (review FIRST — do not ignore):
     {prefetched_news_digest}
-
-    Use pre-loaded performance data to prioritise stories that explain recent moves:
-    {market_pulse_table}
-    Instrument profiles:
     {instrument_profile_table}
-
-    Workflow (strict order):
-    1. Read prefetched_news_digest for every ticker (Yahoo + Italy + global + NASDAQ
-       Serper already executed by prefetch). Use research_reference_seed numbers exactly.
-    2. Gap-filling tool searches ONLY when needed:
-       (a) Impact **HIGH** in watchlist_material_news — deepen with Serper and/or scrape;
-       (b) fewer than 2 dated headlines for the instrument in the digest;
-       (c) |1D| or |1W| > 2% in market_pulse_table without an explanatory headline.
-       Hard cap: 4 tool calls per instrument, 12 per run. Skip tools when prefetch is
-       sufficient. Follow institutional_sources_guide for official portals.
-    3. INSTITUTIONAL SCRAPE (mandatory for HIGH): ScrapeWebsiteTool on the OFFICIAL
-       primary source (Borsa Italiana, CONSOB, company IR) for core facts.
-    4. Scrape when any other material headline has an incomplete snippet.
-    5. Write the brief — include ALL material prefetch headlines plus gap-fill discoveries.
-
-    Priority rules:
-    1. Include every material headline from prefetched_news_digest with citation.
-    2. **Official issuer/regulatory news is never optional** for stocks: corporate
-       announcements, market operations, fines/sanctions/investigations, and items from
-       institutional portals (Borsa Italiana, CONSOB, etc.). If present, they MUST lead
-       that instrument's subsection and flow into the final briefing.
-    3. Prioritise recent headlines that explain 1D/1W moves in market_pulse_table.
-    4. Material instrument-specific news MUST lead over generic macro/sector talk.
-    5. For ETFs, include fund-specific AND global theme/sector news (e.g. Nvidia for SMH).
-    6. For .MI stocks, include Italian press AND global wire stories (Reuters, Bloomberg).
-    7. To explain 1D/1W moves, prefer headlines dated within the last 7 calendar days.
-    8. Never cite [1]..[{last_citation}] for news — those numbers are Yahoo market data only.
-    9. SOURCE FRESHNESS: each prefetch headline carries published_date and a freshness tag.
-       A 1D move may be causally attributed ONLY to sources tagged CAUSAL (published within
-       the last 3 trading days). BACKGROUND sources are profile/context only — label them
-       as such and never use them as the primary driver of today's move.
-
-    Quality rules:
-    - DEDUP: two URLs differing only by tracking params or `?lang=` are the SAME source
-      → ONE [N]. Do not list the Italian and English versions of one article twice.
-    - SOURCE RELEVANCE: an equity move is explained only by sources about that
-      equity/issuer/regulator — never by a derivative on the name (covered warrant,
-      certificate, bond) unless the event is about that derivative.
-    - CONTRADICTION HANDLING: when two material sources conflict on the same name
-      (e.g. price sell-off vs broker target-price upgrade), report BOTH and explain
-      the tension in one sentence — never silently drop one side.
-
-    Citation rules:
-    - [1]..[{last_citation}] are reserved for Yahoo Finance data per instrument.
-    - Use the EXACT citation numbers from research_reference_seed for prefetch headlines.
-    - Additional tool discoveries may use the next free number after the seed list.
-
-    Search window: last 7 days (primary), up to 14 days if nothing recent.
   expected_output: >
-    A news brief with:
-    - **Material news by impact** — at the top, one block per instrument with Impact HIGH/MEDIUM
-      from watchlist_material_news; confirm or upgrade with tool searches and [N]. For HIGH items,
-      restate the headline facts verbatim (do not paraphrase into vague sector talk), including the
-      core facts extracted from the official source scrape.
-    - MANDATORY subsection for EVERY instrument ({instrument_count}) — none omitted.
-      Heading format: ### Name (TICKER). In prose always write Name (TICKER), not ticker alone.
-      For each instrument list at least 2 headlines when available (from prefetch and/or
-      tools); if only one exists, include it and state that no further headline was found.
-      Format per headline: title, **exact date YYYY-MM-DD**, 1-line summary, [N].
-      If no instrument-specific headline exists, state that explicitly and give the best
-      sector/theme driver with [N].
-    - Any source contradiction surfaced explicitly in one sentence.
-    - Correlated macro or sector news affecting multiple watchlist names with [N]
-    - Risks or events to watch in the next session with [N]
+    ≤450 words. Structure:
+    - `high_impact:` TICKER — headline fact [N] url (one line per HIGH)
+    - Per TICKER ({instrument_count}, none skipped): 1-2 bullets `title | date | [N] | url`
+      or `no_headline: theme driver [N]`
+    - `conflicts:` one line if any, else "none"
+    - `macro_cross:` one line with [N] if relevant
+    No ### headings, no prose paragraphs.
   agent: news_analyst
 
 outlook_analysis_task:
   async_execution: true
   description: >
-    Assess the medium-term (3–12 month) outlook for the watchlist on
-    {current_date}. Session: {session_label} · Milan/Europe focus.
-    Watchlist: {watchlist_names} (tickers: {watchlist_tickers}).
-    Instrument profiles (from market data):
+    INTERNAL HANDOFF to chief_strategist — NOT human-facing prose.
+
+    OUTPUT CONTRACT (mandatory):
+    - Compact bullets or `key: value` ONLY. No paragraphs, introductions, or conclusions.
+    - Do NOT repeat YTD/1M figures from market_pulse_table.
+    - HARD CAP: ≤350 words total.
+    - Bull/Base/Bear: one bullet each with dated trigger → outcome and [N].
+    - New sources from [{next_citation}]+. No ETF price targets.
+
+    --- RUN CONTEXT ---
+    Session: {session_label} · {current_date} · {language}
+    Orientation: {session_orientation}
+    Watchlist: {watchlist_tickers}
     {instrument_profile_table}
-    Current performance context:
-    {market_pulse_table}
-    Full structured context (JSON):
     {watchlist_context}
-    Requirements:
-    - For each instrument/theme, explain structural drivers over 3–12 months.
-    - Cover macro: ECB/Fed path, inflation, growth, USD/EUR where relevant.
-    - For ETF themes (AI, semiconductors, global equities), research sector outlook
-      — do NOT invent price targets for the ETFs themselves.
-    - SCENARIO ANCHORING: every Bull / Base / Bear bullet must rest on at least one
-      concrete, dated trigger or threshold (e.g. "ECB cut ≥25bp on 2026-06-11 → base").
-      Reject statements that would apply to any watchlist. Each scenario cites [N] for its trigger.
-    - Link outlook to current YTD and 1M performance from market data with [N].
-    - Cite every claim. New sources from [{next_citation}].
   expected_output: >
-    A macro and thematic outlook brief with:
-    - Cross-watchlist outlook headline (2-3 lines) with citations
-    - Per-theme medium-term view for EVERY watchlist theme/ticker group with citations
-    - Macro backdrop for Milan-listed UCITS (ECB rates, inflation, FX, flows) with citations
-    - Explicit **Bull / Base / Bear** scenario subsection (3 bullets each minimum), each anchored
-      to a dated trigger/threshold with citations
-    - Key assumptions and data limitations
-    - References: [N] Source name, YYYY-MM-DD, URL for N >= {next_citation}
+    ≤350 words:
+    - `macro:` 2-3 bullets ECB/Fed/inflation/FX with [N]
+    - Per theme/ticker group: 1 bullet driver with [N]
+    - `bull:` trigger → thesis [N]
+    - `base:` trigger → thesis [N]
+    - `bear:` trigger → thesis [N]
+    - `limitations:` or "none"
+    No prose paragraphs.
   agent: outlook_analyst
 
 calendar_analysis_task:
   async_execution: true
   description: >
-    Build a dated event calendar from {calendar_window_start} to
-    {calendar_window_end} (inclusive) for watchlist: {watchlist_tickers}.
-    Today: {current_date} · Session: {session_label} · Milan market focus.
-    Instrument profiles (link events to instruments):
-    {instrument_profile_table}
-    Performance context:
-    {market_pulse_table}
-    Pre-loaded FORWARD events (Yahoo Finance — confirmed dates only):
-    {forward_calendar_table}
-    Recent dated news (past items — NOT the Event Calendar; reference only):
-    {recent_dated_events_table}
-    MANDATORY date rules:
-    - Every event MUST have an exact date in YYYY-MM-DD format.
-    - Dates must fall within {calendar_window_start}..{calendar_window_end}.
-    - If the date is not confirmed in a source, DO NOT include the event.
-    - Never use vague timing (e.g. "soon", "next week", "in June" without day).
-    - Never list period placeholders (e.g. "Q2 earnings season ends", "end of month").
-    - Each event MUST cite a source that includes the confirmed date and a URL.
-    - Sort events chronologically by date ascending.
-    IMPACT TAXONOMY (mandatory): the Impact column uses ONLY one of:
-    `Earnings`, `Macro release`, `Central bank`, `Corporate action`, `Sector data`,
-    `Regulatory`. No free-form labels (monthly sales = `Sector data`, not `Earnings`).
-    Search for confirmed dates using tools before writing. Include:
-    central-bank meetings (ECB/Fed), major macro releases (CPI, PMI, payrolls),
-    earnings dates for AI/semiconductor theme proxies, EU/Milan market events.
-    Cite every event and date. New sources from [{next_citation}].
-  expected_output: >
-    An event calendar brief with:
-    - Markdown table with EXACT columns:
-      | Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |
-      where Impact is one of the closed taxonomy values.
-    - Minimum 5 dated events if available in sources; fewer only if truly
-      unconfirmed — then state "No further confirmed dates in window."
-    - Top 3 near-term catalysts with full dates (YYYY-MM-DD) and citations
-    - References: [N] Source name, date, URL for N >= {next_citation}
-  agent: calendar_analyst
+    INTERNAL HANDOFF to chief_strategist — NOT human-facing prose.
 
+    OUTPUT CONTRACT (mandatory):
+    - One markdown table + ≤3 catalyst bullets. No prose intro/outro.
+    - HARD CAP: ≤250 words total (table rows count toward cap).
+    - Columns: | Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |
+    - Impact ∈ {Earnings, Macro release, Central bank, Corporate action, Sector data, Regulatory}
+    - Confirmed YYYY-MM-DD + source URL required; omit unverified events.
+    - New sources from [{next_citation}]+. Sort by date ascending.
+
+    --- RUN CONTEXT ---
+    Window: {calendar_window_start} .. {calendar_window_end} · Today: {current_date}
+    Session: {session_label} · Split: {calendar_split}
+    Tickers: {watchlist_tickers}
+    {forward_calendar_table}
+    {recent_dated_events_table}
+    {instrument_profile_table}
+  expected_output: >
+    ≤250 words:
+    - Markdown table (forward events only, dates in window)
+    - `top_catalysts:` up to 3 lines `YYYY-MM-DD | event | [N]`
+    - If none: `no_confirmed_events: true`
+    No narrative paragraphs.
+  agent: calendar_analyst
 executive_briefing_task:
   description: >
     Write ONE executive watchlist briefing in {language} for session

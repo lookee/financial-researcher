@@ -49,6 +49,15 @@ def test_news_analyst_yaml_has_prefetch_first_workflow():
     assert "12 per run" in instructions
 
 
+def test_analyst_tasks_have_word_caps():
+    tasks_path = Path(__file__).parents[1] / "src/financial_researcher/config/tasks_briefing.yaml"
+    tasks = yaml.safe_load(tasks_path.read_text(encoding="utf-8"))
+    assert "≤300 words" in tasks["market_analysis_task"]["description"]
+    assert "≤450 words" in tasks["news_analysis_task"]["description"]
+    assert "≤350 words" in tasks["outlook_analysis_task"]["description"]
+    assert "≤250 words" in tasks["calendar_analysis_task"]["description"]
+
+
 def test_market_analyst_uses_mini_model():
     agents_path = Path(__file__).parents[1] / "src/financial_researcher/config/agents_briefing.yaml"
     agents = yaml.safe_load(agents_path.read_text(encoding="utf-8"))
