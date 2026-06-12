@@ -11,6 +11,7 @@ import requests
 import yfinance as yf
 
 from financial_researcher.services.retry import with_retries
+from financial_researcher.services.source_freshness import annotate_headline_freshness
 from financial_researcher.settings import get_serper_settings
 from financial_researcher.services.news_providers import FinnhubNewsProvider, dedupe_headlines
 from financial_researcher.tools.serper_query import sanitize_serper_query
@@ -323,7 +324,9 @@ def _format_headline_line(instrument: dict[str, Any], headline: dict[str, str]) 
             priority_tag = "**INSTITUTIONAL SOURCE** | "
         else:
             priority_tag = "**MATERIAL NEWS** | "
-    line = f"- {priority_tag}{date} | **{title}** | {source}{region_tag}"
+    freshness = headline.get("freshness_label") or ""
+    freshness_tag = f" [{freshness}]" if freshness else ""
+    line = f"- {priority_tag}{date}{freshness_tag} | **{title}** | {source}{region_tag}"
     if url:
         line += f" | {url}"
     if summary:
@@ -356,7 +359,9 @@ def build_research_reference_seed(
                     "name": item["name"],
                     "title": headline["title"],
                     "source": headline.get("source") or "Unknown",
-                    "date": headline.get("date") or "n/a",
+                    "date": headline.get("published_date") or headline.get("date") or "n/a",
+                    "published_date": headline.get("published_date"),
+                    "freshness_role": headline.get("freshness_role", "background"),
                     "url": headline["url"],
                     "score": headline_relevance_score(item, headline),
                 }
@@ -571,6 +576,7 @@ def prefetch_watchlist_news_bundle(
     instruments: list[dict[str, Any]],
     *,
     current_year: int | None = None,
+    as_of_date: date | None = None,
     language: str = "English",
     start_citation: int = 7,
     max_local_queries: int = 5,
@@ -579,6 +585,7 @@ def prefetch_watchlist_news_bundle(
 ) -> tuple[str, str, str, list[dict[str, Any]]]:
     """Return digest, material brief, reference seed markdown, and seed entries."""
     year = current_year or datetime.now(MILAN_TZ).year
+    as_of = as_of_date or datetime.now(MILAN_TZ).date()
     has_serper = bool(os.getenv("SERPER_API_KEY", "").strip())
     limits = _prefetch_limits(len(instruments))
     max_local_queries = limits["max_local_queries"]
@@ -614,6 +621,9 @@ def prefetch_watchlist_news_bundle(
             max_nasdaq_queries=max_nasdaq_queries,
             max_headlines=max_headlines_per_ticker,
         )
+        combined = [
+            annotate_headline_freshness(headline, as_of=as_of) for headline in combined
+        ]
         headlines_by_ticker[ticker] = combined
 
         if not combined:

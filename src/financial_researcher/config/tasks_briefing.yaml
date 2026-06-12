@@ -83,6 +83,10 @@ news_analysis_task:
     6. For .MI stocks, include Italian press AND global wire stories (Reuters, Bloomberg).
     7. To explain 1D/1W moves, prefer headlines dated within the last 7 calendar days.
     8. Never cite [1]..[{last_citation}] for news — those numbers are Yahoo market data only.
+    9. SOURCE FRESHNESS: each prefetch headline carries published_date and a freshness tag.
+       A 1D move may be causally attributed ONLY to sources tagged CAUSAL (published within
+       the last 3 trading days). BACKGROUND sources are profile/context only — label them
+       as such and never use them as the primary driver of today's move.
 
     Quality rules:
     - DEDUP: two URLs differing only by tracking params or `?lang=` are the SAME source
@@ -219,6 +223,9 @@ executive_briefing_task:
       reference pages or LOW-impact items.
     - Bold the instrument name on first mention in each section.
     - Skimmable: bullets over walls of text; the Executive Summary reads in under 3 minutes.
+
+    SOURCE FRESHNESS: honour CAUSAL vs BACKGROUND tags from prefetch — attribute 1D moves
+    only to CAUSAL sources (≤3 trading days); label older sources as background/context.
 
     ANTI-REDUNDANCY (mandatory — keeps the memo concise):
     - Each performance figure (e.g. "+5.66% 1D") may appear at most TWICE in the

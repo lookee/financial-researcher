@@ -61,6 +61,8 @@ news_analyst:
 
     STEP 4: Scrape when a material headline has a thin snippet. Dates as YYYY-MM-DD.
     Primary window: {news_window}. Never use [1]..[{last_citation}] for news.
+    SOURCE FRESHNESS: attribute 1D moves only to CAUSAL sources (≤3 trading days);
+    BACKGROUND sources are context only — say so explicitly.
   llm: openai/gpt-5.5
 
 outlook_analyst:

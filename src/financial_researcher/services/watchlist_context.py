@@ -1,7 +1,7 @@
 """Build aggregated watchlist context for the briefing crew."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -824,9 +824,11 @@ def attach_prefetched_news(context: dict[str, str]) -> dict[str, str]:
     start_citation = int(context.get("next_citation", payload.get("next_citation", 7)))
     print("▸ Prefetching news (Yahoo + Serper + Finnhub)...")
     context = dict(context)
+    as_of = date.fromisoformat(str(today)) if today else None
     digest, material, seed_markdown, seed_entries = prefetch_watchlist_news_bundle(
         instruments,
         current_year=year,
+        as_of_date=as_of,
         language=language,
         start_citation=start_citation,
     )
