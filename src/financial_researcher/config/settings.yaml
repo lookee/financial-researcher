@@ -4,3 +4,10 @@
 
 # Default language for generated briefings (e.g. English, Italian).
 default_language: English
+
+# Website scrape tool (ScrapeWebsiteTool used by news/outlook/calendar agents).
+scrape:
+  # When true (default), scraped pages are truncated before reaching the LLM.
+  truncate_enabled: true
+  # Max characters returned per scrape (suffix "[...troncato]" added when trimmed).
+  max_chars: 2500

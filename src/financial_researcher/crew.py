@@ -6,10 +6,9 @@ https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
 
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from crewai_tools import ScrapeWebsiteTool
-
 from financial_researcher import llm_compat  # noqa: F401 — patch LLM before agents run
 
+from financial_researcher.tools.scrape_limited import build_scrape_tool
 from financial_researcher.tools.serper_news import (
     SerperNasdaqNewsTool,
     SerperNewsItalyTool,
@@ -17,10 +16,12 @@ from financial_researcher.tools.serper_news import (
     SerperSearchTool,
 )
 
+_SCRAPE_TOOL = build_scrape_tool()
+
 _SEARCH_TOOLS = [
     SerperSearchTool(),
     SerperNewsTool(),
-    ScrapeWebsiteTool(),
+    _SCRAPE_TOOL,
 ]
 
 _NEWS_TOOLS = [
@@ -28,7 +29,7 @@ _NEWS_TOOLS = [
     SerperNewsItalyTool(),
     SerperNasdaqNewsTool(),
     SerperSearchTool(),
-    ScrapeWebsiteTool(),
+    _SCRAPE_TOOL,
 ]
 
 

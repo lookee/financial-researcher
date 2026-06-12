@@ -58,6 +58,33 @@ uv run briefing --watchlist path/to.yaml     # custom watchlist
 | `--force` | Refresh cached identity and market data |
 | `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
 
+## Configuration
+
+Application defaults live in `src/financial_researcher/config/settings.yaml` (language, scrape behaviour, etc.). `REPORT_LANGUAGE` in `.env` overrides `default_language`.
+
+### Website scrape truncation
+
+News, outlook and calendar agents use `ScrapeWebsiteTool` for institutional pages. By default, scraped text is **truncated to 2,500 characters** before it reaches the LLM: paragraphs matching the instrument name/ticker or query keywords are kept first; otherwise the start of the page is used. Trimmed output ends with `[...troncato]`.
+
+```yaml
+# src/financial_researcher/config/settings.yaml
+scrape:
+  truncate_enabled: true   # set false for full page text (higher token use)
+  max_chars: 2500
+```
+
+### Determinism & post-processing
+
+Several briefing guarantees are enforced in Python rather than in agent prompts:
+
+- **1D consistency** — canonical daily change from quote fields; `⚠` when quote and history diverge
+- **Material news** — prefetch emits `Impact **NONE**` instead of promoting ETF/profile pages as headlines
+- **Post-process** — cap on `🔴` tags, continuous research citation numbering, calendar table column normalisation
+- **Performance table** — injected by the pipeline (price column, one `[N]` per row)
+- **News agent** — prefetch-first workflow with a hard cap on gap-filling tool calls (4 per instrument, 12 per run)
+
+## Usage details
+
 ### The four moments of the Milan day
 
 The briefing is **session-aware**: the same watchlist produces a different memo depending on where you are in the Borsa Italiana day (Europe/Rome). When `--session` is omitted, the CLI picks the most recently passed slot ([schedule](src/financial_researcher/config/sessions_milan.yaml)).

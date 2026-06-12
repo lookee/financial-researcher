@@ -40,3 +40,31 @@ def get_default_language() -> str:
         return yaml_language.strip()
 
     return "English"
+
+
+@lru_cache
+def get_scrape_settings() -> dict[str, int | bool]:
+    """Scrape tool options from settings.yaml (truncate_enabled defaults to True)."""
+    scrape = _load_yaml_settings().get("scrape") or {}
+    if not isinstance(scrape, dict):
+        scrape = {}
+
+    truncate_enabled = scrape.get("truncate_enabled", True)
+    if isinstance(truncate_enabled, str):
+        truncate_enabled = truncate_enabled.strip().lower() not in {
+            "0",
+            "false",
+            "no",
+            "off",
+        }
+
+    max_chars = scrape.get("max_chars", 2500)
+    try:
+        max_chars = int(max_chars)
+    except (TypeError, ValueError):
+        max_chars = 2500
+
+    return {
+        "truncate_enabled": bool(truncate_enabled),
+        "max_chars": max(500, min(max_chars, 20_000)),
+    }
