@@ -582,8 +582,8 @@ def prefetch_watchlist_news_bundle(
     max_local_queries: int = 5,
     max_global_queries: int = 5,
     max_headlines_per_ticker: int = 18,
-) -> tuple[str, str, str, list[dict[str, Any]]]:
-    """Return digest, material brief, reference seed markdown, and seed entries."""
+) -> tuple[str, str, str, list[dict[str, Any]], dict[str, list[dict[str, str]]]]:
+    """Return digest, material brief, reference seed, seed entries, headlines by ticker."""
     year = current_year or datetime.now(MILAN_TZ).year
     as_of = as_of_date or datetime.now(MILAN_TZ).date()
     has_serper = bool(os.getenv("SERPER_API_KEY", "").strip())
@@ -646,7 +646,13 @@ def prefetch_watchlist_news_bundle(
         language=language,
         seed_entries=seed_entries,
     )
-    return "\n".join(digest_lines).rstrip(), material_brief, seed_markdown, seed_entries
+    return (
+        "\n".join(digest_lines).rstrip(),
+        material_brief,
+        seed_markdown,
+        seed_entries,
+        headlines_by_ticker,
+    )
 
 
 def prefetch_watchlist_news(
@@ -658,7 +664,7 @@ def prefetch_watchlist_news(
     max_headlines_per_ticker: int = 18,
 ) -> str:
     """Build a markdown digest of pre-fetched Yahoo + Serper news per ticker."""
-    digest, _, _, _ = prefetch_watchlist_news_bundle(
+    digest, _, _, _, _ = prefetch_watchlist_news_bundle(
         instruments,
         current_year=current_year,
         max_local_queries=max_local_queries,
