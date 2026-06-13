@@ -240,7 +240,7 @@ Config: [`agents_briefing.yaml`](src/financial_researcher/defaults/agents_briefi
 
 Agents route through [LiteLLM](https://docs.litellm.ai/docs/providers) (via CrewAI). The briefing pipeline works with **OpenAI**, **Anthropic**, **DeepSeek**, **Groq**, and **OpenRouter** — pick a profile or override individual agents with `FR_MODEL_*`.
 
-Profiles follow `{provider}_{tier}` naming. **Free tiers** use the `free_` prefix (zero LLM cost); the CLI and run metadata show `[FREE]` when active. Legacy names (`balanced`, `budget`, `multi`, …) still work as aliases.
+Profiles follow `{provider}_{tier}` naming. **Free tiers** use the `free_` prefix (zero LLM cost); the CLI and run metadata show `[FREE]` when active.
 
 | Profile | API keys needed | Lineup (summary) |
 |---------|-----------------|------------------|
@@ -260,8 +260,6 @@ Profiles follow `{provider}_{tier}` naming. **Free tiers** use the `free_` prefi
 | `openrouter_auto_quality` | `OPENROUTER_API_KEY` | Auto Router — savings **1** (top quality) |
 | `openrouter_auto_balanced` | `OPENROUTER_API_KEY` | Auto Router — savings **7** (balanced) |
 | `openrouter_auto_economy` | `OPENROUTER_API_KEY` | Auto Router — savings **10** (max savings) |
-
-Legacy aliases: `balanced` → `openai_balanced`, `frontier` → `openai_frontier`, `budget` → `openai_economy`, `anthropic` → `anthropic_balanced`, `deepseek` → `deepseek_balanced`, `multi` → `mixed_balanced`, `openrouter_auto` → `openrouter_auto_balanced`, `openrouter_auto_top` → `openrouter_auto_quality`, `openrouter_auto_medium` → `openrouter_auto_balanced`, `openrouter_auto_max_savings` → `openrouter_auto_economy`.
 
 ```bash
 uv run briefing --model-profile deepseek_balanced        # DeepSeek only

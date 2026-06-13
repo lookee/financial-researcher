@@ -49,11 +49,6 @@ def test_model_profile_name_from_env(monkeypatch):
     assert get_model_profile_name() == "deepseek_balanced"
 
 
-def test_model_profile_name_legacy_alias(monkeypatch):
-    monkeypatch.setenv("FR_MODEL_PROFILE", "deepseek")
-    assert get_model_profile_name() == "deepseek_balanced"
-
-
 def test_model_profile_name_env_beats_yaml(monkeypatch):
     monkeypatch.setenv("FR_MODEL_PROFILE", "mixed_balanced")
     assert get_model_profile_name() == "mixed_balanced"

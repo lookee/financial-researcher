@@ -5,16 +5,13 @@ import os
 import pytest
 
 from financial_researcher.agent_llm import (
-    PROFILE_ALIASES,
     build_agent_llm,
     build_openrouter_auto_plugins,
     clear_profile_caches,
     describe_active_profile,
     get_default_profile_name,
-    get_profile_description,
     is_free_profile,
     list_model_profile_names,
-    normalize_profile_name,
     resolve_active_profile_name,
     resolve_agent_model,
     resolve_openrouter_auto_tradeoff,
@@ -56,22 +53,6 @@ def test_list_model_profile_names():
     assert "openrouter_auto_quality" in names
     assert "openrouter_auto_balanced" in names
     assert "openrouter_auto_economy" in names
-    assert "balanced" not in names
-
-
-def test_legacy_profile_aliases():
-    assert normalize_profile_name("balanced") == "openai_balanced"
-    assert normalize_profile_name("budget") == "openai_economy"
-    assert normalize_profile_name("multi") == "mixed_balanced"
-    assert normalize_profile_name("openrouter_auto_max_savings") == "openrouter_auto_economy"
-    assert normalize_profile_name("openai_balanced") == "openai_balanced"
-    assert len(PROFILE_ALIASES) >= 10
-
-
-def test_legacy_alias_resolves_models(monkeypatch):
-    monkeypatch.setenv("FR_MODEL_PROFILE", "balanced")
-    assert resolve_active_profile_name() == "openai_balanced"
-    assert resolve_agent_model("chief") == "openai/gpt-5.5"
 
 
 def test_is_free_profile():
@@ -114,12 +95,6 @@ def test_openrouter_auto_balanced_tradeoff(monkeypatch):
     monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto_balanced")
     assert resolve_openrouter_auto_tradeoff() == 7
     assert uses_openrouter_auto_routing() is True
-
-
-def test_legacy_openrouter_auto_alias_tradeoff(monkeypatch):
-    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto_max_savings")
-    assert resolve_active_profile_name() == "openrouter_auto_economy"
-    assert resolve_openrouter_auto_tradeoff() == 10
 
 
 def test_build_openrouter_auto_plugins():
@@ -166,5 +141,11 @@ def test_free_groq_profile_uses_groq(monkeypatch):
 
 def test_unknown_profile_raises(monkeypatch):
     monkeypatch.setenv("FR_MODEL_PROFILE", "nonexistent")
+    with pytest.raises(ValueError, match="Unknown model profile"):
+        resolve_agent_model("market")
+
+
+def test_retired_profile_name_raises(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "balanced")
     with pytest.raises(ValueError, match="Unknown model profile"):
         resolve_agent_model("market")

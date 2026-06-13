@@ -1,7 +1,7 @@
 """Per-agent LLM model and reasoning-effort configuration.
 
 Profiles use {provider}_{tier} naming in defaults/model_profiles.yaml.
-Free tiers are prefixed free_ (zero LLM cost). Legacy profile names are accepted via PROFILE_ALIASES.
+Free tiers are prefixed free_ (zero LLM cost).
 """
 
 from __future__ import annotations
@@ -27,20 +27,6 @@ _AGENT_MODEL_ENV: dict[str, str] = {
 _PROFILES_PATH = Path(__file__).parent / "defaults" / "model_profiles.yaml"
 _FALLBACK_DEFAULT_PROFILE = "openai_balanced"
 
-# Legacy names → canonical profile (backward compatibility).
-PROFILE_ALIASES: dict[str, str] = {
-    "balanced": "openai_balanced",
-    "frontier": "openai_frontier",
-    "budget": "openai_economy",
-    "anthropic": "anthropic_balanced",
-    "deepseek": "deepseek_balanced",
-    "multi": "mixed_balanced",
-    "openrouter_auto": "openrouter_auto_balanced",
-    "openrouter_auto_top": "openrouter_auto_quality",
-    "openrouter_auto_medium": "openrouter_auto_balanced",
-    "openrouter_auto_max_savings": "openrouter_auto_economy",
-}
-
 _OPENROUTER_AUTO_MODELS = frozenset(
     {
         "openrouter/openrouter/auto",
@@ -49,17 +35,9 @@ _OPENROUTER_AUTO_MODELS = frozenset(
 )
 
 
-def normalize_profile_name(profile_name: str) -> str:
-    """Map legacy profile names to canonical names."""
-    key = profile_name.strip()
-    if not key:
-        return key
-    return PROFILE_ALIASES.get(key, key)
-
-
 def is_free_profile(profile_name: str | None = None) -> bool:
     """True for free_ profiles (zero LLM token cost)."""
-    name = normalize_profile_name(profile_name or resolve_active_profile_name())
+    name = (profile_name or resolve_active_profile_name()).strip()
     return name.startswith("free_")
 
 
@@ -88,7 +66,7 @@ def list_model_profile_names() -> list[str]:
 def get_default_profile_name() -> str:
     default = _load_profiles_document().get("default_profile", _FALLBACK_DEFAULT_PROFILE)
     if isinstance(default, str) and default.strip():
-        return normalize_profile_name(default.strip())
+        return default.strip()
     return _FALLBACK_DEFAULT_PROFILE
 
 
@@ -96,7 +74,7 @@ def resolve_active_profile_name() -> str:
     """Profile name from env, settings.yaml, or model_profiles default."""
     from financial_researcher.settings import get_model_profile_name
 
-    return normalize_profile_name(get_model_profile_name())
+    return get_model_profile_name()
 
 
 def get_profile_description(profile_name: str | None = None) -> str:
@@ -161,7 +139,7 @@ def uses_openrouter_auto_routing() -> bool:
 
 
 def _agent_config_for_profile(profile_name: str, agent: str) -> dict[str, str]:
-    profile_name = normalize_profile_name(profile_name)
+    profile_name = profile_name.strip()
     profiles = _load_profiles_document().get("profiles") or {}
     profile = profiles.get(profile_name)
     if not isinstance(profile, dict):

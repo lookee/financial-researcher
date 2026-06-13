@@ -18,7 +18,6 @@ from financial_researcher.agent_llm import (
     clear_profile_caches,
     describe_active_profile,
     list_model_profile_names,
-    normalize_profile_name,
     resolve_active_profile_name,
     resolve_openrouter_auto_tradeoff,
     uses_openrouter_auto_routing,
@@ -80,7 +79,7 @@ def run_briefing(
         )
 
     if model_profile:
-        os.environ["FR_MODEL_PROFILE"] = normalize_profile_name(model_profile)
+        os.environ["FR_MODEL_PROFILE"] = model_profile
 
     if openrouter_tradeoff is not None:
         os.environ["OPENROUTER_AUTO_TRADEOFF"] = str(openrouter_tradeoff)
