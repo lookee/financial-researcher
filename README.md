@@ -25,19 +25,6 @@ Static samples live in [`examples/briefings/`](examples/briefings/) (tracked in 
 | Italian | 2026-06-12 | `close` | [watchlist_2026-06-12_close.md](examples/briefings/watchlist_2026-06-12_close.md) |
 | English | 2026-06-12 | `close` | [watchlist_2026-06-12_close_en.md](examples/briefings/watchlist_2026-06-12_close_en.md) |
 
-Italian samples were generated from a 6-instrument personal watchlist (not the 4-instrument [`config/watchlist.yaml.example`](config/watchlist.yaml.example)). To add an English sample or refresh an existing file:
-
-```bash
-# English — example watchlist
-uv run briefing --watchlist config/watchlist.yaml.example --session close --language English --force
-cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/
-
-# Italian
-uv run briefing --watchlist config/watchlist.yaml.example --session close --language Italian --force
-cp output/briefings/watchlist_$(date +%Y-%m-%d)_close.md examples/briefings/watchlist_$(date +%Y-%m-%d)_close.md
-```
-
-New runs are written to `output/briefings/` (gitignored) unless you copy them into `examples/briefings/` as above.
 
 ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
 
