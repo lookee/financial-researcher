@@ -1,9 +1,14 @@
 # Financial Researcher
 
-![Python](https://img.shields.io/badge/python-3.10--3.12-3776AB?logo=python&logoColor=white)
-![CrewAI](https://img.shields.io/badge/CrewAI-multi--agent-8957E5?logo=openai&logoColor=white)
-![CI](https://github.com/lookee/financial-researcher/actions/workflows/ci.yml/badge.svg)
-![Status](https://img.shields.io/badge/status-experimental-red)
+[![Python](https://img.shields.io/badge/python-3.10--3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/tests-159%20passing-brightgreen?logo=pytest&logoColor=white)](tests/)
+[![CI](https://github.com/lookee/financial-researcher/actions/workflows/ci.yml/badge.svg)](https://github.com/lookee/financial-researcher/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
+[![CrewAI](https://img.shields.io/badge/CrewAI-multi--agent-8957E5?logo=openai&logoColor=white)](https://crewai.com)
+[![LLM](https://img.shields.io/badge/LLM-OpenAI%20%7C%20Anthropic%20%7C%20DeepSeek%20%7C%20OpenRouter-8957E5)](src/financial_researcher/defaults/model_profiles.yaml)
+[![Market](https://img.shields.io/badge/market-Borsa%20Italiana%20(Milan)-006E48)](src/financial_researcher/defaults/sessions_milan.yaml)
+[![uv](https://img.shields.io/badge/uv-package%20manager-DE5FE9?logo=uv&logoColor=white)](https://docs.astral.sh/uv/)
+[![Status](https://img.shields.io/badge/status-experimental-red)](#)
 
 > One **executive briefing** for your whole **watchlist** — not one report per ticker.
 
