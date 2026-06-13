@@ -1,7 +1,7 @@
 # Financial Researcher
 
 [![Python](https://img.shields.io/badge/python-3.10--3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-159%20passing-brightgreen?logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/lookee/financial_researcher/main/.github/badges/tests.json&query=$.message&label=tests&color=brightgreen&logo=pytest&logoColor=white&cacheSeconds=600)](tests/)
 [![CI](https://github.com/lookee/financial-researcher/actions/workflows/ci.yml/badge.svg)](https://github.com/lookee/financial-researcher/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
 [![CrewAI](https://img.shields.io/badge/CrewAI-multi--agent-8957E5?logo=openai&logoColor=white)](https://crewai.com)
