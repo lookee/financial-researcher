@@ -104,14 +104,22 @@ uv run briefing --email                      # send HTML briefing via Resend
 | `--quiet` | Hide CrewAI agent/task progress (default: shown) |
 | `--email` | Send the briefing as HTML via Resend (requires env vars below) |
 | `--no-run-metadata` | Omit the run-metadata footer (time, models, tokens) from the briefing |
-| `--no-charts` | Skip the embedded performance charts (weekly + 12-month indexed) |
+| `--no-charts` | Skip the embedded performance charts (session-aware: intraday/week at midday, full set at close) |
 | `--openrouter-tradeoff` | Override OpenRouter Auto savings `1`–`10` (beats profile preset; only for `openrouter_auto_*`) |
 
 By default each briefing ends with a **run-metadata** section: processing time, model profile, token usage and per-agent LLM lineup. Disable with `--no-run-metadata` or `BRIEFING_RUN_METADATA=0`.
 
 ### Performance charts
 
-Each briefing embeds elegant, **indexed-to-100** line charts (white background, editorial palette) in the Performance section: a **weekly** view and a **12-month** view, so instruments at very different prices are comparable on one scale. Charts are rendered deterministically in Python ([`chart_generator.py`](src/financial_researcher/services/chart_generator.py)) from the daily close series — **the LLMs never receive the price series or the images**, so they add zero token cost. PNGs are written to `output/briefings/charts/` and referenced from the markdown; when emailing, they are embedded inline via Resend CID attachments. Disable with `--no-charts` or `BRIEFING_CHARTS=0`.
+Each briefing embeds elegant, **indexed-to-100** line charts (white background, editorial palette) in the Performance section. The set depends on the Milan **session**:
+
+| Session | Charts |
+|---------|--------|
+| `pre_open` | Weekly (context before the open — no intraday yet) |
+| `post_open`, `midday` | Intraday (partial at midday) + weekly |
+| `close` | Session (full intraday), weekly, monthly, 12-month |
+
+Charts are rendered deterministically in Python ([`chart_generator.py`](src/financial_researcher/services/chart_generator.py)) from Yahoo daily closes and 5-minute intraday bars — **the LLMs never receive the price series or the images**, so they add zero token cost. PNGs are written to `output/briefings/charts/` and referenced from the markdown; when emailing, they are embedded inline via Resend CID attachments. Disable with `--no-charts` or `BRIEFING_CHARTS=0`.
 
 ### Email delivery (Resend)
 

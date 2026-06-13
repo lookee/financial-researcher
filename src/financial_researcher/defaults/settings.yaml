@@ -8,7 +8,7 @@ default_language: English
 # Append run metadata (duration, models, tokens) at the end of each briefing.
 report:
   include_run_metadata: true
-  # Embed elegant indexed performance charts (weekly + 12-month) in the briefing.
+  # Embed session-aware performance charts in the briefing (see chart_generator.py).
   include_charts: true
 
 # Model lineup profile (openai_balanced, openai_frontier, openai_economy, anthropic_balanced,

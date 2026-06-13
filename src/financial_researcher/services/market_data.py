@@ -27,6 +27,23 @@ def compute_volatility_30d(history: pd.DataFrame) -> float | None:
     return round(float(returns.std() * (30**0.5) * 100), 2)
 
 
+def extract_intraday_series(intraday: pd.DataFrame) -> dict[str, list] | None:
+    """Compact intraday close series (ISO timestamps + closes) for session charts."""
+    if intraday.empty or "Close" not in intraday.columns:
+        return None
+    closes = intraday["Close"].dropna()
+    if len(closes) < 2:
+        return None
+    timestamps: list[str] = []
+    for ts in closes.index:
+        dt = ts.to_pydatetime()
+        if dt.tzinfo is not None:
+            dt = dt.replace(tzinfo=None)
+        timestamps.append(dt.isoformat(timespec="minutes"))
+    values = [round(float(value), 4) for value in closes.tolist()]
+    return {"timestamps": timestamps, "closes": values}
+
+
 def extract_history_series(history: pd.DataFrame) -> dict[str, list] | None:
     """Compact daily close series (dates + closes) for deterministic charting."""
     if history.empty or "Close" not in history.columns:
@@ -129,6 +146,15 @@ class MarketDataService:
         history_series = extract_history_series(history)
         if history_series is not None:
             snapshot["history"] = history_series
+        try:
+            intraday = with_retries(
+                lambda: ticker.history(period="1d", interval="5m", auto_adjust=True)
+            )
+            intraday_series = extract_intraday_series(intraday)
+            if intraday_series is not None:
+                snapshot["intraday"] = intraday_series
+        except Exception:
+            pass
         return snapshot
 
     def get_benchmark_snapshot(self, ticker: str, name: str) -> dict[str, Any]:

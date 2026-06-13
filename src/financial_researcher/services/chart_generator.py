@@ -1,12 +1,14 @@
 """Generate elegant, deterministic performance charts for briefings.
 
-Charts are rendered in pure Python (matplotlib, Agg backend) from the daily
-close series already fetched by the market pipeline. They never touch the LLMs:
-the crew receives no price series and no images — charts are produced after the
-crew has run and injected into the final markdown / email.
+Charts are rendered in pure Python (matplotlib, Agg backend) from price series
+fetched by the market pipeline. They never touch the LLMs: the crew receives no
+price series and no images — charts are produced after the crew has run and
+injected into the final markdown / email.
 
-The hero visual is a multi-line chart indexed to 100 at the start of the
-horizon, so instruments of very different prices can be compared on one scale.
+Horizons are chosen per Milan session:
+  pre_open   → current week (no intraday yet)
+  post_open, midday → intraday + current week
+  close      → session (intraday), week, month, year
 """
 
 from __future__ import annotations
@@ -25,7 +27,7 @@ import matplotlib.pyplot as plt
 
 from financial_researcher.services import chart_theme
 
-# Horizon -> trailing sessions (None means "year-to-date", sliced by date).
+# Horizon -> trailing daily sessions (None = year-to-date slice).
 _HORIZON_SESSIONS: dict[str, int | None] = {
     "1w": 5,
     "1m": 21,
@@ -33,10 +35,16 @@ _HORIZON_SESSIONS: dict[str, int | None] = {
     "1y": 252,
 }
 
-# Default horizons rendered per briefing (best representations from daily closes).
-_DEFAULT_HORIZONS: tuple[str, ...] = ("1w", "1y")
+# Chart set per Milan session (aligned with session_profiles valid_metrics).
+_SESSION_CHART_HORIZONS: dict[str, tuple[str, ...]] = {
+    "pre_open": ("1w",),
+    "post_open": ("1d", "1w"),
+    "midday": ("1d", "1w"),
+    "close": ("1d", "1w", "1m", "1y"),
+}
 
-_MIN_POINTS = 3
+_MIN_DAILY_POINTS = 3
+_MIN_INTRADAY_POINTS = 2
 
 
 @dataclass(frozen=True)
@@ -49,12 +57,47 @@ class ChartArtifact:
     content_id: str
 
 
-def _horizon_caption(horizon: str, *, italian: bool) -> str:
+def resolve_chart_horizons(session: str) -> tuple[str, ...]:
+    """Return chart horizons for a Milan briefing session."""
+    return _SESSION_CHART_HORIZONS.get(session, ("1w", "1y"))
+
+
+def _horizon_caption(horizon: str, *, italian: bool, session: str) -> str:
+    if horizon == "1d":
+        if session == "close":
+            it, en = (
+                "Andamento della seduta — base 100",
+                "Session trend — indexed to 100",
+            )
+        elif session == "midday":
+            it, en = (
+                "Andamento intraday (parziale) — base 100",
+                "Intraday trend (partial) — indexed to 100",
+            )
+        else:
+            it, en = (
+                "Andamento intraday — base 100",
+                "Intraday trend — indexed to 100",
+            )
+        return it if italian else en
+
     captions = {
-        "1w": ("Andamento settimanale — base 100", "Weekly trend — indexed to 100"),
-        "1m": ("Andamento mensile — base 100", "1-month trend — indexed to 100"),
-        "ytd": ("Andamento da inizio anno — base 100", "Year-to-date trend — indexed to 100"),
-        "1y": ("Andamento su 12 mesi — base 100", "12-month trend — indexed to 100"),
+        "1w": (
+            "Andamento settimanale — base 100",
+            "Weekly trend — indexed to 100",
+        ),
+        "1m": (
+            "Andamento mensile — base 100",
+            "1-month trend — indexed to 100",
+        ),
+        "ytd": (
+            "Andamento da inizio anno — base 100",
+            "Year-to-date trend — indexed to 100",
+        ),
+        "1y": (
+            "Andamento su 12 mesi — base 100",
+            "12-month trend — indexed to 100",
+        ),
     }
     it, en = captions.get(horizon, (horizon, horizon))
     return it if italian else en
@@ -70,13 +113,27 @@ def _parse_dates(raw_dates: list[str]) -> list[datetime]:
     return parsed
 
 
-def _slice_series(
+def _parse_timestamps(raw_timestamps: list[str]) -> list[datetime]:
+    parsed: list[datetime] = []
+    for value in raw_timestamps:
+        text = str(value).strip()
+        try:
+            if len(text) == 10:
+                parsed.append(datetime.fromisoformat(text))
+            else:
+                parsed.append(datetime.fromisoformat(text[:19]))
+        except (ValueError, TypeError):
+            parsed.append(datetime.min)
+    return parsed
+
+
+def _slice_daily_series(
     dates: list[datetime],
     closes: list[float],
     horizon: str,
 ) -> tuple[list[datetime], list[float]]:
-    sessions = _HORIZON_SESSIONS.get(horizon, None)
-    if sessions is None:  # year-to-date
+    sessions = _HORIZON_SESSIONS.get(horizon)
+    if sessions is None:
         year = date.today().year
         pairs = [(d, c) for d, c in zip(dates, closes) if d.year == year]
         if pairs:
@@ -94,7 +151,9 @@ def _indexed(closes: list[float]) -> list[float]:
     return [round(c / base * 100, 4) for c in closes]
 
 
-def _extract_series(instrument: dict[str, Any]) -> tuple[list[datetime], list[float]] | None:
+def _extract_daily_series(
+    instrument: dict[str, Any],
+) -> tuple[list[datetime], list[float]] | None:
     history = instrument.get("history") or {}
     raw_dates = history.get("dates") or []
     raw_closes = history.get("closes") or []
@@ -104,6 +163,42 @@ def _extract_series(instrument: dict[str, Any]) -> tuple[list[datetime], list[fl
     if len(closes) != len(raw_closes):
         return None
     return _parse_dates(raw_dates), closes
+
+
+def _extract_intraday_series(
+    instrument: dict[str, Any],
+) -> tuple[list[datetime], list[float]] | None:
+    intraday = instrument.get("intraday") or {}
+    raw_ts = intraday.get("timestamps") or []
+    raw_closes = intraday.get("closes") or []
+    if not raw_ts or not raw_closes or len(raw_ts) != len(raw_closes):
+        return None
+    closes = [float(c) for c in raw_closes if c is not None]
+    if len(closes) != len(raw_closes):
+        return None
+    return _parse_timestamps(raw_ts), closes
+
+
+def _extract_chart_series(
+    instrument: dict[str, Any],
+    horizon: str,
+) -> tuple[list[datetime], list[float]] | None:
+    if horizon == "1d":
+        series = _extract_intraday_series(instrument)
+        if series is None:
+            return None
+        dates, closes = series
+        if len(closes) < _MIN_INTRADAY_POINTS:
+            return None
+        return dates, closes
+
+    series = _extract_daily_series(instrument)
+    if series is None:
+        return None
+    dates, closes = _slice_daily_series(series[0], series[1], horizon)
+    if len(closes) < _MIN_DAILY_POINTS:
+        return None
+    return dates, closes
 
 
 def _fmt_delta(pct: float, *, italian: bool) -> str:
@@ -140,10 +235,22 @@ def _place_end_labels(ax, entries: list[dict[str, Any]], *, italian: bool) -> No
         )
 
 
+def _configure_time_axis(ax, *, horizon: str) -> None:
+    if horizon == "1d":
+        locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
+    else:
+        locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
+
+
 def build_indexed_chart(
     instruments: list[dict[str, Any]],
     *,
     horizon: str,
+    session: str,
     output_path: Path,
     language: str,
     title: str,
@@ -153,12 +260,10 @@ def build_indexed_chart(
 
     plottable: list[dict[str, Any]] = []
     for index, instrument in enumerate(instruments):
-        series = _extract_series(instrument)
+        series = _extract_chart_series(instrument, horizon)
         if series is None:
             continue
-        dates, closes = _slice_series(series[0], series[1], horizon)
-        if len(closes) < _MIN_POINTS:
-            continue
+        dates, closes = series
         values = _indexed(closes)
         plottable.append(
             {
@@ -202,10 +307,7 @@ def build_indexed_chart(
                 )
 
         ax.axhline(100.0, color=chart_theme.HAIRLINE, linewidth=1.0, zorder=1)
-
-        locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
-        ax.xaxis.set_major_locator(locator)
-        ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
+        _configure_time_axis(ax, horizon=horizon)
 
         ax.margins(x=0.02)
         ax.set_xlim(right=ax.get_xlim()[1] + (ax.get_xlim()[1] - ax.get_xlim()[0]) * 0.18)
@@ -237,7 +339,7 @@ def build_indexed_chart(
 
     return ChartArtifact(
         horizon=horizon,
-        caption=_horizon_caption(horizon, italian=italian),
+        caption=_horizon_caption(horizon, italian=italian, session=session),
         path=output_path,
         content_id=f"chart-{horizon}-{output_path.stem}",
     )
@@ -250,17 +352,19 @@ def generate_briefing_charts(
     language: str,
     slug: str,
     out_dir: Path,
-    horizons: tuple[str, ...] = _DEFAULT_HORIZONS,
+    horizons: tuple[str, ...] | None = None,
 ) -> list[ChartArtifact]:
-    """Render the set of charts for a briefing run. Empty list when no data."""
+    """Render session-appropriate charts for a briefing run."""
     italian = language.lower().startswith("ital")
+    chosen = horizons if horizons is not None else resolve_chart_horizons(session)
     artifacts: list[ChartArtifact] = []
-    for horizon in horizons:
-        caption = _horizon_caption(horizon, italian=italian)
+    for horizon in chosen:
+        caption = _horizon_caption(horizon, italian=italian, session=session)
         output_path = out_dir / f"{slug}_{horizon}.png"
         artifact = build_indexed_chart(
             instruments,
             horizon=horizon,
+            session=session,
             output_path=output_path,
             language=language,
             title=caption,

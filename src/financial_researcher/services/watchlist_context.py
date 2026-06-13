@@ -197,6 +197,10 @@ def _instrument_entry(
     if history:
         entry["history"] = history
 
+    intraday = snapshot.get("intraday")
+    if intraday:
+        entry["intraday"] = intraday
+
     return entry
 
 
