@@ -115,7 +115,7 @@ class TestRunMetadataFooter:
             },
             duration_seconds=96.75,
             warnings=[],
-            model_profile="balanced",
+            model_profile="openai_balanced",
             agent_models={
                 "market": "openai/gpt-5.4-mini",
                 "news": "openai/gpt-5.5",
@@ -136,7 +136,7 @@ class TestRunMetadataFooter:
         )
         assert "## Informazioni di elaborazione" in footer
         assert "Profilo modelli" in footer
-        assert "balanced" in footer
+        assert "openai_balanced" in footer
         assert "33,518" in footer
         assert "openai/gpt-5.5" in footer
 

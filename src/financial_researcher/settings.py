@@ -46,17 +46,20 @@ def get_model_profile_name() -> str:
     """Return the active model profile name.
 
     Priority: FR_MODEL_PROFILE env > settings.yaml model_profile >
-    model_profiles.yaml default_profile > balanced.
+    model_profiles.yaml default_profile > openai_balanced.
     """
+    from financial_researcher.agent_llm import (
+        get_default_profile_name,
+        normalize_profile_name,
+    )
+
     env_profile = os.getenv("FR_MODEL_PROFILE", "").strip()
     if env_profile:
-        return env_profile
+        return normalize_profile_name(env_profile)
 
     yaml_profile = _load_yaml_settings().get("model_profile", "")
     if isinstance(yaml_profile, str) and yaml_profile.strip():
-        return yaml_profile.strip()
-
-    from financial_researcher.agent_llm import get_default_profile_name
+        return normalize_profile_name(yaml_profile.strip())
 
     return get_default_profile_name()
 

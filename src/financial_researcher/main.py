@@ -15,8 +15,10 @@ import time
 from pathlib import Path
 
 from financial_researcher.agent_llm import (
+    clear_profile_caches,
     describe_active_profile,
     list_model_profile_names,
+    normalize_profile_name,
     resolve_active_profile_name,
     resolve_openrouter_auto_tradeoff,
     uses_openrouter_auto_routing,
@@ -78,10 +80,19 @@ def run_briefing(
         )
 
     if model_profile:
-        os.environ["FR_MODEL_PROFILE"] = model_profile
+        os.environ["FR_MODEL_PROFILE"] = normalize_profile_name(model_profile)
 
     if openrouter_tradeoff is not None:
         os.environ["OPENROUTER_AUTO_TRADEOFF"] = str(openrouter_tradeoff)
+
+    if model_profile or openrouter_tradeoff is not None:
+        clear_profile_caches()
+
+    if openrouter_tradeoff is not None and not uses_openrouter_auto_routing():
+        print(
+            "\n▸ Warning: --openrouter-tradeoff applies only to openrouter_auto_* "
+            "profiles; the active profile does not use OpenRouter Auto routing."
+        )
 
     print(f"\n▸ Session: {chosen_session} (Milan)")
     print(f"▸ Model profile: {describe_active_profile()}")
@@ -185,7 +196,7 @@ Examples:
   uv run briefing
   uv run briefing --session close
   uv run briefing --force --language Italian
-  uv run briefing --model-profile budget
+  uv run briefing --model-profile openrouter_auto_balanced --openrouter-tradeoff 3
         """,
     )
     parser.add_argument(
@@ -248,8 +259,9 @@ Examples:
         metavar="1-10",
         default=None,
         help=(
-            "OpenRouter Auto savings level: 1 = favour quality, 10 = max savings "
-            "(maps to cost_quality_tradeoff; profile presets: top=1, medium=7, max_savings=10)"
+            "OpenRouter Auto savings override (1 = quality, 10 = max savings). "
+            "Beats the profile preset (quality=1, balanced=7, economy=10). "
+            "Same as OPENROUTER_AUTO_TRADEOFF. Only for openrouter_auto_* profiles."
         ),
     )
     return parser

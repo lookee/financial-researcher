@@ -54,9 +54,9 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `OPENAI_API_KEY` | ✅* | LLM for `balanced`, `frontier`, `budget`, `multi` profiles |
-| `ANTHROPIC_API_KEY` | — | Required for `anthropic` or `multi` |
-| `DEEPSEEK_API_KEY` | — | Required for `deepseek` or `multi` |
+| `OPENAI_API_KEY` | ✅* | LLM for `openai_*` and `mixed_balanced` profiles |
+| `ANTHROPIC_API_KEY` | — | Required for `anthropic_balanced` or `mixed_balanced` |
+| `DEEPSEEK_API_KEY` | — | Required for `deepseek_balanced` or `mixed_balanced` |
 | `SERPER_API_KEY` | ✅ | News and web search |
 | `SERPER_FREE_TIER` | — | Set `0` if you have a paid Serper plan (keeps `site:` queries) |
 | `FINNHUB_API_KEY` | — | Optional Finnhub company-news prefetch (merged with Yahoo/Serper) |
@@ -67,7 +67,7 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 | `FR_MODEL_PROFILE` | — | Model lineup — see [Model profiles](#model-profiles) and [`model_profiles.yaml`](src/financial_researcher/defaults/model_profiles.yaml) |
 | `GROQ_API_KEY` | — | Required for `--model-profile free_groq` (no OpenAI key needed) |
 | `OPENROUTER_API_KEY` | — | Required for `free_openrouter_nex` or any `openrouter_auto_*` profile |
-| `OPENROUTER_AUTO_TRADEOFF` | — | Override profile savings `1`–`10` (1 = quality, 10 = max savings) |
+| `OPENROUTER_AUTO_TRADEOFF` | — | Override profile savings `1`–`10` for `openrouter_auto_*` (1 = quality, 10 = max savings). Beats profile preset; same as `--openrouter-tradeoff` |
 | `FR_MODEL_*` | — | Per-agent model override (e.g. `FR_MODEL_CHIEF`) — beats the active profile |
 | `WATCHLIST_PATH` | — | Override watchlist YAML location (default: `./config/watchlist.yaml`) |
 | `FINANCIAL_RESEARCHER_CONFIG_DIR` | — | Global user config directory (default: `~/.config/financial_researcher`) |
@@ -80,7 +80,7 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 | `BRIEFING_EMAIL_AUTO` | — | Set `1` to email after every run (same as always passing `--email`) |
 | `BRIEFING_RUN_METADATA` | — | Set `0` to hide the run-metadata footer (enabled by default) |
 
-\*Not required for single-provider profiles that use another backend (`anthropic`, `deepseek`, `free_groq`, `free_openrouter_nex`, `openrouter_auto_*`). The `multi` profile needs OpenAI + Anthropic + DeepSeek.
+\*Not required for single-provider profiles that use another backend (`anthropic_balanced`, `deepseek_balanced`, `free_*`, `openrouter_auto_*`). `mixed_balanced` needs OpenAI + Anthropic + DeepSeek.
 
 ## Usage
 
@@ -88,7 +88,7 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 uv run briefing                              # auto session, default language
 uv run briefing --session close              # explicit Milan session
 uv run briefing --force --language Italian   # refresh cache + language
-uv run briefing --model-profile frontier     # all gpt-5.5 lineup
+uv run briefing --model-profile openai_frontier   # all gpt-5.5 lineup
 uv run briefing --watchlist path/to.yaml     # custom watchlist
 uv run briefing --email                      # send HTML briefing via Resend
 ```
@@ -99,10 +99,11 @@ uv run briefing --email                      # send HTML briefing via Resend
 | `--language LANG` | Briefing language (default: English) |
 | `--force` | Refresh cached identity and market data |
 | `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
-| `--model-profile` | See [Model profiles](#model-profiles) (default: `balanced`) |
+| `--model-profile` | See [Model profiles](#model-profiles) (default: `openai_balanced`) |
 | `--quiet` | Hide CrewAI agent/task progress (default: shown) |
 | `--email` | Send the briefing as HTML via Resend (requires env vars below) |
 | `--no-run-metadata` | Omit the run-metadata footer (time, models, tokens) from the briefing |
+| `--openrouter-tradeoff` | Override OpenRouter Auto savings `1`–`10` (beats profile preset; only for `openrouter_auto_*`) |
 
 By default each briefing ends with a **run-metadata** section: processing time, model profile, token usage and per-agent LLM lineup. Disable with `--no-run-metadata` or `BRIEFING_RUN_METADATA=0`.
 
@@ -225,7 +226,7 @@ CrewAI  ├─ market_analyst ─┐
 3. **Aggregate** context, performance table and theme map in Python.
 4. **Run agents** — four analysts in parallel, then the chief strategist writes one cited memo.
 
-| Agent | Role | Model (`balanced`) | Tools |
+| Agent | Role | Model (`openai_balanced`) | Tools |
 |-------|------|-------|-------|
 | `market_analyst` | Relative performance across the watchlist | gpt-5.4-mini | Pre-loaded context |
 | `news_analyst` | News & catalysts behind recent moves | gpt-5.5 | Serper · Yahoo news · scraping |
@@ -239,48 +240,55 @@ Config: [`agents_briefing.yaml`](src/financial_researcher/defaults/agents_briefi
 
 Agents route through [LiteLLM](https://docs.litellm.ai/docs/providers) (via CrewAI). The briefing pipeline works with **OpenAI**, **Anthropic**, **DeepSeek**, **Groq**, and **OpenRouter** — pick a profile or override individual agents with `FR_MODEL_*`.
 
+Profiles follow `{provider}_{tier}` naming. **Free tiers** use the `free_` prefix (zero LLM cost); the CLI and run metadata show `[FREE]` when active. Legacy names (`balanced`, `budget`, `multi`, …) still work as aliases.
+
 | Profile | API keys needed | Lineup (summary) |
 |---------|-----------------|------------------|
-| `balanced` | `OPENAI_API_KEY` | **Default** — mini on market/calendar, `gpt-5.4` outlook, `gpt-5.5` news + chief |
-| `frontier` | `OPENAI_API_KEY` | all `gpt-5.5`, higher reasoning on news/chief |
-| `budget` | `OPENAI_API_KEY` | mini on all analysts, `gpt-5.4` chief |
-| `anthropic` | `ANTHROPIC_API_KEY` | Haiku on market/calendar, Sonnet 4.6 on news/chief |
-| `deepseek` | `DEEPSEEK_API_KEY` | V4 Flash on analysts, V4 Pro on news/chief |
-| `multi` | OpenAI + Anthropic + DeepSeek | Flash analysts · Sonnet news · `gpt-5.4` outlook · `gpt-5.5` chief |
+| **OpenAI (paid)** | | |
+| `openai_balanced` | `OPENAI_API_KEY` | **Default** — mini on market/calendar, `gpt-5.4` outlook, `gpt-5.5` news + chief |
+| `openai_frontier` | `OPENAI_API_KEY` | all `gpt-5.5`, higher reasoning on news/chief |
+| `openai_economy` | `OPENAI_API_KEY` | mini on all analysts, `gpt-5.4` chief |
+| **Single-provider (paid)** | | |
+| `anthropic_balanced` | `ANTHROPIC_API_KEY` | Haiku on market/calendar, Sonnet 4.6 on news/chief |
+| `deepseek_balanced` | `DEEPSEEK_API_KEY` | V4 Flash on analysts, V4 Pro on news/chief |
+| **Multi-provider (paid)** | | |
+| `mixed_balanced` | OpenAI + Anthropic + DeepSeek | Flash analysts · Sonnet news · `gpt-5.4` outlook · `gpt-5.5` chief |
+| **Free (zero LLM cost)** | | |
 | `free_groq` | `GROQ_API_KEY` | Llama via Groq — experimental |
 | `free_openrouter_nex` | `OPENROUTER_API_KEY` | [Nex-N2-Pro (free)](https://openrouter.ai/nex-agi/nex-n2-pro:free) — experimental |
-| `openrouter_auto_top` | `OPENROUTER_API_KEY` | Auto Router — savings **1** (top quality) |
-| `openrouter_auto_medium` | `OPENROUTER_API_KEY` | Auto Router — savings **7** (balanced) |
-| `openrouter_auto_max_savings` | `OPENROUTER_API_KEY` | Auto Router — savings **10** (max savings) |
-| `openrouter_auto` | `OPENROUTER_API_KEY` | Alias for `openrouter_auto_medium` |
+| **OpenRouter Auto (paid, variable cost)** | | |
+| `openrouter_auto_quality` | `OPENROUTER_API_KEY` | Auto Router — savings **1** (top quality) |
+| `openrouter_auto_balanced` | `OPENROUTER_API_KEY` | Auto Router — savings **7** (balanced) |
+| `openrouter_auto_economy` | `OPENROUTER_API_KEY` | Auto Router — savings **10** (max savings) |
+
+Legacy aliases: `balanced` → `openai_balanced`, `frontier` → `openai_frontier`, `budget` → `openai_economy`, `anthropic` → `anthropic_balanced`, `deepseek` → `deepseek_balanced`, `multi` → `mixed_balanced`, `openrouter_auto` → `openrouter_auto_balanced`, `openrouter_auto_top` → `openrouter_auto_quality`, `openrouter_auto_medium` → `openrouter_auto_balanced`, `openrouter_auto_max_savings` → `openrouter_auto_economy`.
 
 ```bash
-uv run briefing --model-profile deepseek               # DeepSeek only
-uv run briefing --model-profile multi                  # OpenAI + Anthropic + DeepSeek
-uv run briefing --model-profile anthropic              # Claude Haiku + Sonnet 4.6
-uv run briefing --model-profile free_openrouter_nex
-uv run briefing --model-profile openrouter_auto_top
-uv run briefing --model-profile openrouter_auto_medium
-uv run briefing --model-profile openrouter_auto_max_savings
-uv run briefing --model-profile openrouter_auto_max_savings --openrouter-tradeoff 8
-uv run briefing --model-profile budget
-export FR_MODEL_PROFILE=frontier
+uv run briefing --model-profile deepseek_balanced        # DeepSeek only
+uv run briefing --model-profile mixed_balanced           # OpenAI + Anthropic + DeepSeek
+uv run briefing --model-profile anthropic_balanced       # Claude Haiku + Sonnet 4.6
+uv run briefing --model-profile free_openrouter_nex      # [FREE] Nex-N2-Pro
+uv run briefing --model-profile openrouter_auto_quality
+uv run briefing --model-profile openrouter_auto_balanced
+uv run briefing --model-profile openrouter_auto_economy --openrouter-tradeoff 8
+uv run briefing --model-profile openai_economy
+export FR_MODEL_PROFILE=openai_frontier
 ```
 
-Set `model_profile: budget` in `defaults/settings.yaml` for a persistent default. Per-agent `FR_MODEL_*` env vars still override one slot in the active profile.
+Set `model_profile: openai_economy` in `defaults/settings.yaml` for a persistent default. Per-agent `FR_MODEL_*` env vars still override one slot in the active profile.
 
 > [!NOTE]
 > **Provider notes**
-> - **`deepseek`** — [DeepSeek V4](https://api-docs.deepseek.com/) via `deepseek/deepseek-v4-flash` and `deepseek/deepseek-v4-pro`. Set `DEEPSEEK_API_KEY` only.
-> - **`multi`** — assigns each provider where it fits best: cheap DeepSeek for table analysts, Anthropic for news synthesis, OpenAI for outlook + final memo. All three API keys required.
-> - **`anthropic`** — [Claude Haiku 4.5](https://www.anthropic.com/news/claude-haiku-4-5) + [Sonnet 4.6](https://docs.litellm.ai/docs/providers/anthropic).
-> - **`free_*`** — experimental; weaker citations than `balanced`.
-> - **`openrouter_auto_*`** — [OpenRouter Auto Router](https://openrouter.ai/docs/guides/routing/routers/auto-router): savings level is set on the profile (`top`=1, `medium`=7, `max_savings`=10). Override with `OPENROUTER_AUTO_TRADEOFF` or `--openrouter-tradeoff`. The actual routed model is chosen by OpenRouter per request.
+> - **`deepseek_balanced`** — [DeepSeek V4](https://api-docs.deepseek.com/) via `deepseek/deepseek-v4-flash` and `deepseek/deepseek-v4-pro`. Set `DEEPSEEK_API_KEY` only.
+> - **`mixed_balanced`** — assigns each provider where it fits best: cheap DeepSeek for table analysts, Anthropic for news synthesis, OpenAI for outlook + final memo. All three API keys required.
+> - **`anthropic_balanced`** — [Claude Haiku 4.5](https://www.anthropic.com/news/claude-haiku-4-5) + [Sonnet 4.6](https://docs.litellm.ai/docs/providers/anthropic).
+> - **`free_*`** — zero LLM token cost; experimental; weaker citations than `openai_balanced`. Shown as `[FREE]` in logs and run metadata.
+> - **`openrouter_auto_*`** — [OpenRouter Auto Router](https://openrouter.ai/docs/guides/routing/routers/auto-router): savings level is set on the profile (`quality`=1, `balanced`=7, `economy`=10). Override with `OPENROUTER_AUTO_TRADEOFF` or `--openrouter-tradeoff`. The actual routed model is chosen by OpenRouter per request.
 
 > [!WARNING]
-> **Default profile (`balanced`) targets cost vs quality.** Analyst agents emit terse internal handoffs; reasoning effort is tuned per agent — together this typically cuts completion tokens by roughly half versus `frontier`. A full run still makes many LLM calls plus news search and page scraping.
+> **Default profile (`openai_balanced`) targets cost vs quality.** Analyst agents emit terse internal handoffs; reasoning effort is tuned per agent — together this typically cuts completion tokens by roughly half versus `openai_frontier`. A full run still makes many LLM calls plus news search and page scraping.
 >
-> **Want all-frontier quality?** Use `--model-profile frontier` or per-agent overrides (see `.env.sample`).
+> **Want all-frontier quality?** Use `--model-profile openai_frontier` or per-agent overrides (see `.env.sample`).
 
 **Prompt caching:** agent role/goal/backstory in `agents_briefing.yaml` are static (no dates or session placeholders). Run-specific tables and dates are appended at the end of each task description under `--- RUN CONTEXT ---`, so OpenAI can cache the shared instruction prefix across runs.
 

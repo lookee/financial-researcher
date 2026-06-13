@@ -1,8 +1,9 @@
 # Model lineup profiles for the briefing crew.
+# Naming: {provider}_{tier} — free profiles use the free_ prefix (zero LLM cost).
 # Select: FR_MODEL_PROFILE env, model_profile in defaults/settings.yaml, or --model-profile.
 # Per-agent FR_MODEL_* env vars override the active profile for that agent only.
 
-default_profile: balanced
+default_profile: openai_balanced
 
 # Shared agent lineup for OpenRouter Auto profiles (YAML anchor).
 openrouter_auto_agents: &openrouter_auto_agents
@@ -13,9 +14,10 @@ openrouter_auto_agents: &openrouter_auto_agents
   chief: { model: openrouter/openrouter/auto, reasoning: medium }
 
 profiles:
-  balanced:
+  # --- OpenAI (paid) ---
+  openai_balanced:
     description: >
-      Default cost/quality mix — frontier on news and chief only; mini on market/calendar.
+      Default OpenAI mix — frontier on news and chief; mini on market/calendar.
     agents:
       market: { model: openai/gpt-5.4-mini, reasoning: low }
       news: { model: openai/gpt-5.5, reasoning: medium }
@@ -23,7 +25,7 @@ profiles:
       calendar: { model: openai/gpt-5.4-mini, reasoning: low }
       chief: { model: openai/gpt-5.5, reasoning: medium }
 
-  frontier:
+  openai_frontier:
     description: >
       All frontier OpenAI models — highest quality and cost; use for final memos.
     agents:
@@ -33,7 +35,7 @@ profiles:
       calendar: { model: openai/gpt-5.5, reasoning: low }
       chief: { model: openai/gpt-5.5, reasoning: high }
 
-  budget:
+  openai_economy:
     description: >
       Low-cost OpenAI — mini on analysts, gpt-5.4 on chief; expect thinner synthesis.
     agents:
@@ -43,56 +45,10 @@ profiles:
       calendar: { model: openai/gpt-5.4-mini, reasoning: low }
       chief: { model: openai/gpt-5.4, reasoning: medium }
 
-  free_groq:
+  # --- Single-provider (paid) ---
+  anthropic_balanced:
     description: >
-      Groq free tier via LiteLLM (set GROQ_API_KEY). Experimental — weaker citations.
-    agents:
-      market: { model: groq/llama-3.1-8b-instant, reasoning: low }
-      news: { model: groq/llama-3.3-70b-versatile, reasoning: low }
-      outlook: { model: groq/llama-3.3-70b-versatile, reasoning: low }
-      calendar: { model: groq/llama-3.1-8b-instant, reasoning: low }
-      chief: { model: groq/llama-3.3-70b-versatile, reasoning: low }
-
-  free_openrouter_nex:
-    description: >
-      OpenRouter free tier — Nex AGI Nex-N2-Pro (set OPENROUTER_API_KEY). Experimental.
-    agents:
-      market: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
-      news: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
-      outlook: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
-      calendar: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
-      chief: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: medium }
-
-  # OpenRouter Auto Router — savings level on the profile (auto_tradeoff 1–10).
-  # Override per run: OPENROUTER_AUTO_TRADEOFF or --openrouter-tradeoff.
-
-  openrouter_auto_top:
-    description: >
-      OpenRouter Auto — top quality (auto_tradeoff 1). Best models regardless of cost.
-    auto_tradeoff: 1
-    agents: *openrouter_auto_agents
-
-  openrouter_auto_medium:
-    description: >
-      OpenRouter Auto — balanced (auto_tradeoff 7). Default OpenRouter cost/quality mix.
-    auto_tradeoff: 7
-    agents: *openrouter_auto_agents
-
-  openrouter_auto_max_savings:
-    description: >
-      OpenRouter Auto — max savings (auto_tradeoff 10). Cheapest capable model per request.
-    auto_tradeoff: 10
-    agents: *openrouter_auto_agents
-
-  openrouter_auto:
-    description: >
-      Alias for openrouter_auto_medium — balanced OpenRouter Auto Router (auto_tradeoff 7).
-    auto_tradeoff: 7
-    agents: *openrouter_auto_agents
-
-  anthropic:
-    description: >
-      Anthropic cost/quality mix (set ANTHROPIC_API_KEY) — Haiku on analysts, Sonnet on news/chief.
+      Anthropic cost/quality mix — Haiku on analysts, Sonnet on news/chief.
     agents:
       market: { model: anthropic/claude-haiku-4-5, reasoning: low }
       news: { model: anthropic/claude-sonnet-4-6, reasoning: medium }
@@ -100,9 +56,9 @@ profiles:
       calendar: { model: anthropic/claude-haiku-4-5, reasoning: low }
       chief: { model: anthropic/claude-sonnet-4-6, reasoning: medium }
 
-  deepseek:
+  deepseek_balanced:
     description: >
-      DeepSeek only (set DEEPSEEK_API_KEY) — V4 Flash on analysts, V4 Pro on news/chief.
+      DeepSeek only — V4 Flash on analysts, V4 Pro on news/chief.
     agents:
       market: { model: deepseek/deepseek-v4-flash, reasoning: low }
       news: { model: deepseek/deepseek-v4-pro, reasoning: medium }
@@ -110,7 +66,8 @@ profiles:
       calendar: { model: deepseek/deepseek-v4-flash, reasoning: low }
       chief: { model: deepseek/deepseek-v4-pro, reasoning: medium }
 
-  multi:
+  # --- Multi-provider (paid) ---
+  mixed_balanced:
     description: >
       Multi-provider mix — DeepSeek analysts, Anthropic news, OpenAI outlook + chief.
       Requires DEEPSEEK_API_KEY, ANTHROPIC_API_KEY, and OPENAI_API_KEY.
@@ -120,3 +77,43 @@ profiles:
       outlook: { model: openai/gpt-5.4, reasoning: low }
       calendar: { model: deepseek/deepseek-v4-flash, reasoning: low }
       chief: { model: openai/gpt-5.5, reasoning: medium }
+
+  # --- Free tier (zero LLM cost) ---
+  free_groq:
+    description: >
+      FREE — Groq free tier via LiteLLM (GROQ_API_KEY). Experimental; weaker citations.
+    agents:
+      market: { model: groq/llama-3.1-8b-instant, reasoning: low }
+      news: { model: groq/llama-3.3-70b-versatile, reasoning: low }
+      outlook: { model: groq/llama-3.3-70b-versatile, reasoning: low }
+      calendar: { model: groq/llama-3.1-8b-instant, reasoning: low }
+      chief: { model: groq/llama-3.3-70b-versatile, reasoning: low }
+
+  free_openrouter_nex:
+    description: >
+      FREE — OpenRouter Nex-N2-Pro :free (OPENROUTER_API_KEY). Experimental.
+    agents:
+      market: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
+      news: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
+      outlook: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
+      calendar: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
+      chief: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: medium }
+
+  # --- OpenRouter Auto (paid, variable cost) — auto_tradeoff 1–10 on profile ---
+  openrouter_auto_quality:
+    description: >
+      OpenRouter Auto — top quality (auto_tradeoff 1). Best models regardless of cost.
+    auto_tradeoff: 1
+    agents: *openrouter_auto_agents
+
+  openrouter_auto_balanced:
+    description: >
+      OpenRouter Auto — balanced (auto_tradeoff 7). Default OpenRouter cost/quality mix.
+    auto_tradeoff: 7
+    agents: *openrouter_auto_agents
+
+  openrouter_auto_economy:
+    description: >
+      OpenRouter Auto — max savings (auto_tradeoff 10). Cheapest capable model per request.
+    auto_tradeoff: 10
+    agents: *openrouter_auto_agents

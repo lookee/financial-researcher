@@ -2,6 +2,7 @@
 
 import pytest
 
+from financial_researcher.agent_llm import clear_profile_caches, resolve_openrouter_auto_tradeoff
 from financial_researcher.settings import (
     _load_yaml_settings,
     email_delivery_configured,
@@ -40,17 +41,22 @@ def _clear_settings_caches():
 
 def test_model_profile_name_defaults_to_balanced(monkeypatch):
     monkeypatch.delenv("FR_MODEL_PROFILE", raising=False)
-    assert get_model_profile_name() == "balanced"
+    assert get_model_profile_name() == "openai_balanced"
 
 
 def test_model_profile_name_from_env(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "deepseek_balanced")
+    assert get_model_profile_name() == "deepseek_balanced"
+
+
+def test_model_profile_name_legacy_alias(monkeypatch):
     monkeypatch.setenv("FR_MODEL_PROFILE", "deepseek")
-    assert get_model_profile_name() == "deepseek"
+    assert get_model_profile_name() == "deepseek_balanced"
 
 
 def test_model_profile_name_env_beats_yaml(monkeypatch):
-    monkeypatch.setenv("FR_MODEL_PROFILE", "multi")
-    assert get_model_profile_name() == "multi"
+    monkeypatch.setenv("FR_MODEL_PROFILE", "mixed_balanced")
+    assert get_model_profile_name() == "mixed_balanced"
 
 
 def test_default_language_from_env(monkeypatch):
@@ -135,11 +141,20 @@ def test_report_metadata_disabled_via_env(monkeypatch):
     assert get_report_settings()["include_run_metadata"] is False
 
 
+def test_openrouter_tradeoff_env_overrides_profile(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto_economy")
+    monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "3")
+    clear_profile_caches()
+    assert resolve_openrouter_auto_tradeoff() == 3
+
+
 def test_openrouter_tradeoff_from_env(monkeypatch):
     monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "9")
+    get_openrouter_auto_tradeoff_from_config.cache_clear()
     assert get_openrouter_auto_tradeoff_from_config() == 9
 
 
 def test_openrouter_tradeoff_clamped(monkeypatch):
     monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "99")
+    get_openrouter_auto_tradeoff_from_config.cache_clear()
     assert get_openrouter_auto_tradeoff_from_config() == 10

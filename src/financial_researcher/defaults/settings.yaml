@@ -9,8 +9,9 @@ default_language: English
 report:
   include_run_metadata: true
 
-# Model lineup profile (…, openrouter_auto_top, openrouter_auto_medium, openrouter_auto_max_savings, openrouter_auto). Overridden by FR_MODEL_PROFILE.
-# model_profile: balanced
+# Model lineup profile (openai_balanced, openai_frontier, openai_economy, anthropic_balanced,
+#   deepseek_balanced, mixed_balanced, free_*, openrouter_auto_*). Overridden by FR_MODEL_PROFILE.
+# model_profile: openai_balanced
 
 # Serper news/search (prefetch + agent tools).
 serper:
