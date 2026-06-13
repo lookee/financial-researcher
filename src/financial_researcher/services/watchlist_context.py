@@ -193,6 +193,10 @@ def _instrument_entry(
     if vol is not None:
         entry["volatility_30d"] = vol
 
+    history = snapshot.get("history")
+    if history:
+        entry["history"] = history
+
     return entry
 
 

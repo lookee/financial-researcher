@@ -237,26 +237,36 @@ def get_openrouter_auto_tradeoff_from_config() -> int | None:
     return None
 
 
+def _resolve_report_flag(
+    report: dict, *, env_name: str, yaml_key: str, default: bool
+) -> bool:
+    env_flag = os.getenv(env_name, "").strip()
+    if env_flag:
+        return _env_bool(env_name, default)
+    value = report.get(yaml_key, default)
+    if isinstance(value, str):
+        return value.strip().lower() not in {"0", "false", "no", "off"}
+    return bool(value)
+
+
 @lru_cache
 def get_report_settings() -> dict[str, bool]:
-    """Briefing report options (run-metadata footer enabled by default)."""
+    """Briefing report options (run-metadata footer + charts enabled by default)."""
     report = _load_yaml_settings().get("report") or {}
     if not isinstance(report, dict):
         report = {}
 
-    env_flag = os.getenv("BRIEFING_RUN_METADATA", "").strip()
-    if env_flag:
-        include_run_metadata = _env_bool("BRIEFING_RUN_METADATA", True)
-    else:
-        include = report.get("include_run_metadata", True)
-        if isinstance(include, str):
-            include_run_metadata = include.strip().lower() not in {
-                "0",
-                "false",
-                "no",
-                "off",
-            }
-        else:
-            include_run_metadata = bool(include)
-
-    return {"include_run_metadata": include_run_metadata}
+    return {
+        "include_run_metadata": _resolve_report_flag(
+            report,
+            env_name="BRIEFING_RUN_METADATA",
+            yaml_key="include_run_metadata",
+            default=True,
+        ),
+        "include_charts": _resolve_report_flag(
+            report,
+            env_name="BRIEFING_CHARTS",
+            yaml_key="include_charts",
+            default=True,
+        ),
+    }

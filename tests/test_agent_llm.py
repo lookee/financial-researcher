@@ -4,6 +4,8 @@ import os
 
 import pytest
 
+pytest.importorskip("crewai")
+
 from financial_researcher.agent_llm import (
     build_agent_llm,
     build_openrouter_auto_plugins,
@@ -95,6 +97,13 @@ def test_openrouter_auto_balanced_tradeoff(monkeypatch):
     monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto_balanced")
     assert resolve_openrouter_auto_tradeoff() == 7
     assert uses_openrouter_auto_routing() is True
+
+
+def test_openrouter_tradeoff_env_overrides_profile(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto_economy")
+    monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "3")
+    clear_profile_caches()
+    assert resolve_openrouter_auto_tradeoff() == 3
 
 
 def test_build_openrouter_auto_plugins():

@@ -33,6 +33,10 @@ def briefings_dir() -> Path:
     return output_dir() / "briefings"
 
 
+def charts_dir() -> Path:
+    return briefings_dir() / "charts"
+
+
 def metrics_dir() -> Path:
     return output_dir() / "metrics"
 
@@ -52,6 +56,7 @@ def market_data_dir() -> Path:
 def ensure_runtime_dirs() -> None:
     """Create output, data, and project config directories if missing."""
     briefings_dir().mkdir(parents=True, exist_ok=True)
+    charts_dir().mkdir(parents=True, exist_ok=True)
     metrics_dir().mkdir(parents=True, exist_ok=True)
     identity_data_dir().mkdir(parents=True, exist_ok=True)
     market_data_dir().mkdir(parents=True, exist_ok=True)

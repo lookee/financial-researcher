@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from crewai import LLM
 
 _AGENT_KEYS: tuple[str, ...] = ("market", "news", "outlook", "calendar", "chief")
 
@@ -199,8 +198,10 @@ def describe_active_profile() -> str:
     return summary
 
 
-def build_agent_llm(agent: str) -> LLM:
+def build_agent_llm(agent: str):
     """Construct a CrewAI LLM with model tier and reasoning effort for one agent."""
+    from crewai import LLM
+
     model = resolve_agent_model(agent)
     llm_kwargs: dict[str, Any] = {
         "model": model,

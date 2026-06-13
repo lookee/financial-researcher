@@ -27,6 +27,18 @@ def compute_volatility_30d(history: pd.DataFrame) -> float | None:
     return round(float(returns.std() * (30**0.5) * 100), 2)
 
 
+def extract_history_series(history: pd.DataFrame) -> dict[str, list] | None:
+    """Compact daily close series (dates + closes) for deterministic charting."""
+    if history.empty or "Close" not in history.columns:
+        return None
+    closes = history["Close"].dropna()
+    if len(closes) < 3:
+        return None
+    dates = [ts.date().isoformat() for ts in closes.index]
+    values = [round(float(value), 4) for value in closes.tolist()]
+    return {"dates": dates, "closes": values}
+
+
 def compute_canonical_1d(
     current: float | None,
     previous_close: float | None,
@@ -114,6 +126,9 @@ class MarketDataService:
             snapshot["volatility_30d"] = vol_30d
         if quality_flags:
             snapshot["quality_flags"] = quality_flags
+        history_series = extract_history_series(history)
+        if history_series is not None:
+            snapshot["history"] = history_series
         return snapshot
 
     def get_benchmark_snapshot(self, ticker: str, name: str) -> dict[str, Any]:

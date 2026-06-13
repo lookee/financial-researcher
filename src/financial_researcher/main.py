@@ -10,6 +10,7 @@ from financial_researcher.cli_output import configure_clean_cli_output
 configure_clean_cli_output()
 
 import argparse
+import json
 import os
 import time
 from pathlib import Path
@@ -23,7 +24,16 @@ from financial_researcher.agent_llm import (
     uses_openrouter_auto_routing,
 )
 from financial_researcher.crew import WatchlistBriefingCrew
-from financial_researcher.paths import default_watchlist_path, ensure_runtime_dirs
+from financial_researcher.paths import (
+    briefings_dir,
+    charts_dir,
+    default_watchlist_path,
+    ensure_runtime_dirs,
+)
+from financial_researcher.services.chart_generator import (
+    build_charts_markdown,
+    generate_briefing_charts,
+)
 from financial_researcher.services.briefing_postprocess import postprocess_briefing
 from financial_researcher.services.briefing_validator import (
     format_validation_summary,
@@ -67,6 +77,7 @@ def run_briefing(
     model_profile: str | None = None,
     send_email: bool | None = None,
     include_run_metadata: bool | None = None,
+    include_charts: bool | None = None,
     openrouter_tradeoff: int | None = None,
 ) -> str:
     """Generate a unified executive briefing for the configured watchlist."""
@@ -114,6 +125,35 @@ def run_briefing(
 
     output_path = Path(output_file)
     raw_markdown = output_path.read_text(encoding="utf-8") if output_path.exists() else (result.raw or "")
+
+    show_charts = (
+        include_charts
+        if include_charts is not None
+        else get_report_settings()["include_charts"]
+    )
+    chart_artifacts = []
+    if show_charts:
+        try:
+            chart_instruments = json.loads(
+                inputs.get("watchlist_instruments_json", "[]")
+            )
+            chart_artifacts = generate_briefing_charts(
+                chart_instruments,
+                session=chosen_session,
+                language=inputs.get("language", get_default_language()),
+                slug=output_path.stem,
+                out_dir=charts_dir(),
+            )
+            inputs["watchlist_performance_charts_md"] = build_charts_markdown(
+                chart_artifacts,
+                language=inputs.get("language", get_default_language()),
+                base_dir=briefings_dir(),
+            )
+            if chart_artifacts:
+                print(f"▸ Charts: {len(chart_artifacts)} rendered to {charts_dir()}")
+        except Exception as exc:
+            print(f"\n▸ Chart generation skipped: {exc}")
+
     processed, warnings = postprocess_briefing(raw_markdown, inputs)
     validation_warnings = validate_briefing(processed, inputs)
 
@@ -177,6 +217,7 @@ def run_briefing(
                 session=chosen_session,
                 date_str=inputs.get("current_date", ""),
                 language=inputs.get("language", get_default_language()),
+                chart_artifacts=chart_artifacts,
             )
             recipients = ", ".join(get_email_settings()["to_addresses"])
             print(f"▸ Email sent via Resend to {recipients} (id: {email_id})")
@@ -252,6 +293,11 @@ Examples:
         help="Omit the run-metadata footer (processing time, models, tokens) from the briefing",
     )
     parser.add_argument(
+        "--no-charts",
+        action="store_true",
+        help="Skip the embedded performance charts (weekly + 12-month indexed)",
+    )
+    parser.add_argument(
         "--openrouter-tradeoff",
         type=int,
         choices=range(1, 11),
@@ -280,6 +326,7 @@ def cli(argv: list[str] | None = None) -> None:
         model_profile=args.model_profile,
         send_email=args.email or None,
         include_run_metadata=False if args.no_run_metadata else None,
+        include_charts=False if args.no_charts else None,
         openrouter_tradeoff=args.openrouter_tradeoff,
     )
 

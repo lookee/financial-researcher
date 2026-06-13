@@ -2,7 +2,6 @@
 
 import pytest
 
-from financial_researcher.agent_llm import clear_profile_caches, resolve_openrouter_auto_tradeoff
 from financial_researcher.settings import (
     _load_yaml_settings,
     email_delivery_configured,
@@ -136,11 +135,14 @@ def test_report_metadata_disabled_via_env(monkeypatch):
     assert get_report_settings()["include_run_metadata"] is False
 
 
-def test_openrouter_tradeoff_env_overrides_profile(monkeypatch):
-    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto_economy")
-    monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "3")
-    clear_profile_caches()
-    assert resolve_openrouter_auto_tradeoff() == 3
+def test_charts_enabled_by_default(monkeypatch):
+    monkeypatch.delenv("BRIEFING_CHARTS", raising=False)
+    assert get_report_settings()["include_charts"] is True
+
+
+def test_charts_disabled_via_env(monkeypatch):
+    monkeypatch.setenv("BRIEFING_CHARTS", "0")
+    assert get_report_settings()["include_charts"] is False
 
 
 def test_openrouter_tradeoff_from_env(monkeypatch):

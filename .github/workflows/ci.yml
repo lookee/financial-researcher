@@ -25,11 +25,13 @@ jobs:
       - name: Install light dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyyaml requests pandas yfinance pytest
+          pip install pyyaml requests pandas yfinance pytest matplotlib markdown
 
       - name: Run unit tests (crewai-free)
         env:
           PYTHONPATH: src
+          MPLCONFIGDIR: /tmp/matplotlib
+          MPLBACKEND: Agg
         run: python -m pytest tests/ -q
 
   full:

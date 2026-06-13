@@ -14,6 +14,36 @@ from financial_researcher.settings import get_email_settings
 RESEND_API_URL = "https://api.resend.com/emails"
 
 
+def _build_chart_attachments(
+    chart_artifacts: list[Any] | None,
+) -> tuple[list[dict[str, str]], dict[str, str]]:
+    """Return (Resend attachments, {relative_src: content_id}) for inline charts."""
+    attachments: list[dict[str, str]] = []
+    src_to_cid: dict[str, str] = {}
+    for artifact in chart_artifacts or []:
+        path = getattr(artifact, "path", None)
+        content_id = getattr(artifact, "content_id", None)
+        if path is None or content_id is None or not path.is_file():
+            continue
+        attachments.append(
+            {
+                "filename": path.name,
+                "content": base64.b64encode(path.read_bytes()).decode("ascii"),
+                "content_id": content_id,
+                "content_type": "image/png",
+            }
+        )
+        src_to_cid[f"charts/{path.name}"] = content_id
+    return attachments, src_to_cid
+
+
+def _inline_chart_images(html: str, src_to_cid: dict[str, str]) -> str:
+    """Rewrite <img src="charts/..."> to inline cid: references for email."""
+    for src, content_id in src_to_cid.items():
+        html = html.replace(f'src="{src}"', f'src="cid:{content_id}"')
+    return html
+
+
 class BriefingEmailError(RuntimeError):
     """Raised when email delivery is misconfigured or the API call fails."""
 
@@ -62,6 +92,7 @@ def send_briefing_email(
     date_str: str,
     language: str,
     settings: dict[str, Any] | None = None,
+    chart_artifacts: list[Any] | None = None,
 ) -> str:
     """Send the briefing as HTML via Resend. Returns the Resend email id."""
     cfg = settings if settings is not None else get_email_settings()
@@ -82,6 +113,9 @@ def send_briefing_email(
     )
     html = briefing_markdown_to_email_html(markdown_text, title=title)
 
+    chart_attachments, src_to_cid = _build_chart_attachments(chart_artifacts)
+    html = _inline_chart_images(html, src_to_cid)
+
     payload: dict[str, Any] = {
         "from": cfg["from_address"],
         "to": cfg["to_addresses"],
@@ -90,14 +124,17 @@ def send_briefing_email(
         "text": markdown_text,
     }
 
+    attachments: list[dict[str, str]] = list(chart_attachments)
     if markdown_path is not None and markdown_path.is_file():
         attachment_bytes = markdown_path.read_bytes()
-        payload["attachments"] = [
+        attachments.append(
             {
                 "filename": markdown_path.name,
                 "content": base64.b64encode(attachment_bytes).decode("ascii"),
             }
-        ]
+        )
+    if attachments:
+        payload["attachments"] = attachments
 
     response = requests.post(
         RESEND_API_URL,

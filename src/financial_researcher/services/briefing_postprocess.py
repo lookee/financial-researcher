@@ -681,6 +681,10 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
     if highlights:
         performance_body = f"{highlights}\n\n{performance_table}"
 
+    charts_md = inputs.get("watchlist_performance_charts_md", "")
+    if charts_md:
+        performance_body = f"{performance_body}\n\n{charts_md}"
+
     before_perf = updated
     updated = _remove_duplicate_sections(updated, "performance")
     updated = _replace_section_body(

@@ -59,8 +59,18 @@ def style_email_tables(html: str) -> str:
     )
 
 
+def style_email_images(html: str) -> str:
+    """Make embedded charts responsive and elegant in email clients."""
+    return html.replace(
+        "<img ",
+        '<img style="display:block;max-width:100%;height:auto;margin:18px auto;'
+        'border:1px solid #e5e7eb;border-radius:8px;" ',
+    )
+
+
 def briefing_markdown_to_email_html(markdown_text: str, *, title: str) -> str:
     """Full pipeline: markdown → styled HTML email document."""
     body = markdown_to_html_body(markdown_text)
     body = style_email_tables(body)
+    body = style_email_images(body)
     return wrap_email_html(body, title=title)
