@@ -153,7 +153,7 @@ Tokens: prompt=… completion=… | requests=… | warnings=…
 
 ### The four moments of the Milan day
 
-The briefing is **session-aware**: the same watchlist produces a different memo depending on where you are in the Borsa Italiana day (Europe/Rome). When `--session` is omitted, the CLI picks the most recently passed slot ([schedule](src/financial_researcher/defaults/sessions_milan.yaml)).
+The briefing is **session-aware**: the same watchlist produces a different memo depending on where you are in the Borsa Italiana day (Europe/Rome). When `--session` is omitted, the CLI picks the most recently passed slot ([schedule](src/financial_researcher/defaults/sessions_milan.yaml)). **On weekends and Borsa Italiana trading holidays the exchange is closed, so the CLI always defaults to `close`** (the last available close). Recognised full-closure holidays: New Year's Day, Good Friday, Easter Monday, Labour Day, Christmas Day and St. Stephen's Day (Easter is computed per year; other Italian civic holidays do not close the exchange).
 
 | Session | Clock | The memo's job | What it leans on |
 |---------|-------|----------------|------------------|

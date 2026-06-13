@@ -977,9 +977,57 @@ def load_milan_sessions() -> dict[str, str]:
     return data.get("sessions", {})
 
 
+def _easter_sunday(year: int) -> date:
+    """Gregorian Easter Sunday (Anonymous/Meeus computus)."""
+    a = year % 19
+    b, c = divmod(year, 100)
+    d, e = divmod(b, 4)
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    m = (32 + 2 * e + 2 * i - h - k) % 7
+    n = (a + 11 * h + 22 * m) // 451
+    month, day = divmod(h + m - 7 * n + 114, 31)
+    return date(year, month, day + 1)
+
+
+def milan_market_holidays(year: int) -> set[date]:
+    """Euronext Milan (Borsa Italiana) full-closure trading holidays for a year.
+
+    Includes only days the exchange is fully closed: New Year's Day, Good Friday,
+    Easter Monday, Labour Day, Christmas Day and St. Stephen's Day. Other Italian
+    civic holidays (e.g. Ferragosto, Republic Day) do not close the exchange.
+    """
+    easter = _easter_sunday(year)
+    return {
+        date(year, 1, 1),            # New Year's Day
+        easter - timedelta(days=2),  # Good Friday
+        easter + timedelta(days=1),  # Easter Monday
+        date(year, 5, 1),            # Labour Day
+        date(year, 12, 25),          # Christmas Day
+        date(year, 12, 26),          # St. Stephen's Day
+    }
+
+
+def is_milan_market_closed(moment: datetime | None = None) -> bool:
+    """True when Borsa Italiana is closed for the day (weekend or holiday)."""
+    moment = moment or datetime.now(MILAN_TZ)
+    if moment.weekday() >= 5:  # Saturday (5) or Sunday (6)
+        return True
+    return moment.date() in milan_market_holidays(moment.year)
+
+
 def infer_milan_session(when: datetime | None = None) -> str:
-    """Return the Milan session whose scheduled time most recently passed today."""
+    """Return the Milan session whose scheduled time most recently passed today.
+
+    When Borsa Italiana is closed (weekend or trading holiday) the only meaningful
+    data is the last available close, so always return ``close`` regardless of the
+    clock.
+    """
     moment = when or datetime.now(MILAN_TZ)
+    if is_milan_market_closed(moment):
+        return "close"
     current = moment.strftime("%H:%M")
     sessions = load_milan_sessions()
     ordered = sorted(sessions.items(), key=lambda item: item[1])
