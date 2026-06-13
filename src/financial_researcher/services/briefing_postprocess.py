@@ -83,6 +83,7 @@ SECTION_ALIASES: dict[str, str] = {
     "outlook a medio termine": "outlook",
     "prospettive a medio termine": "outlook",
     "event calendar": "calendar",
+    "calendario eventi": "calendar",
     "calendario degli eventi": "calendar",
     "correlated themes": "themes",
     "temi correlati": "themes",
@@ -459,6 +460,52 @@ def renumber_citations(
 
 def _parse_table_cells(row: str) -> list[str]:
     return [cell.strip() for cell in row.strip().strip("|").split("|")]
+
+
+def _ensure_pipe_row(row: str) -> str:
+    """Wrap a markdown table row with leading/trailing pipes when missing."""
+    stripped = row.strip()
+    if not stripped:
+        return stripped
+    if not stripped.startswith("|"):
+        stripped = f"| {stripped.lstrip('|').strip()}"
+    if not stripped.endswith("|"):
+        stripped = f"{stripped.rstrip('|').strip()} |"
+    return stripped
+
+
+_TABLE_SEPARATOR_RE = re.compile(r"^\|?[-:| ]+\|?\s*$")
+
+
+def _find_calendar_table_rows(calendar_block: str) -> list[str] | None:
+    """Locate a calendar markdown table, including LLM rows with inconsistent pipes."""
+    lines = calendar_block.splitlines()
+    for index, line in enumerate(lines):
+        if not _TABLE_SEPARATOR_RE.match(line.strip()):
+            continue
+        if index == 0:
+            continue
+        header = lines[index - 1].strip()
+        if "|" not in header:
+            continue
+        data_rows: list[str] = []
+        for row in lines[index + 1 :]:
+            stripped = row.strip()
+            if not stripped:
+                break
+            if stripped.startswith("#"):
+                break
+            if "|" not in stripped:
+                break
+            data_rows.append(stripped)
+        if not data_rows:
+            continue
+        return [
+            _ensure_pipe_row(header),
+            _ensure_pipe_row(line.strip()),
+            *(_ensure_pipe_row(row) for row in data_rows),
+        ]
+    return None
 
 
 def _headers_match_canonical(headers: list[str]) -> bool:
