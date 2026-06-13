@@ -205,6 +205,38 @@ def email_delivery_configured() -> bool:
     return bool(cfg["api_key"] and cfg["from_address"] and cfg["to_addresses"])
 
 
+def clamp_openrouter_auto_tradeoff(value: int) -> int:
+    """Clamp OpenRouter Auto savings level to 1–10 (maps to cost_quality_tradeoff)."""
+    return max(1, min(10, int(value)))
+
+
+def parse_openrouter_auto_tradeoff(raw: str | int | float | None) -> int | None:
+    """Parse a savings level 1–10, or None when unset/invalid."""
+    if raw is None:
+        return None
+    if isinstance(raw, str) and not raw.strip():
+        return None
+    try:
+        return clamp_openrouter_auto_tradeoff(int(raw))
+    except (TypeError, ValueError):
+        return None
+
+
+@lru_cache
+def get_openrouter_auto_tradeoff_from_config() -> int | None:
+    """OpenRouter Auto savings level from env or settings.yaml only (not profile)."""
+    env_value = parse_openrouter_auto_tradeoff(
+        os.getenv("OPENROUTER_AUTO_TRADEOFF", "").strip() or None
+    )
+    if env_value is not None:
+        return env_value
+
+    openrouter = _load_yaml_settings().get("openrouter") or {}
+    if isinstance(openrouter, dict):
+        return parse_openrouter_auto_tradeoff(openrouter.get("auto_tradeoff"))
+    return None
+
+
 @lru_cache
 def get_report_settings() -> dict[str, bool]:
     """Briefing report options (run-metadata footer enabled by default)."""

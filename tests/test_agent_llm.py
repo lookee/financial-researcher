@@ -6,6 +6,7 @@ import pytest
 
 from financial_researcher.agent_llm import (
     build_agent_llm,
+    build_openrouter_auto_plugins,
     clear_profile_caches,
     describe_active_profile,
     get_default_profile_name,
@@ -13,7 +14,9 @@ from financial_researcher.agent_llm import (
     list_model_profile_names,
     resolve_active_profile_name,
     resolve_agent_model,
+    resolve_openrouter_auto_tradeoff,
     resolve_reasoning_effort,
+    uses_openrouter_auto_routing,
 )
 from financial_researcher.settings import _load_yaml_settings
 
@@ -46,6 +49,7 @@ def test_list_model_profile_names():
     assert "multi" in names
     assert "free_groq" in names
     assert "free_openrouter_nex" in names
+    assert "openrouter_auto" in names
 
 
 def test_deepseek_profile_models(monkeypatch):
@@ -91,6 +95,48 @@ def test_free_openrouter_nex_profile_models(monkeypatch):
     assert model == "openrouter/nex-agi/nex-n2-pro:free"
     assert resolve_reasoning_effort("chief") == "medium"
     assert resolve_agent_model("market") == model
+
+
+def test_openrouter_auto_profile_models(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto")
+    assert resolve_agent_model("market") == "openrouter/openrouter/auto"
+    assert resolve_agent_model("chief") == "openrouter/openrouter/auto"
+    assert resolve_reasoning_effort("news") == "medium"
+    assert resolve_reasoning_effort("market") == "low"
+
+
+def test_openrouter_auto_default_tradeoff(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto")
+    monkeypatch.delenv("OPENROUTER_AUTO_TRADEOFF", raising=False)
+    assert resolve_openrouter_auto_tradeoff() == 7
+    assert uses_openrouter_auto_routing() is True
+
+
+def test_openrouter_auto_tradeoff_from_env(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto")
+    monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "9")
+    assert resolve_openrouter_auto_tradeoff() == 9
+
+
+def test_build_openrouter_auto_plugins():
+    plugins = build_openrouter_auto_plugins(9)
+    assert plugins == [{"id": "auto-router", "cost_quality_tradeoff": 9}]
+
+
+def test_build_agent_llm_attaches_openrouter_plugins(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto")
+    monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "4")
+    llm = build_agent_llm("market")
+    assert llm.model == "openrouter/openrouter/auto"
+    assert llm.additional_params["plugins"] == [
+        {"id": "auto-router", "cost_quality_tradeoff": 4}
+    ]
+
+
+def test_describe_active_profile_includes_openrouter_savings(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto")
+    monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "8")
+    assert "openrouter_savings=8/10" in describe_active_profile()
 
 
 def test_default_balanced_profile_models():

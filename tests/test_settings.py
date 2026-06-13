@@ -10,6 +10,7 @@ from financial_researcher.settings import (
     get_email_settings,
     get_model_profile_name,
     get_pipeline_settings,
+    get_openrouter_auto_tradeoff_from_config,
     get_report_settings,
     get_scrape_settings,
     get_serper_settings,
@@ -25,6 +26,7 @@ def _clear_settings_caches():
     get_benchmark_settings.cache_clear()
     get_email_settings.cache_clear()
     get_report_settings.cache_clear()
+    get_openrouter_auto_tradeoff_from_config.cache_clear()
     yield
     _load_yaml_settings.cache_clear()
     get_scrape_settings.cache_clear()
@@ -33,6 +35,7 @@ def _clear_settings_caches():
     get_benchmark_settings.cache_clear()
     get_email_settings.cache_clear()
     get_report_settings.cache_clear()
+    get_openrouter_auto_tradeoff_from_config.cache_clear()
 
 
 def test_model_profile_name_defaults_to_balanced(monkeypatch):
@@ -130,3 +133,13 @@ def test_report_metadata_enabled_by_default(monkeypatch):
 def test_report_metadata_disabled_via_env(monkeypatch):
     monkeypatch.setenv("BRIEFING_RUN_METADATA", "0")
     assert get_report_settings()["include_run_metadata"] is False
+
+
+def test_openrouter_tradeoff_from_env(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "9")
+    assert get_openrouter_auto_tradeoff_from_config() == 9
+
+
+def test_openrouter_tradeoff_clamped(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_AUTO_TRADEOFF", "99")
+    assert get_openrouter_auto_tradeoff_from_config() == 10

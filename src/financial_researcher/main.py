@@ -18,6 +18,8 @@ from financial_researcher.agent_llm import (
     describe_active_profile,
     list_model_profile_names,
     resolve_active_profile_name,
+    resolve_openrouter_auto_tradeoff,
+    uses_openrouter_auto_routing,
 )
 from financial_researcher.crew import WatchlistBriefingCrew
 from financial_researcher.paths import default_watchlist_path, ensure_runtime_dirs
@@ -64,6 +66,7 @@ def run_briefing(
     model_profile: str | None = None,
     send_email: bool | None = None,
     include_run_metadata: bool | None = None,
+    openrouter_tradeoff: int | None = None,
 ) -> str:
     """Generate a unified executive briefing for the configured watchlist."""
     ensure_runtime_dirs()
@@ -76,6 +79,9 @@ def run_briefing(
 
     if model_profile:
         os.environ["FR_MODEL_PROFILE"] = model_profile
+
+    if openrouter_tradeoff is not None:
+        os.environ["OPENROUTER_AUTO_TRADEOFF"] = str(openrouter_tradeoff)
 
     print(f"\n▸ Session: {chosen_session} (Milan)")
     print(f"▸ Model profile: {describe_active_profile()}")
@@ -115,6 +121,11 @@ def run_briefing(
         warnings=warnings + validation_warnings,
         model_profile=resolve_active_profile_name(),
         agent_models=build_agent_models_map(),
+        openrouter_auto_tradeoff=(
+            resolve_openrouter_auto_tradeoff()
+            if uses_openrouter_auto_routing()
+            else None
+        ),
     )
     write_run_metrics(metrics_path, metrics_payload)
 
@@ -230,6 +241,17 @@ Examples:
         action="store_true",
         help="Omit the run-metadata footer (processing time, models, tokens) from the briefing",
     )
+    parser.add_argument(
+        "--openrouter-tradeoff",
+        type=int,
+        choices=range(1, 11),
+        metavar="1-10",
+        default=None,
+        help=(
+            "OpenRouter Auto savings level: 1 = favour quality, 10 = max savings "
+            "(maps to cost_quality_tradeoff; default 7 for openrouter_auto profile)"
+        ),
+    )
     return parser
 
 
@@ -247,6 +269,7 @@ def cli(argv: list[str] | None = None) -> None:
         model_profile=args.model_profile,
         send_email=args.email or None,
         include_run_metadata=False if args.no_run_metadata else None,
+        openrouter_tradeoff=args.openrouter_tradeoff,
     )
 
 

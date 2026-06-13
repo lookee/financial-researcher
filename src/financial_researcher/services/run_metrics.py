@@ -43,6 +43,7 @@ _METADATA_COPY: dict[str, dict[str, str]] = {
         "agents_heading": "Models by agent",
         "agent_col": "Agent",
         "model_col": "Model",
+        "openrouter_savings": "OpenRouter savings (1–10)",
     },
     "Italian": {
         "heading": "Informazioni di elaborazione",
@@ -53,6 +54,7 @@ _METADATA_COPY: dict[str, dict[str, str]] = {
         "agents_heading": "Modelli per agente",
         "agent_col": "Agente",
         "model_col": "Modello",
+        "openrouter_savings": "Risparmio OpenRouter (1–10)",
     },
 }
 
@@ -163,6 +165,9 @@ def format_run_metadata_footer(
             f"{_format_token_count(int(metrics_payload.get('total_tokens', 0)))} |"
         ),
     ]
+    tradeoff = metrics_payload.get("openrouter_auto_tradeoff")
+    if tradeoff is not None:
+        summary_rows.append(f"| {copy['openrouter_savings']} | {int(tradeoff)} |")
 
     agent_rows = [
         f"| {labels[agent]} | `{model}` |"
@@ -213,6 +218,7 @@ def build_run_metrics_payload(
     warnings: list[str],
     model_profile: str | None = None,
     agent_models: dict[str, str] | None = None,
+    openrouter_auto_tradeoff: int | None = None,
     timestamp: datetime | None = None,
 ) -> dict[str, Any]:
     """Assemble the JSON document written after each briefing run."""
@@ -233,6 +239,8 @@ def build_run_metrics_payload(
         payload["model_profile"] = model_profile
     if agent_models:
         payload["agent_models"] = agent_models
+    if openrouter_auto_tradeoff is not None:
+        payload["openrouter_auto_tradeoff"] = int(openrouter_auto_tradeoff)
     return payload
 
 

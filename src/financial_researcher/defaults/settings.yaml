@@ -9,7 +9,7 @@ default_language: English
 report:
   include_run_metadata: true
 
-# Model lineup profile (balanced, frontier, budget, anthropic, deepseek, multi, free_groq, free_openrouter_nex). Overridden by FR_MODEL_PROFILE.
+# Model lineup profile (balanced, frontier, budget, anthropic, deepseek, multi, free_groq, free_openrouter_nex, openrouter_auto). Overridden by FR_MODEL_PROFILE.
 # model_profile: balanced
 
 # Serper news/search (prefetch + agent tools).
@@ -41,3 +41,7 @@ scrape:
 #   to: "you@example.com"
 #   subject_prefix: "[Watchlist]"
 #   auto_send: false
+
+# OpenRouter Auto Router — savings level 1 (quality) … 10 (max savings). Overridden by OPENROUTER_AUTO_TRADEOFF.
+# openrouter:
+#   auto_tradeoff: 7

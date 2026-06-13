@@ -140,6 +140,16 @@ class TestRunMetadataFooter:
         assert "33,518" in footer
         assert "openai/gpt-5.5" in footer
 
+    def test_footer_includes_openrouter_savings(self):
+        payload = self._payload()
+        payload["openrouter_auto_tradeoff"] = 9
+        footer = format_run_metadata_footer(
+            metrics_payload=payload,
+            language="Italian",
+        )
+        assert "Risparmio OpenRouter (1–10)" in footer
+        assert "| 9 |" in footer
+
     def test_footer_in_english(self):
         footer = format_run_metadata_footer(
             metrics_payload=self._payload(),

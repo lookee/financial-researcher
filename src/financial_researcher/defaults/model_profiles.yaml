@@ -55,6 +55,18 @@ profiles:
       calendar: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
       chief: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: medium }
 
+  openrouter_auto:
+    description: >
+      OpenRouter Auto Router (set OPENROUTER_API_KEY) — OpenRouter picks the best model
+      per request from a curated set. Cost varies by routed model.
+    auto_tradeoff: 7
+    agents:
+      market: { model: openrouter/openrouter/auto, reasoning: low }
+      news: { model: openrouter/openrouter/auto, reasoning: medium }
+      outlook: { model: openrouter/openrouter/auto, reasoning: low }
+      calendar: { model: openrouter/openrouter/auto, reasoning: low }
+      chief: { model: openrouter/openrouter/auto, reasoning: medium }
+
   anthropic:
     description: >
       Anthropic cost/quality mix (set ANTHROPIC_API_KEY) — Haiku on analysts, Sonnet on news/chief.

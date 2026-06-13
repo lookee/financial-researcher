@@ -1,8 +1,11 @@
 """Per-agent LLM model and reasoning-effort configuration.
 
-Lineups are defined in defaults/model_profiles.yaml (balanced, frontier, budget, anthropic, deepseek, multi, free_groq, free_openrouter_nex).
+Lineups are defined in defaults/model_profiles.yaml (balanced, frontier, budget, anthropic, deepseek, multi, free_groq, free_openrouter_nex, openrouter_auto).
 Select a profile via FR_MODEL_PROFILE, defaults/settings.yaml model_profile, or --model-profile.
 Per-agent FR_MODEL_* env vars still override the active profile for that agent.
+
+OpenRouter Auto (`openrouter_auto` profile) accepts a savings level 1–10 via OPENROUTER_AUTO_TRADEOFF,
+defaults/settings.yaml openrouter.auto_tradeoff, profile auto_tradeoff, or --openrouter-tradeoff.
 """
 
 from __future__ import annotations
@@ -28,6 +31,13 @@ _AGENT_MODEL_ENV: dict[str, str] = {
 _PROFILES_PATH = Path(__file__).parent / "defaults" / "model_profiles.yaml"
 _FALLBACK_DEFAULT_PROFILE = "balanced"
 
+_OPENROUTER_AUTO_MODELS = frozenset(
+    {
+        "openrouter/openrouter/auto",
+        "openrouter/auto",
+    }
+)
+
 
 @lru_cache
 def _load_profiles_document() -> dict[str, Any]:
@@ -41,6 +51,9 @@ def _load_profiles_document() -> dict[str, Any]:
 def clear_profile_caches() -> None:
     """Clear cached profile YAML (for tests)."""
     _load_profiles_document.cache_clear()
+    from financial_researcher.settings import get_openrouter_auto_tradeoff_from_config
+
+    get_openrouter_auto_tradeoff_from_config.cache_clear()
 
 
 def list_model_profile_names() -> list[str]:
@@ -70,6 +83,52 @@ def get_profile_description(profile_name: str | None = None) -> str:
     if isinstance(description, str):
         return " ".join(description.split())
     return ""
+
+
+def is_openrouter_auto_model(model: str) -> bool:
+    """True when the model id routes through OpenRouter Auto."""
+    return model.strip().lower() in _OPENROUTER_AUTO_MODELS
+
+
+def build_openrouter_auto_plugins(tradeoff: int) -> list[dict[str, Any]]:
+    """OpenRouter Auto Router plugin payload for LiteLLM/CrewAI."""
+    from financial_researcher.settings import clamp_openrouter_auto_tradeoff
+
+    level = clamp_openrouter_auto_tradeoff(tradeoff)
+    return [
+        {
+            "id": "auto-router",
+            "cost_quality_tradeoff": level,
+        }
+    ]
+
+
+def resolve_openrouter_auto_tradeoff() -> int | None:
+    """Savings level 1–10 when OpenRouter Auto is configured, else None."""
+    from financial_researcher.settings import (
+        get_openrouter_auto_tradeoff_from_config,
+        parse_openrouter_auto_tradeoff,
+    )
+
+    configured = get_openrouter_auto_tradeoff_from_config()
+    if configured is not None:
+        return configured
+
+    profile_name = resolve_active_profile_name()
+    profile = (_load_profiles_document().get("profiles") or {}).get(profile_name) or {}
+    if isinstance(profile, dict):
+        profile_value = parse_openrouter_auto_tradeoff(profile.get("auto_tradeoff"))
+        if profile_value is not None:
+            return profile_value
+
+    if profile_name == "openrouter_auto":
+        return 7
+    return None
+
+
+def uses_openrouter_auto_routing() -> bool:
+    """True when any active agent model is OpenRouter Auto."""
+    return any(is_openrouter_auto_model(resolve_agent_model(agent)) for agent in _AGENT_KEYS)
 
 
 def _agent_config_for_profile(profile_name: str, agent: str) -> dict[str, str]:
@@ -123,12 +182,23 @@ def describe_active_profile() -> str:
     """Human-readable summary of the active profile and per-agent models."""
     profile_name = resolve_active_profile_name()
     parts = [f"{agent}={resolve_agent_model(agent)}" for agent in _AGENT_KEYS]
-    return f"{profile_name} ({', '.join(parts)})"
+    summary = f"{profile_name} ({', '.join(parts)})"
+    if uses_openrouter_auto_routing():
+        tradeoff = resolve_openrouter_auto_tradeoff()
+        if tradeoff is not None:
+            summary += f" | openrouter_savings={tradeoff}/10"
+    return summary
 
 
 def build_agent_llm(agent: str) -> LLM:
     """Construct a CrewAI LLM with model tier and reasoning effort for one agent."""
-    return LLM(
-        model=resolve_agent_model(agent),
-        reasoning_effort=resolve_reasoning_effort(agent),
-    )
+    model = resolve_agent_model(agent)
+    llm_kwargs: dict[str, Any] = {
+        "model": model,
+        "reasoning_effort": resolve_reasoning_effort(agent),
+    }
+    if is_openrouter_auto_model(model):
+        tradeoff = resolve_openrouter_auto_tradeoff()
+        if tradeoff is not None:
+            llm_kwargs["plugins"] = build_openrouter_auto_plugins(tradeoff)
+    return LLM(**llm_kwargs)

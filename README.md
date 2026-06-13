@@ -66,7 +66,8 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 | `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
 | `FR_MODEL_PROFILE` | — | Model lineup — see [Model profiles](#model-profiles) and [`model_profiles.yaml`](src/financial_researcher/defaults/model_profiles.yaml) |
 | `GROQ_API_KEY` | — | Required for `--model-profile free_groq` (no OpenAI key needed) |
-| `OPENROUTER_API_KEY` | — | Required for `--model-profile free_openrouter_nex` (no OpenAI key needed) |
+| `OPENROUTER_API_KEY` | — | Required for `--model-profile free_openrouter_nex` or `openrouter_auto` |
+| `OPENROUTER_AUTO_TRADEOFF` | — | OpenRouter Auto savings level `1`–`10` (1 = quality, 10 = max savings; default `7`) |
 | `FR_MODEL_*` | — | Per-agent model override (e.g. `FR_MODEL_CHIEF`) — beats the active profile |
 | `WATCHLIST_PATH` | — | Override watchlist YAML location (default: `./config/watchlist.yaml`) |
 | `FINANCIAL_RESEARCHER_CONFIG_DIR` | — | Global user config directory (default: `~/.config/financial_researcher`) |
@@ -79,7 +80,7 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 | `BRIEFING_EMAIL_AUTO` | — | Set `1` to email after every run (same as always passing `--email`) |
 | `BRIEFING_RUN_METADATA` | — | Set `0` to hide the run-metadata footer (enabled by default) |
 
-\*Not required for single-provider profiles that use another backend (`anthropic`, `deepseek`, `free_groq`, `free_openrouter_nex`). The `multi` profile needs OpenAI + Anthropic + DeepSeek.
+\*Not required for single-provider profiles that use another backend (`anthropic`, `deepseek`, `free_groq`, `free_openrouter_nex`, `openrouter_auto`). The `multi` profile needs OpenAI + Anthropic + DeepSeek.
 
 ## Usage
 
@@ -248,12 +249,15 @@ Agents route through [LiteLLM](https://docs.litellm.ai/docs/providers) (via Crew
 | `multi` | OpenAI + Anthropic + DeepSeek | Flash analysts · Sonnet news · `gpt-5.4` outlook · `gpt-5.5` chief |
 | `free_groq` | `GROQ_API_KEY` | Llama via Groq — experimental |
 | `free_openrouter_nex` | `OPENROUTER_API_KEY` | [Nex-N2-Pro (free)](https://openrouter.ai/nex-agi/nex-n2-pro:free) — experimental |
+| `openrouter_auto` | `OPENROUTER_API_KEY` | [OpenRouter Auto](https://openrouter.ai/openrouter/auto) — picks best model per request |
 
 ```bash
 uv run briefing --model-profile deepseek               # DeepSeek only
 uv run briefing --model-profile multi                  # OpenAI + Anthropic + DeepSeek
 uv run briefing --model-profile anthropic              # Claude Haiku + Sonnet 4.6
 uv run briefing --model-profile free_openrouter_nex
+uv run briefing --model-profile openrouter_auto
+uv run briefing --model-profile openrouter_auto --openrouter-tradeoff 9
 uv run briefing --model-profile budget
 export FR_MODEL_PROFILE=frontier
 ```
@@ -266,6 +270,7 @@ Set `model_profile: budget` in `defaults/settings.yaml` for a persistent default
 > - **`multi`** — assigns each provider where it fits best: cheap DeepSeek for table analysts, Anthropic for news synthesis, OpenAI for outlook + final memo. All three API keys required.
 > - **`anthropic`** — [Claude Haiku 4.5](https://www.anthropic.com/news/claude-haiku-4-5) + [Sonnet 4.6](https://docs.litellm.ai/docs/providers/anthropic).
 > - **`free_*`** — experimental; weaker citations than `balanced`.
+> - **`openrouter_auto`** — [OpenRouter Auto Router](https://openrouter.ai/docs/guides/routing/routers/auto-router): each LLM call is routed to an optimal model; cost and quality vary per request. Set savings with `OPENROUTER_AUTO_TRADEOFF` (1–10) or `--openrouter-tradeoff`. The run-metadata footer shows the configured savings level; the actual routed model is chosen by OpenRouter.
 
 > [!WARNING]
 > **Default profile (`balanced`) targets cost vs quality.** Analyst agents emit terse internal handoffs; reasoning effort is tuned per agent — together this typically cuts completion tokens by roughly half versus `frontier`. A full run still makes many LLM calls plus news search and page scraping.
