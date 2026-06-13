@@ -249,7 +249,7 @@ Examples:
         default=None,
         help=(
             "OpenRouter Auto savings level: 1 = favour quality, 10 = max savings "
-            "(maps to cost_quality_tradeoff; default 7 for openrouter_auto profile)"
+            "(maps to cost_quality_tradeoff; profile presets: top=1, medium=7, max_savings=10)"
         ),
     )
     return parser

@@ -1,11 +1,11 @@
 """Per-agent LLM model and reasoning-effort configuration.
 
-Lineups are defined in defaults/model_profiles.yaml (balanced, frontier, budget, anthropic, deepseek, multi, free_groq, free_openrouter_nex, openrouter_auto).
+Lineups are defined in defaults/model_profiles.yaml (balanced, frontier, budget, anthropic, deepseek, multi, free_groq, free_openrouter_nex, openrouter_auto_top, openrouter_auto_medium, openrouter_auto_max_savings, openrouter_auto).
 Select a profile via FR_MODEL_PROFILE, defaults/settings.yaml model_profile, or --model-profile.
 Per-agent FR_MODEL_* env vars still override the active profile for that agent.
 
-OpenRouter Auto (`openrouter_auto` profile) accepts a savings level 1–10 via OPENROUTER_AUTO_TRADEOFF,
-defaults/settings.yaml openrouter.auto_tradeoff, profile auto_tradeoff, or --openrouter-tradeoff.
+OpenRouter Auto profiles embed savings level 1–10 as auto_tradeoff (top=1, medium=7, max_savings=10).
+Override per run with OPENROUTER_AUTO_TRADEOFF or --openrouter-tradeoff.
 """
 
 from __future__ import annotations
@@ -104,7 +104,10 @@ def build_openrouter_auto_plugins(tradeoff: int) -> list[dict[str, Any]]:
 
 
 def resolve_openrouter_auto_tradeoff() -> int | None:
-    """Savings level 1–10 when OpenRouter Auto is configured, else None."""
+    """Savings level 1–10 when OpenRouter Auto is in use, else None."""
+    if not uses_openrouter_auto_routing():
+        return None
+
     from financial_researcher.settings import (
         get_openrouter_auto_tradeoff_from_config,
         parse_openrouter_auto_tradeoff,
@@ -121,9 +124,7 @@ def resolve_openrouter_auto_tradeoff() -> int | None:
         if profile_value is not None:
             return profile_value
 
-    if profile_name == "openrouter_auto":
-        return 7
-    return None
+    return 7
 
 
 def uses_openrouter_auto_routing() -> bool:

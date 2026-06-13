@@ -4,6 +4,14 @@
 
 default_profile: balanced
 
+# Shared agent lineup for OpenRouter Auto profiles (YAML anchor).
+openrouter_auto_agents: &openrouter_auto_agents
+  market: { model: openrouter/openrouter/auto, reasoning: low }
+  news: { model: openrouter/openrouter/auto, reasoning: medium }
+  outlook: { model: openrouter/openrouter/auto, reasoning: low }
+  calendar: { model: openrouter/openrouter/auto, reasoning: low }
+  chief: { model: openrouter/openrouter/auto, reasoning: medium }
+
 profiles:
   balanced:
     description: >
@@ -55,17 +63,32 @@ profiles:
       calendar: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: low }
       chief: { model: openrouter/nex-agi/nex-n2-pro:free, reasoning: medium }
 
+  # OpenRouter Auto Router — savings level on the profile (auto_tradeoff 1–10).
+  # Override per run: OPENROUTER_AUTO_TRADEOFF or --openrouter-tradeoff.
+
+  openrouter_auto_top:
+    description: >
+      OpenRouter Auto — top quality (auto_tradeoff 1). Best models regardless of cost.
+    auto_tradeoff: 1
+    agents: *openrouter_auto_agents
+
+  openrouter_auto_medium:
+    description: >
+      OpenRouter Auto — balanced (auto_tradeoff 7). Default OpenRouter cost/quality mix.
+    auto_tradeoff: 7
+    agents: *openrouter_auto_agents
+
+  openrouter_auto_max_savings:
+    description: >
+      OpenRouter Auto — max savings (auto_tradeoff 10). Cheapest capable model per request.
+    auto_tradeoff: 10
+    agents: *openrouter_auto_agents
+
   openrouter_auto:
     description: >
-      OpenRouter Auto Router (set OPENROUTER_API_KEY) — OpenRouter picks the best model
-      per request from a curated set. Cost varies by routed model.
+      Alias for openrouter_auto_medium — balanced OpenRouter Auto Router (auto_tradeoff 7).
     auto_tradeoff: 7
-    agents:
-      market: { model: openrouter/openrouter/auto, reasoning: low }
-      news: { model: openrouter/openrouter/auto, reasoning: medium }
-      outlook: { model: openrouter/openrouter/auto, reasoning: low }
-      calendar: { model: openrouter/openrouter/auto, reasoning: low }
-      chief: { model: openrouter/openrouter/auto, reasoning: medium }
+    agents: *openrouter_auto_agents
 
   anthropic:
     description: >

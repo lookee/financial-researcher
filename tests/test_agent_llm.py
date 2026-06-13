@@ -50,6 +50,10 @@ def test_list_model_profile_names():
     assert "free_groq" in names
     assert "free_openrouter_nex" in names
     assert "openrouter_auto" in names
+    assert "openrouter_auto_top" in names
+    assert "openrouter_auto_medium" in names
+    assert "openrouter_auto_max_savings" in names
+    assert "x-openrouter" not in " ".join(names)
 
 
 def test_deepseek_profile_models(monkeypatch):
@@ -103,6 +107,24 @@ def test_openrouter_auto_profile_models(monkeypatch):
     assert resolve_agent_model("chief") == "openrouter/openrouter/auto"
     assert resolve_reasoning_effort("news") == "medium"
     assert resolve_reasoning_effort("market") == "low"
+
+
+def test_openrouter_auto_top_tradeoff(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto_top")
+    monkeypatch.delenv("OPENROUTER_AUTO_TRADEOFF", raising=False)
+    assert resolve_openrouter_auto_tradeoff() == 1
+
+
+def test_openrouter_auto_max_savings_tradeoff(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto_max_savings")
+    monkeypatch.delenv("OPENROUTER_AUTO_TRADEOFF", raising=False)
+    assert resolve_openrouter_auto_tradeoff() == 10
+
+
+def test_openrouter_auto_medium_tradeoff(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "openrouter_auto_medium")
+    monkeypatch.delenv("OPENROUTER_AUTO_TRADEOFF", raising=False)
+    assert resolve_openrouter_auto_tradeoff() == 7
 
 
 def test_openrouter_auto_default_tradeoff(monkeypatch):
