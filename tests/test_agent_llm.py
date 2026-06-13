@@ -41,8 +41,25 @@ def test_list_model_profile_names():
     assert "frontier" in names
     assert "budget" in names
     assert "anthropic" in names
+    assert "deepseek" in names
+    assert "multi" in names
     assert "free_groq" in names
     assert "free_openrouter_nex" in names
+
+
+def test_deepseek_profile_models(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "deepseek")
+    assert resolve_agent_model("market") == "deepseek/deepseek-v4-flash"
+    assert resolve_agent_model("news") == "deepseek/deepseek-v4-pro"
+    assert resolve_agent_model("chief") == "deepseek/deepseek-v4-pro"
+
+
+def test_multi_profile_models(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "multi")
+    assert resolve_agent_model("market") == "deepseek/deepseek-v4-flash"
+    assert resolve_agent_model("news") == "anthropic/claude-sonnet-4-6"
+    assert resolve_agent_model("outlook") == "openai/gpt-5.4"
+    assert resolve_agent_model("chief") == "openai/gpt-5.5"
 
 
 def test_anthropic_profile_models(monkeypatch):

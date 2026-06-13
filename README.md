@@ -67,8 +67,9 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `OPENAI_API_KEY` | ✅* | LLM for `balanced`, `frontier`, `budget` profiles |
-| `ANTHROPIC_API_KEY` | — | Required for `--model-profile anthropic` (no OpenAI key needed) |
+| `OPENAI_API_KEY` | ✅* | LLM for `balanced`, `frontier`, `budget`, `multi` profiles |
+| `ANTHROPIC_API_KEY` | — | Required for `anthropic` or `multi` |
+| `DEEPSEEK_API_KEY` | — | Required for `deepseek` or `multi` |
 | `SERPER_API_KEY` | ✅ | News and web search |
 | `SERPER_FREE_TIER` | — | Set `0` if you have a paid Serper plan (keeps `site:` queries) |
 | `FINNHUB_API_KEY` | — | Optional Finnhub company-news prefetch (merged with Yahoo/Serper) |
@@ -76,7 +77,7 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 | `FINNHUB_NEWS_LOOKBACK_DAYS` | — | Days of Finnhub news history per instrument (default: `14`, max `30`) |
 | `OPENFIGI_API_KEY` | — | Higher ISIN-resolution rate limits |
 | `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
-| `FR_MODEL_PROFILE` | — | Model lineup: `balanced` · `frontier` · `budget` · `anthropic` · `free_groq` · `free_openrouter_nex` (see [`model_profiles.yaml`](src/financial_researcher/defaults/model_profiles.yaml)) |
+| `FR_MODEL_PROFILE` | — | Model lineup — see [Model profiles](#model-profiles) and [`model_profiles.yaml`](src/financial_researcher/defaults/model_profiles.yaml) |
 | `GROQ_API_KEY` | — | Required for `--model-profile free_groq` (no OpenAI key needed) |
 | `OPENROUTER_API_KEY` | — | Required for `--model-profile free_openrouter_nex` (no OpenAI key needed) |
 | `FR_MODEL_*` | — | Per-agent model override (e.g. `FR_MODEL_CHIEF`) — beats the active profile |
@@ -85,7 +86,7 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 | `FINANCIAL_RESEARCHER_HOME` | — | Base directory for `output/` and `data/` (default: current working directory) |
 | `BRIEFING_QUIET` | — | Set `1` to hide CrewAI agent/task progress (same as `--quiet`) |
 
-\*Not required when using `anthropic`, `free_groq`, or `free_openrouter_nex`.
+\*Not required for single-provider profiles that use another backend (`anthropic`, `deepseek`, `free_groq`, `free_openrouter_nex`). The `multi` profile needs OpenAI + Anthropic + DeepSeek.
 
 ## Usage
 
@@ -103,7 +104,7 @@ uv run briefing --watchlist path/to.yaml     # custom watchlist
 | `--language LANG` | Briefing language (default: English) |
 | `--force` | Refresh cached identity and market data |
 | `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
-| `--model-profile` | `balanced` · `frontier` · `budget` · `anthropic` · `free_groq` · `free_openrouter_nex` (default: `balanced`) |
+| `--model-profile` | See [Model profiles](#model-profiles) (default: `balanced`) |
 | `--quiet` | Hide CrewAI agent/task progress (default: shown) |
 
 ## Configuration
@@ -207,7 +208,7 @@ CrewAI  ├─ market_analyst ─┐
 3. **Aggregate** context, performance table and theme map in Python.
 4. **Run agents** — four analysts in parallel, then the chief strategist writes one cited memo.
 
-| Agent | Role | Model | Tools |
+| Agent | Role | Model (`balanced`) | Tools |
 |-------|------|-------|-------|
 | `market_analyst` | Relative performance across the watchlist | gpt-5.4-mini | Pre-loaded context |
 | `news_analyst` | News & catalysts behind recent moves | gpt-5.5 | Serper · Yahoo news · scraping |
@@ -219,29 +220,36 @@ Config: [`agents_briefing.yaml`](src/financial_researcher/defaults/agents_briefi
 
 ### Model profiles
 
-| Profile | Use case | Lineup (summary) |
-|---------|----------|------------------|
-| `balanced` | **Default** — cost/quality mix | mini on market/calendar, `gpt-5.4` outlook, `gpt-5.5` news + chief |
-| `frontier` | Best quality, highest cost | all `gpt-5.5`, higher reasoning on news/chief |
-| `budget` | Cheapest OpenAI | mini on all analysts, `gpt-5.4` chief |
-| `anthropic` | Anthropic (`ANTHROPIC_API_KEY`) | Haiku on market/calendar, Sonnet 4.6 on news/chief |
-| `free_groq` | Groq free tier (`GROQ_API_KEY`) | Llama via LiteLLM — experimental |
-| `free_openrouter_nex` | OpenRouter free (`OPENROUTER_API_KEY`) | [Nex-N2-Pro (free)](https://openrouter.ai/nex-agi/nex-n2-pro:free) on all agents — experimental |
+Agents route through [LiteLLM](https://docs.litellm.ai/docs/providers) (via CrewAI). The briefing pipeline works with **OpenAI**, **Anthropic**, **DeepSeek**, **Groq**, and **OpenRouter** — pick a profile or override individual agents with `FR_MODEL_*`.
+
+| Profile | API keys needed | Lineup (summary) |
+|---------|-----------------|------------------|
+| `balanced` | `OPENAI_API_KEY` | **Default** — mini on market/calendar, `gpt-5.4` outlook, `gpt-5.5` news + chief |
+| `frontier` | `OPENAI_API_KEY` | all `gpt-5.5`, higher reasoning on news/chief |
+| `budget` | `OPENAI_API_KEY` | mini on all analysts, `gpt-5.4` chief |
+| `anthropic` | `ANTHROPIC_API_KEY` | Haiku on market/calendar, Sonnet 4.6 on news/chief |
+| `deepseek` | `DEEPSEEK_API_KEY` | V4 Flash on analysts, V4 Pro on news/chief |
+| `multi` | OpenAI + Anthropic + DeepSeek | Flash analysts · Sonnet news · `gpt-5.4` outlook · `gpt-5.5` chief |
+| `free_groq` | `GROQ_API_KEY` | Llama via Groq — experimental |
+| `free_openrouter_nex` | `OPENROUTER_API_KEY` | [Nex-N2-Pro (free)](https://openrouter.ai/nex-agi/nex-n2-pro:free) — experimental |
 
 ```bash
+uv run briefing --model-profile deepseek               # DeepSeek only
+uv run briefing --model-profile multi                  # OpenAI + Anthropic + DeepSeek
 uv run briefing --model-profile anthropic              # Claude Haiku + Sonnet 4.6
-uv run briefing --model-profile free_openrouter_nex   # OpenRouter Nex-N2-Pro (free)
-uv run briefing --model-profile free_groq             # Groq Llama (free)
+uv run briefing --model-profile free_openrouter_nex
 uv run briefing --model-profile budget
-export FR_MODEL_PROFILE=frontier   # same as --model-profile
+export FR_MODEL_PROFILE=frontier
 ```
 
 Set `model_profile: budget` in `defaults/settings.yaml` for a persistent default. Per-agent `FR_MODEL_*` env vars still override one slot in the active profile.
 
 > [!NOTE]
-> **`anthropic`** uses [Claude Haiku 4.5](https://www.anthropic.com/news/claude-haiku-4-5) on table/summary analysts and [Claude Sonnet 4.6](https://docs.litellm.ai/docs/providers/anthropic) on news + chief — analogous to `balanced` on OpenAI. Set `ANTHROPIC_API_KEY` in `.env`.
->
-> **`free_groq`** and **`free_openrouter_nex`** are experimental: weaker citations and synthesis than `balanced`. They replace `OPENAI_API_KEY` with `GROQ_API_KEY` or `OPENROUTER_API_KEY` respectively (see `.env.sample`).
+> **Provider notes**
+> - **`deepseek`** — [DeepSeek V4](https://api-docs.deepseek.com/) via `deepseek/deepseek-v4-flash` and `deepseek/deepseek-v4-pro`. Set `DEEPSEEK_API_KEY` only.
+> - **`multi`** — assigns each provider where it fits best: cheap DeepSeek for table analysts, Anthropic for news synthesis, OpenAI for outlook + final memo. All three API keys required.
+> - **`anthropic`** — [Claude Haiku 4.5](https://www.anthropic.com/news/claude-haiku-4-5) + [Sonnet 4.6](https://docs.litellm.ai/docs/providers/anthropic).
+> - **`free_*`** — experimental; weaker citations than `balanced`.
 
 > [!WARNING]
 > **Default profile (`balanced`) targets cost vs quality.** Analyst agents emit terse internal handoffs; reasoning effort is tuned per agent — together this typically cuts completion tokens by roughly half versus `frontier`. A full run still makes many LLM calls plus news search and page scraping.

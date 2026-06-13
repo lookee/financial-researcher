@@ -64,3 +64,24 @@ profiles:
       outlook: { model: anthropic/claude-sonnet-4-6, reasoning: low }
       calendar: { model: anthropic/claude-haiku-4-5, reasoning: low }
       chief: { model: anthropic/claude-sonnet-4-6, reasoning: medium }
+
+  deepseek:
+    description: >
+      DeepSeek only (set DEEPSEEK_API_KEY) — V4 Flash on analysts, V4 Pro on news/chief.
+    agents:
+      market: { model: deepseek/deepseek-v4-flash, reasoning: low }
+      news: { model: deepseek/deepseek-v4-pro, reasoning: medium }
+      outlook: { model: deepseek/deepseek-v4-flash, reasoning: low }
+      calendar: { model: deepseek/deepseek-v4-flash, reasoning: low }
+      chief: { model: deepseek/deepseek-v4-pro, reasoning: medium }
+
+  multi:
+    description: >
+      Multi-provider mix — DeepSeek analysts, Anthropic news, OpenAI outlook + chief.
+      Requires DEEPSEEK_API_KEY, ANTHROPIC_API_KEY, and OPENAI_API_KEY.
+    agents:
+      market: { model: deepseek/deepseek-v4-flash, reasoning: low }
+      news: { model: anthropic/claude-sonnet-4-6, reasoning: medium }
+      outlook: { model: openai/gpt-5.4, reasoning: low }
+      calendar: { model: deepseek/deepseek-v4-flash, reasoning: low }
+      chief: { model: openai/gpt-5.5, reasoning: medium }

@@ -1,6 +1,6 @@
 """Per-agent LLM model and reasoning-effort configuration.
 
-Lineups are defined in defaults/model_profiles.yaml (balanced, frontier, budget, anthropic, free_groq, free_openrouter_nex).
+Lineups are defined in defaults/model_profiles.yaml (balanced, frontier, budget, anthropic, deepseek, multi, free_groq, free_openrouter_nex).
 Select a profile via FR_MODEL_PROFILE, defaults/settings.yaml model_profile, or --model-profile.
 Per-agent FR_MODEL_* env vars still override the active profile for that agent.
 """
