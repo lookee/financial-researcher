@@ -109,6 +109,7 @@ calendar_analysis_task:
     - HARD CAP: ≤250 words total (table rows count toward cap).
     - Table header row MUST be exactly (copy verbatim):
       | Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |
+      |---|---|---|---|---|
     - Impact ∈ {Earnings, Macro release, Central bank, Corporate action, Sector data, Regulatory}
     - Confirmed YYYY-MM-DD + source URL required; omit unverified events.
     - New sources from [{next_citation}]+. Sort by date ascending.
@@ -154,8 +155,10 @@ executive_briefing_task:
     3. Performance — heading + one leader/laggard sentence ONLY (no table)
     4. Drivers — one entry per instrument ({instrument_count})
     5. Outlook — Bull/Base/Bear with dated triggers
-    6. Calendar — copy the calendar analyst table verbatim with EXACT headers:
-       `Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N]`
+    6. Calendar — copy the calendar analyst table verbatim as a proper markdown table
+       (every row must start and end with `|`):
+       | Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |
+       |---|---|---|---|---|
        Forward events only (date >= today); closed Impact taxonomy.
     7. Correlated themes · 8. Risks (≥3) · 9. References (injected) · 10. Disclaimer
 

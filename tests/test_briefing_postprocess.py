@@ -114,6 +114,21 @@ class TestNormalizeCalendarTable:
         assert "| Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |" in updated
         assert calendar_table_normalization_warning(updated) is None
 
+    def test_repairs_header_without_outer_pipes(self):
+        content = """\
+## Calendario Eventi
+
+Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N]
+|---|---|---|---|---|
+| 2026-06-18 | ECB policy decision and press conference | EUR rates, quality factor | HIGH | [10] |
+| 2026-06-30 | End-Q2 portfolio rebalancing | Global quality, AI/semis | MEDIUM | [7] |
+"""
+        updated = normalize_calendar_table(content)
+        assert "| Date (YYYY-MM-DD) | Event | Affected tickers/themes | Impact | [N] |" in updated
+        assert "|---|---|---|---|---|" in updated
+        assert "| 2026-06-18 | ECB policy decision and press conference |" in updated
+        assert calendar_table_normalization_warning(updated) is None
+
     def test_warning_when_headers_unmappable(self):
         content = """\
 ## Event Calendar

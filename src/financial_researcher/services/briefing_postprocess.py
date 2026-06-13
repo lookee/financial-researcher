@@ -550,21 +550,17 @@ def normalize_calendar_table(content: str) -> str:
     if not calendar_block:
         return content
 
-    table_match = re.search(
-        r"(^\|.+\|\s*\n\|[-:| ]+\|\s*\n(?:^\|.+\|\s*\n?)+)",
-        calendar_block,
-        re.MULTILINE,
-    )
-    if not table_match:
+    rows = _find_calendar_table_rows(calendar_block)
+    if not rows or len(rows) < 3:
         return content
 
-    table_text = table_match.group(1)
-    rows = [row for row in table_text.splitlines() if row.strip()]
-    if len(rows) < 2:
-        return content
-
+    old_table = _find_calendar_table_text_for_replace(calendar_block) or "\n".join(rows)
     headers = _parse_table_cells(rows[0])
+
     if _headers_match_canonical(headers):
+        new_table = "\n".join(rows)
+        if old_table != new_table:
+            return content.replace(old_table, new_table, 1)
         return content
 
     column_map = _remap_calendar_headers(headers)
@@ -591,7 +587,28 @@ def normalize_calendar_table(content: str) -> str:
         canonical_rows.append("| " + " | ".join(remapped) + " |")
 
     new_table = "\n".join(canonical_rows)
-    return content.replace(table_text, new_table, 1)
+    return content.replace(old_table, new_table, 1)
+
+
+def _find_calendar_table_text_for_replace(calendar_block: str) -> str | None:
+    """Return the raw table substring in the calendar block (any pipe style)."""
+    lines = calendar_block.splitlines()
+    for index, line in enumerate(lines):
+        if not _TABLE_SEPARATOR_RE.match(line.strip()):
+            continue
+        if index == 0:
+            continue
+        header = lines[index - 1].strip()
+        if "|" not in header:
+            continue
+        end = index + 1
+        while end < len(lines):
+            stripped = lines[end].strip()
+            if not stripped or stripped.startswith("#") or "|" not in stripped:
+                break
+            end += 1
+        return "\n".join(lines[index - 1 : end])
+    return None
 
 
 def calendar_table_normalization_warning(content: str) -> str | None:
@@ -600,15 +617,11 @@ def calendar_table_normalization_warning(content: str) -> str | None:
     if not calendar_block:
         return None
 
-    table_match = re.search(
-        r"(^\|.+\|\s*\n\|[-:| ]+\|\s*\n(?:^\|.+\|\s*\n?)+)",
-        calendar_block,
-        re.MULTILINE,
-    )
-    if not table_match:
+    rows = _find_calendar_table_rows(calendar_block)
+    if not rows or len(rows) < 2:
         return None
 
-    headers = _parse_table_cells(table_match.group(1).splitlines()[0])
+    headers = _parse_table_cells(rows[0])
     if _headers_match_canonical(headers):
         return None
     if _remap_calendar_headers(headers) is not None:
