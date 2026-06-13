@@ -5,6 +5,10 @@
 # Default language for generated briefings (e.g. English, Italian).
 default_language: English
 
+# Append run metadata (duration, models, tokens) at the end of each briefing.
+report:
+  include_run_metadata: true
+
 # Model lineup profile (balanced, frontier, budget, anthropic, deepseek, multi, free_groq, free_openrouter_nex). Overridden by FR_MODEL_PROFILE.
 # model_profile: balanced
 
@@ -30,3 +34,10 @@ scrape:
   truncate_enabled: true
   # Max characters returned per scrape (suffix "[...troncato]" added when trimmed).
   max_chars: 2500
+
+# Optional email delivery via Resend (overridden by BRIEFING_EMAIL_* env vars).
+# email:
+#   from: "Financial Researcher <onboarding@resend.dev>"
+#   to: "you@example.com"
+#   subject_prefix: "[Watchlist]"
+#   auto_send: false

@@ -26,7 +26,10 @@ from financial_researcher.services.briefing_validator import (
     format_validation_summary,
     validate_briefing,
 )
+from financial_researcher.services.briefing_email import BriefingEmailError, send_briefing_email
 from financial_researcher.services.run_metrics import (
+    append_run_metadata_footer,
+    build_agent_models_map,
     build_run_metrics_payload,
     extract_usage_metrics,
     format_metrics_summary,
@@ -41,7 +44,13 @@ from financial_researcher.services.watchlist_pipeline import (
     VALID_SESSIONS,
     WatchlistPipeline,
 )
-from financial_researcher.settings import get_default_language, get_model_profile_name
+from financial_researcher.settings import (
+    email_delivery_configured,
+    get_default_language,
+    get_email_settings,
+    get_model_profile_name,
+    get_report_settings,
+)
 
 WATCHLIST_PATH = default_watchlist_path()
 
@@ -53,6 +62,8 @@ def run_briefing(
     force: bool = False,
     watchlist_path: Path | None = None,
     model_profile: str | None = None,
+    send_email: bool | None = None,
+    include_run_metadata: bool | None = None,
 ) -> str:
     """Generate a unified executive briefing for the configured watchlist."""
     ensure_runtime_dirs()
@@ -89,7 +100,6 @@ def run_briefing(
     raw_markdown = output_path.read_text(encoding="utf-8") if output_path.exists() else (result.raw or "")
     processed, warnings = postprocess_briefing(raw_markdown, inputs)
     validation_warnings = validate_briefing(processed, inputs)
-    output_path.write_text(processed, encoding="utf-8")
 
     usage = extract_usage_metrics(crew)
     metrics_path = metrics_output_path(
@@ -104,8 +114,23 @@ def run_briefing(
         duration_seconds=duration_seconds,
         warnings=warnings + validation_warnings,
         model_profile=resolve_active_profile_name(),
+        agent_models=build_agent_models_map(),
     )
     write_run_metrics(metrics_path, metrics_payload)
+
+    show_metadata = (
+        include_run_metadata
+        if include_run_metadata is not None
+        else get_report_settings()["include_run_metadata"]
+    )
+    if show_metadata:
+        processed = append_run_metadata_footer(
+            processed,
+            metrics_payload=metrics_payload,
+            language=inputs.get("language", get_default_language()),
+        )
+
+    output_path.write_text(processed, encoding="utf-8")
 
     all_warnings = warnings + validation_warnings
     if warnings:
@@ -121,6 +146,22 @@ def run_briefing(
     print(f"\n▸ {format_metrics_summary(usage, warnings=all_warnings)}")
     print(f"▸ Briefing saved to {output_file}")
     print(f"▸ Metrics saved to {metrics_path}")
+
+    should_email = send_email if send_email is not None else get_email_settings()["auto_send"]
+    if should_email:
+        try:
+            email_id = send_briefing_email(
+                markdown_text=processed,
+                markdown_path=output_path,
+                session=chosen_session,
+                date_str=inputs.get("current_date", ""),
+                language=inputs.get("language", get_default_language()),
+            )
+            recipients = ", ".join(get_email_settings()["to_addresses"])
+            print(f"▸ Email sent via Resend to {recipients} (id: {email_id})")
+        except BriefingEmailError as exc:
+            print(f"\n▸ Email delivery failed: {exc}")
+
     return output_file
 
 
@@ -174,6 +215,21 @@ Examples:
             "Same as FR_MODEL_PROFILE."
         ),
     )
+    email_help = "Send the briefing as HTML email via Resend after saving."
+    if email_delivery_configured():
+        email_help += " Configured in .env (RESEND_API_KEY, BRIEFING_EMAIL_FROM, BRIEFING_EMAIL_TO)."
+    else:
+        email_help += " Requires RESEND_API_KEY, BRIEFING_EMAIL_FROM and BRIEFING_EMAIL_TO in .env."
+    parser.add_argument(
+        "--email",
+        action="store_true",
+        help=email_help,
+    )
+    parser.add_argument(
+        "--no-run-metadata",
+        action="store_true",
+        help="Omit the run-metadata footer (processing time, models, tokens) from the briefing",
+    )
     return parser
 
 
@@ -189,6 +245,8 @@ def cli(argv: list[str] | None = None) -> None:
         force=args.force,
         watchlist_path=args.watchlist,
         model_profile=args.model_profile,
+        send_email=args.email or None,
+        include_run_metadata=False if args.no_run_metadata else None,
     )
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,49 @@ from zoneinfo import ZoneInfo
 from financial_researcher.paths import metrics_dir
 
 MILAN_TZ = ZoneInfo("Europe/Rome")
+
+_RUN_METADATA_START = "<!-- financial-researcher:run-metadata -->"
+_RUN_METADATA_END = "<!-- /financial-researcher:run-metadata -->"
+
+_AGENT_LABELS: dict[str, dict[str, str]] = {
+    "English": {
+        "market": "Market analyst",
+        "news": "News analyst",
+        "outlook": "Outlook analyst",
+        "calendar": "Calendar analyst",
+        "chief": "Chief strategist",
+    },
+    "Italian": {
+        "market": "Analista mercato",
+        "news": "Analista news",
+        "outlook": "Analista outlook",
+        "calendar": "Analista calendario",
+        "chief": "Chief strategist",
+    },
+}
+
+_METADATA_COPY: dict[str, dict[str, str]] = {
+    "English": {
+        "heading": "Run metadata",
+        "profile": "Model profile",
+        "duration": "Processing time",
+        "requests": "LLM requests",
+        "tokens": "Tokens (prompt / completion / total)",
+        "agents_heading": "Models by agent",
+        "agent_col": "Agent",
+        "model_col": "Model",
+    },
+    "Italian": {
+        "heading": "Informazioni di elaborazione",
+        "profile": "Profilo modelli",
+        "duration": "Tempo di elaborazione",
+        "requests": "Richieste LLM",
+        "tokens": "Token (prompt / completion / totale)",
+        "agents_heading": "Modelli per agente",
+        "agent_col": "Agente",
+        "model_col": "Modello",
+    },
+}
 
 
 def extract_usage_metrics(crew: Any) -> dict[str, int]:
@@ -55,6 +99,110 @@ def metrics_output_path(*, date_str: str, session: str) -> Path:
     return metrics_dir() / f"run_{date_str}_{session}.json"
 
 
+def build_agent_models_map() -> dict[str, str]:
+    """Return resolved model id per agent for the active profile."""
+    from financial_researcher.agent_llm import _AGENT_KEYS, resolve_agent_model
+
+    return {agent: resolve_agent_model(agent) for agent in _AGENT_KEYS}
+
+
+def format_duration(seconds: float) -> str:
+    """Human-readable duration for reports."""
+    if seconds < 60:
+        return f"{seconds:.1f}s"
+    minutes = int(seconds // 60)
+    remaining = seconds % 60
+    if minutes < 60:
+        return f"{minutes}m {remaining:.0f}s"
+    hours = minutes // 60
+    minutes = minutes % 60
+    return f"{hours}h {minutes}m {remaining:.0f}s"
+
+
+def _format_token_count(value: int) -> str:
+    return f"{value:,}"
+
+
+def _metadata_copy(language: str) -> dict[str, str]:
+    key = "Italian" if language.strip().lower().startswith("ital") else "English"
+    return _METADATA_COPY[key]
+
+
+def _agent_labels(language: str) -> dict[str, str]:
+    key = "Italian" if language.strip().lower().startswith("ital") else "English"
+    return _AGENT_LABELS[key]
+
+
+def strip_run_metadata_footer(markdown: str) -> str:
+    """Remove a previously appended run-metadata block, if present."""
+    pattern = re.compile(
+        rf"\n?{re.escape(_RUN_METADATA_START)}.*?{re.escape(_RUN_METADATA_END)}\n?",
+        re.DOTALL,
+    )
+    return pattern.sub("", markdown).rstrip()
+
+
+def format_run_metadata_footer(
+    *,
+    metrics_payload: dict[str, Any],
+    language: str,
+) -> str:
+    """Build the markdown footer block for run metadata."""
+    copy = _metadata_copy(language)
+    labels = _agent_labels(language)
+    agent_models: dict[str, str] = metrics_payload.get("agent_models") or {}
+
+    summary_rows = [
+        f"| {copy['profile']} | {metrics_payload.get('model_profile', '—')} |",
+        f"| {copy['duration']} | {format_duration(float(metrics_payload.get('duration_seconds', 0)))} |",
+        f"| {copy['requests']} | {int(metrics_payload.get('successful_requests', 0))} |",
+        (
+            f"| {copy['tokens']} | "
+            f"{_format_token_count(int(metrics_payload.get('prompt_tokens', 0)))} / "
+            f"{_format_token_count(int(metrics_payload.get('completion_tokens', 0)))} / "
+            f"{_format_token_count(int(metrics_payload.get('total_tokens', 0)))} |"
+        ),
+    ]
+
+    agent_rows = [
+        f"| {labels[agent]} | `{model}` |"
+        for agent, model in agent_models.items()
+        if agent in labels
+    ]
+
+    lines = [
+        _RUN_METADATA_START,
+        f"## {copy['heading']}",
+        "",
+        "| | |",
+        "|---|---|",
+        *summary_rows,
+        "",
+        f"**{copy['agents_heading']}**",
+        "",
+        f"| {copy['agent_col']} | {copy['model_col']} |",
+        "|---|---|",
+        *agent_rows,
+        _RUN_METADATA_END,
+    ]
+    return "\n".join(lines)
+
+
+def append_run_metadata_footer(
+    markdown: str,
+    *,
+    metrics_payload: dict[str, Any],
+    language: str,
+) -> str:
+    """Append (or replace) the run-metadata footer at the end of the briefing."""
+    base = strip_run_metadata_footer(markdown)
+    footer = format_run_metadata_footer(
+        metrics_payload=metrics_payload,
+        language=language,
+    )
+    return f"{base}\n\n{footer}\n"
+
+
 def build_run_metrics_payload(
     *,
     session: str,
@@ -64,6 +212,7 @@ def build_run_metrics_payload(
     duration_seconds: float,
     warnings: list[str],
     model_profile: str | None = None,
+    agent_models: dict[str, str] | None = None,
     timestamp: datetime | None = None,
 ) -> dict[str, Any]:
     """Assemble the JSON document written after each briefing run."""
@@ -82,6 +231,8 @@ def build_run_metrics_payload(
     }
     if model_profile:
         payload["model_profile"] = model_profile
+    if agent_models:
+        payload["agent_models"] = agent_models
     return payload
 
 

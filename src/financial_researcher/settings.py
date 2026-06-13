@@ -145,3 +145,86 @@ def get_benchmark_settings() -> list[dict[str, str]]:
         {"ticker": "FTSEMIB.MI", "name": "FTSE MIB"},
         {"ticker": "^STOXX", "name": "STOXX Europe 600"},
     ]
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name, "").strip().lower()
+    if not raw:
+        return default
+    return raw not in {"0", "false", "no", "off"}
+
+
+def _parse_email_list(raw: str) -> list[str]:
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+@lru_cache
+def get_email_settings() -> dict[str, str | bool | list[str]]:
+    """Resend email delivery options from environment variables."""
+    email = _load_yaml_settings().get("email") or {}
+    if not isinstance(email, dict):
+        email = {}
+
+    env_to = os.getenv("BRIEFING_EMAIL_TO", "").strip()
+    yaml_to = email.get("to", "")
+    to_raw = env_to or (yaml_to if isinstance(yaml_to, str) else "")
+
+    env_from = os.getenv("BRIEFING_EMAIL_FROM", "").strip()
+    yaml_from = email.get("from", "")
+    from_raw = env_from or (yaml_from if isinstance(yaml_from, str) else "")
+
+    env_prefix = os.getenv("BRIEFING_EMAIL_SUBJECT_PREFIX", "").strip()
+    yaml_prefix = email.get("subject_prefix", "[Watchlist]")
+    subject_prefix = env_prefix or (
+        yaml_prefix if isinstance(yaml_prefix, str) else "[Watchlist]"
+    )
+
+    auto_env = os.getenv("BRIEFING_EMAIL_AUTO", "").strip()
+    auto_yaml = email.get("auto_send", False)
+    if auto_env:
+        auto_send = _env_bool("BRIEFING_EMAIL_AUTO", False)
+    elif isinstance(auto_yaml, bool):
+        auto_send = auto_yaml
+    elif isinstance(auto_yaml, str):
+        auto_send = auto_yaml.strip().lower() not in {"0", "false", "no", "off"}
+    else:
+        auto_send = False
+
+    return {
+        "api_key": os.getenv("RESEND_API_KEY", "").strip(),
+        "from_address": from_raw.strip(),
+        "to_addresses": _parse_email_list(to_raw),
+        "subject_prefix": str(subject_prefix).strip() or "[Watchlist]",
+        "auto_send": auto_send,
+    }
+
+
+def email_delivery_configured() -> bool:
+    """True when Resend can send (API key, sender and at least one recipient)."""
+    cfg = get_email_settings()
+    return bool(cfg["api_key"] and cfg["from_address"] and cfg["to_addresses"])
+
+
+@lru_cache
+def get_report_settings() -> dict[str, bool]:
+    """Briefing report options (run-metadata footer enabled by default)."""
+    report = _load_yaml_settings().get("report") or {}
+    if not isinstance(report, dict):
+        report = {}
+
+    env_flag = os.getenv("BRIEFING_RUN_METADATA", "").strip()
+    if env_flag:
+        include_run_metadata = _env_bool("BRIEFING_RUN_METADATA", True)
+    else:
+        include = report.get("include_run_metadata", True)
+        if isinstance(include, str):
+            include_run_metadata = include.strip().lower() not in {
+                "0",
+                "false",
+                "no",
+                "off",
+            }
+        else:
+            include_run_metadata = bool(include)
+
+    return {"include_run_metadata": include_run_metadata}

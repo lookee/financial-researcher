@@ -72,6 +72,12 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 | `FINANCIAL_RESEARCHER_CONFIG_DIR` | — | Global user config directory (default: `~/.config/financial_researcher`) |
 | `FINANCIAL_RESEARCHER_HOME` | — | Base directory for `output/` and `data/` (default: current working directory) |
 | `BRIEFING_QUIET` | — | Set `1` to hide CrewAI agent/task progress (same as `--quiet`) |
+| `RESEND_API_KEY` | — | [Resend](https://resend.com) API key for `--email` delivery |
+| `BRIEFING_EMAIL_FROM` | — | Verified sender, e.g. `Financial Researcher <onboarding@resend.dev>` |
+| `BRIEFING_EMAIL_TO` | — | Recipient(s), comma-separated |
+| `BRIEFING_EMAIL_SUBJECT_PREFIX` | — | Subject prefix (default: `[Watchlist]`) |
+| `BRIEFING_EMAIL_AUTO` | — | Set `1` to email after every run (same as always passing `--email`) |
+| `BRIEFING_RUN_METADATA` | — | Set `0` to hide the run-metadata footer (enabled by default) |
 
 \*Not required for single-provider profiles that use another backend (`anthropic`, `deepseek`, `free_groq`, `free_openrouter_nex`). The `multi` profile needs OpenAI + Anthropic + DeepSeek.
 
@@ -83,6 +89,7 @@ uv run briefing --session close              # explicit Milan session
 uv run briefing --force --language Italian   # refresh cache + language
 uv run briefing --model-profile frontier     # all gpt-5.5 lineup
 uv run briefing --watchlist path/to.yaml     # custom watchlist
+uv run briefing --email                      # send HTML briefing via Resend
 ```
 
 | Flag | Description |
@@ -93,6 +100,28 @@ uv run briefing --watchlist path/to.yaml     # custom watchlist
 | `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
 | `--model-profile` | See [Model profiles](#model-profiles) (default: `balanced`) |
 | `--quiet` | Hide CrewAI agent/task progress (default: shown) |
+| `--email` | Send the briefing as HTML via Resend (requires env vars below) |
+| `--no-run-metadata` | Omit the run-metadata footer (time, models, tokens) from the briefing |
+
+By default each briefing ends with a **run-metadata** section: processing time, model profile, token usage and per-agent LLM lineup. Disable with `--no-run-metadata` or `BRIEFING_RUN_METADATA=0`.
+
+### Email delivery (Resend)
+
+After each run, optionally email the briefing as **HTML** (with the `.md` file attached). Configure in `.env`:
+
+```env
+RESEND_API_KEY=re_...
+BRIEFING_EMAIL_FROM=Financial Researcher <onboarding@resend.dev>
+BRIEFING_EMAIL_TO=you@example.com
+# BRIEFING_EMAIL_TO=you@example.com,colleague@example.com
+# BRIEFING_EMAIL_AUTO=1
+```
+
+```bash
+uv run briefing --session close --email
+```
+
+`BRIEFING_EMAIL_FROM` must be a **verified sender** in your Resend account (use `onboarding@resend.dev` for initial testing). Recipients live in `BRIEFING_EMAIL_TO` only — one address or several comma-separated. Set `BRIEFING_EMAIL_AUTO=1` to send after every run without passing `--email`.
 
 ## Configuration
 

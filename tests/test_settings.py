@@ -4,10 +4,13 @@ import pytest
 
 from financial_researcher.settings import (
     _load_yaml_settings,
+    email_delivery_configured,
     get_benchmark_settings,
     get_default_language,
+    get_email_settings,
     get_model_profile_name,
     get_pipeline_settings,
+    get_report_settings,
     get_scrape_settings,
     get_serper_settings,
 )
@@ -20,12 +23,16 @@ def _clear_settings_caches():
     get_serper_settings.cache_clear()
     get_pipeline_settings.cache_clear()
     get_benchmark_settings.cache_clear()
+    get_email_settings.cache_clear()
+    get_report_settings.cache_clear()
     yield
     _load_yaml_settings.cache_clear()
     get_scrape_settings.cache_clear()
     get_serper_settings.cache_clear()
     get_pipeline_settings.cache_clear()
     get_benchmark_settings.cache_clear()
+    get_email_settings.cache_clear()
+    get_report_settings.cache_clear()
 
 
 def test_model_profile_name_defaults_to_balanced(monkeypatch):
@@ -93,3 +100,33 @@ def test_benchmark_settings_include_mib_and_stoxx():
     tickers = {b["ticker"] for b in get_benchmark_settings()}
     assert "FTSEMIB.MI" in tickers
     assert "^STOXX" in tickers
+
+
+def test_email_settings_from_env(monkeypatch):
+    monkeypatch.setenv("RESEND_API_KEY", "re_test")
+    monkeypatch.setenv("BRIEFING_EMAIL_FROM", "FR <from@example.com>")
+    monkeypatch.setenv("BRIEFING_EMAIL_TO", "a@example.com, b@example.com")
+    monkeypatch.setenv("BRIEFING_EMAIL_AUTO", "1")
+    cfg = get_email_settings()
+    assert cfg["api_key"] == "re_test"
+    assert cfg["from_address"] == "FR <from@example.com>"
+    assert cfg["to_addresses"] == ["a@example.com", "b@example.com"]
+    assert cfg["auto_send"] is True
+    assert email_delivery_configured() is True
+
+
+def test_email_delivery_not_configured_without_recipient(monkeypatch):
+    monkeypatch.setenv("RESEND_API_KEY", "re_test")
+    monkeypatch.delenv("BRIEFING_EMAIL_TO", raising=False)
+    monkeypatch.delenv("BRIEFING_EMAIL_FROM", raising=False)
+    assert email_delivery_configured() is False
+
+
+def test_report_metadata_enabled_by_default(monkeypatch):
+    monkeypatch.delenv("BRIEFING_RUN_METADATA", raising=False)
+    assert get_report_settings()["include_run_metadata"] is True
+
+
+def test_report_metadata_disabled_via_env(monkeypatch):
+    monkeypatch.setenv("BRIEFING_RUN_METADATA", "0")
+    assert get_report_settings()["include_run_metadata"] is False
