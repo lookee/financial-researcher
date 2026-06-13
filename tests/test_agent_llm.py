@@ -8,6 +8,7 @@ from financial_researcher.agent_llm import (
     build_agent_llm,
     clear_profile_caches,
     describe_active_profile,
+    get_default_profile_name,
     get_profile_description,
     list_model_profile_names,
     resolve_active_profile_name,
@@ -54,12 +55,26 @@ def test_deepseek_profile_models(monkeypatch):
     assert resolve_agent_model("chief") == "deepseek/deepseek-v4-pro"
 
 
+def test_deepseek_profile_reasoning(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "deepseek")
+    assert resolve_reasoning_effort("market") == "low"
+    assert resolve_reasoning_effort("news") == "medium"
+    assert resolve_reasoning_effort("chief") == "medium"
+
+
 def test_multi_profile_models(monkeypatch):
     monkeypatch.setenv("FR_MODEL_PROFILE", "multi")
     assert resolve_agent_model("market") == "deepseek/deepseek-v4-flash"
     assert resolve_agent_model("news") == "anthropic/claude-sonnet-4-6"
     assert resolve_agent_model("outlook") == "openai/gpt-5.4"
     assert resolve_agent_model("chief") == "openai/gpt-5.5"
+
+
+def test_multi_profile_reasoning(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "multi")
+    assert resolve_reasoning_effort("market") == "low"
+    assert resolve_reasoning_effort("news") == "medium"
+    assert resolve_reasoning_effort("chief") == "medium"
 
 
 def test_anthropic_profile_models(monkeypatch):
@@ -118,6 +133,28 @@ def test_reasoning_effort_balanced_tiers():
     assert resolve_reasoning_effort("outlook") == "low"
     assert resolve_reasoning_effort("news") == "medium"
     assert resolve_reasoning_effort("chief") == "medium"
+
+
+def test_reasoning_override_via_env_beats_profile(monkeypatch):
+    monkeypatch.setenv("FR_MODEL_PROFILE", "balanced")
+    monkeypatch.setenv("FR_REASONING_NEWS", "high")
+    assert resolve_reasoning_effort("news") == "high"
+    assert resolve_reasoning_effort("market") == "low"
+
+
+def test_get_default_profile_name():
+    assert get_default_profile_name() == "balanced"
+
+
+def test_get_profile_description_deepseek():
+    desc = get_profile_description("deepseek").lower()
+    assert "deepseek" in desc
+
+
+def test_get_profile_description_multi():
+    desc = get_profile_description("multi").lower()
+    assert "deepseek" in desc
+    assert "anthropic" in desc or "openai" in desc
 
 
 def test_build_agent_llm_sets_model_and_reasoning(monkeypatch):
