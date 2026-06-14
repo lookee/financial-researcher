@@ -18,10 +18,10 @@ Under the hood, a deterministic Python data layer (Yahoo Finance + OpenFIGI) fee
 
 ## Sample briefings
 
-Static samples live in [`examples/briefings/`](examples/briefings/) (tracked in git). Each file is one full executive memo; language and Milan session are listed below.
+Static samples live in [`examples/briefings/`](examples/briefings/) (tracked in git). Each file is one full executive memo; **body** language and Milan session are listed below. Section headings in all samples are **English**.
 
-| Language | Date | Session | Briefing |
-|----------|------|---------|----------|
+| Body | Date | Session | Briefing |
+|------|------|---------|----------|
 | Italian | 2026-06-09 | `close` | [watchlist_2026-06-09_close.md](examples/briefings/watchlist_2026-06-09_close.md) |
 | Italian | 2026-06-10 | `close` | [watchlist_2026-06-10_close.md](examples/briefings/watchlist_2026-06-10_close.md) |
 | Italian | 2026-06-11 | `close` | [watchlist_2026-06-11_close.md](examples/briefings/watchlist_2026-06-11_close.md) |
@@ -41,7 +41,7 @@ Static samples live in [`examples/briefings/`](examples/briefings/) (tracked in 
 - **Cited & verifiable** — every figure and claim maps to a numbered Yahoo Finance or news source. No anonymous assertions.
 - **Milan-native** — four daily sessions aligned with Borsa Italiana hours; the memo's tone and metrics adapt to the time of day.
 - **Deterministic core** — prices and identities are resolved in Python and cached; the agents reason over real data, they don't invent it.
-- **Bilingual** — generate the same briefing in English or Italian from one watchlist.
+- **English structure** — section titles, run-metadata labels and chart headings are always English ([`localization.py`](src/financial_researcher/localization.py)); `--language` / `REPORT_LANGUAGE` controls briefing **prose** and table formatting (English or Italian).
 
 ## Quickstart
 
@@ -68,7 +68,7 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 | `FINNHUB_ENABLED` | — | Set `false` to disable Finnhub even when a key is set (default: `true`) |
 | `FINNHUB_NEWS_LOOKBACK_DAYS` | — | Days of Finnhub news history per instrument (default: `14`, max `30`) |
 | `OPENFIGI_API_KEY` | — | Higher ISIN-resolution rate limits |
-| `REPORT_LANGUAGE` | — | Override briefing language (e.g. `Italian`) |
+| `REPORT_LANGUAGE` | — | Briefing **body** language: `English` or `Italian` (section headings stay English) |
 | `FR_MODEL_PROFILE` | — | Model lineup — see [Model profiles](#model-profiles) and [`model_profiles.yaml`](src/financial_researcher/defaults/model_profiles.yaml) |
 | `GROQ_API_KEY` | — | Required for `--model-profile free_groq` (no OpenAI key needed) |
 | `OPENROUTER_API_KEY` | — | Required for `free_openrouter_nex` or any `openrouter_auto_*` profile |
@@ -93,7 +93,7 @@ The first run scaffolds `./config/` (your watchlist), `output/briefings/`, and `
 ```bash
 uv run briefing                              # auto session, default language
 uv run briefing --session close              # explicit Milan session
-uv run briefing --force --language Italian   # refresh cache + language
+uv run briefing --force --language Italian   # Italian prose + tables; headings stay English
 uv run briefing --model-profile openai_frontier   # all gpt-5.5 lineup
 uv run briefing --watchlist path/to.yaml     # custom watchlist
 uv run briefing --email                      # send HTML briefing via Resend
@@ -102,7 +102,7 @@ uv run briefing --email                      # send HTML briefing via Resend
 | Flag | Description |
 |------|-------------|
 | `--session` | `pre_open` · `post_open` · `midday` · `close` (default: inferred from clock) |
-| `--language LANG` | Briefing language (default: English) |
+| `--language LANG` | Body language: `English` or `Italian` (default: English). Headings and UI labels remain English. |
 | `--force` | Refresh cached identity and market data |
 | `--watchlist PATH` | Watchlist YAML path (default: `config/watchlist.yaml`) |
 | `--model-profile` | See [Model profiles](#model-profiles) (default: `openai_balanced`) |
@@ -153,7 +153,19 @@ Two directories — different roles:
 | **`./config/`** | Your data: `watchlist.yaml` ([`config/README.md`](config/README.md)) |
 | **`src/financial_researcher/defaults/`** | Shipped app defaults: agents, tasks, settings, model profiles, Milan sessions |
 
-Application defaults live in `src/financial_researcher/defaults/settings.yaml` (language, scrape behaviour, model profiles, etc.). Your watchlist lives in `./config/watchlist.yaml`. `REPORT_LANGUAGE` in `.env` overrides `default_language`.
+Application defaults live in `src/financial_researcher/defaults/settings.yaml` (language, scrape behaviour, model profiles, etc.). English section titles and UI labels are defined in [`localization.py`](src/financial_researcher/localization.py). Your watchlist lives in `./config/watchlist.yaml`.
+
+### Language
+
+| What | Controlled by |
+|------|----------------|
+| Section headings (`## Executive Summary`, …) | Always **English** — [`localization.py`](src/financial_researcher/localization.py) |
+| Run-metadata footer, chart subsection titles | Always **English** |
+| Briefing prose, performance-table column labels, number formatting | `--language` / `REPORT_LANGUAGE` / `default_language` — `English` or `Italian` |
+
+`REPORT_LANGUAGE` in `.env` overrides `default_language` in `settings.yaml`. Optional per-watchlist override: `language: Italian` in `watchlist.yaml`.
+
+Italian samples in [`examples/briefings/`](examples/briefings/) use Italian body text with the same English section structure as the English sample (`watchlist_2026-06-12_close_en.md`).
 
 ### Website scrape truncation
 
@@ -210,7 +222,7 @@ uv run briefing --session close
 Define instruments in `config/watchlist.yaml` — name, sector and category are resolved automatically.
 
 ```yaml
-# language: Italian          # optional per-watchlist override
+# language: Italian          # optional body-language override for this watchlist
 instruments:
   - { isin: IE00BMC38736, ticker: SMH.MI,   type: etf }   # VanEck Semiconductors
   - { isin: IE00BDVPNG13, ticker: WTAI.MI,  type: etf }   # WisdomTree AI
@@ -312,7 +324,7 @@ Set `model_profile: openai_economy` in `defaults/settings.yaml` for a persistent
 <details>
 <summary><b>Briefing structure</b></summary>
 
-Title block → Executive Summary → Performance Snapshot → What's Driving the Moves → Medium-Term Outlook → Event Calendar → Correlated Themes → Risks & Watchpoints → References → Disclaimer. Headings follow the configured language; citations are consolidated and numbered.
+Title block → Executive Summary → Performance Snapshot → What's Driving the Moves → Medium-Term Outlook → Event Calendar → Correlated Themes → Risks & Watchpoints → References → Disclaimer. **Section headings are always English.** With `--language Italian`, narrative prose and performance-table labels use Italian; post-process also normalizes any legacy Italian headings to English.
 </details>
 
 <details>
@@ -334,6 +346,7 @@ financial-researcher/
 ├── config/                 # Your watchlist (watchlist.yaml; see config/README.md)
 ├── src/financial_researcher/
 │   ├── main.py · crew.py · paths.py · settings.py · llm_compat.py · session_profiles.py
+│   ├── localization.py     # English section headings and UI labels
 │   ├── defaults/           # Shipped app config: agents, tasks, settings, model profiles
 │   ├── models/    # instrument identity types
 │   ├── services/  # pipeline · context · isin_resolver · market_data · news_prefetch

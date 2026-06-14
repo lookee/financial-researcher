@@ -18,20 +18,15 @@ def _inputs(instruments):
 class TestValidateSectionLanguage:
     def test_detects_duplicate_performance_sections(self):
         content = """\
-## Sommario Esecutivo
+## Executive Summary
 A
-## Snapshot della Performance Watchlist
+## Watchlist Performance Snapshot
 B
-## Snapshot della Performance Watchlist
+## Watchlist Performance Snapshot
 C
 """
         warnings = validate_section_language(content, language="Italian")
         assert any("Duplicate section" in w for w in warnings)
-
-    def test_detects_english_heading_in_italian_briefing(self):
-        content = "## Watchlist Performance Snapshot\n\nBody"
-        warnings = validate_section_language(content, language="Italian")
-        assert any("English heading" in w for w in warnings)
 
 
 class TestValidateBriefing:

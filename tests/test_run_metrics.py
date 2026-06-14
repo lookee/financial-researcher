@@ -158,13 +158,13 @@ class TestRunMetadataFooter:
         assert format_duration(42.5) == "42.5s"
         assert format_duration(96.75) == "1m 37s"
 
-    def test_footer_in_italian(self):
+    def test_footer_uses_english_labels(self):
         footer = format_run_metadata_footer(
             metrics_payload=self._payload(),
             language="Italian",
         )
-        assert "## Informazioni di elaborazione" in footer
-        assert "Profilo modelli" in footer
+        assert "## Run metadata" in footer
+        assert "Model profile" in footer
         assert "openai_balanced" in footer
         assert "33,518" in footer
         assert "openai/gpt-5.5" in footer
@@ -176,7 +176,7 @@ class TestRunMetadataFooter:
             metrics_payload=payload,
             language="Italian",
         )
-        assert "Risparmio OpenRouter (1–10)" in footer
+        assert "OpenRouter savings (1–10)" in footer
         assert "| 9 |" in footer
 
     def test_footer_shows_resolved_models_per_agent(self):
@@ -225,7 +225,7 @@ class TestRunMetadataFooter:
             metrics_payload=self._payload(),
             language="Italian",
         )
-        assert "Informazioni di elaborazione" in first
+        assert "Run metadata" in first
 
         updated_payload = self._payload()
         updated_payload["duration_seconds"] = 120.0
@@ -234,7 +234,7 @@ class TestRunMetadataFooter:
             metrics_payload=updated_payload,
             language="Italian",
         )
-        assert second.count("Informazioni di elaborazione") == 1
+        assert second.count("Run metadata") == 1
         assert "2m 0s" in second
 
     def test_strip_footer(self):

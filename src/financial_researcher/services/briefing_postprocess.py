@@ -15,14 +15,15 @@ MATERIAL_IMPACT_RE = re.compile(
 )
 TABLE_ROW_RE = re.compile(r"^\|(.+)\|\s*$", re.MULTILINE)
 
-from financial_researcher.services.news_ranking import OFFICIAL_DOMAINS
-from financial_researcher.services.watchlist_context import (
-    BRIEFING_SECTION_HEADINGS_EN,
-    BRIEFING_SECTION_HEADINGS_IT,
-    instrument_label,
-    is_italian_language,
+from financial_researcher.localization import (
+    briefing_section_order,
+    english_section_headings,
     localized_section_heading,
+    section_alias_map,
+    section_title_variants,
 )
+from financial_researcher.services.news_ranking import OFFICIAL_DOMAINS
+from financial_researcher.services.watchlist_context import instrument_label
 
 CANONICAL_CALENDAR_HEADERS = [
     "Date (YYYY-MM-DD)",
@@ -56,45 +57,10 @@ CALENDAR_HEADER_ALIASES: dict[str, int] = {
     "citazione": 4,
 }
 
-# Canonical English headings (prompt template). Post-process matches EN + IT aliases.
-SECTION_HEADINGS: dict[str, str] = {
-    "executive_summary": "Executive Summary",
-    "performance": "Watchlist Performance Snapshot",
-    "drivers": "What's Driving the Moves",
-    "outlook": "Medium-Term Outlook",
-    "calendar": "Event Calendar",
-    "themes": "Correlated Themes",
-    "risks": "Risks & Watchpoints",
-    "references": "References",
-    "disclaimer": "Disclaimer",
-}
+# Canonical English headings for post-process matching.
+SECTION_HEADINGS: dict[str, str] = english_section_headings()
 
-SECTION_ALIASES: dict[str, str] = {
-    "executive summary": "executive_summary",
-    "sommario esecutivo": "executive_summary",
-    "watchlist performance snapshot": "performance",
-    "snapshot della performance watchlist": "performance",
-    "scatto della performance della watchlist": "performance",
-    "prestazioni della watchlist": "performance",
-    "what's driving the moves": "drivers",
-    "whats driving the moves": "drivers",
-    "cosa guida i movimenti": "drivers",
-    "medium-term outlook": "outlook",
-    "outlook a medio termine": "outlook",
-    "prospettive a medio termine": "outlook",
-    "event calendar": "calendar",
-    "calendario eventi": "calendar",
-    "calendario degli eventi": "calendar",
-    "correlated themes": "themes",
-    "temi correlati": "themes",
-    "risks & watchpoints": "risks",
-    "risks and watchpoints": "risks",
-    "rischi e punti di attenzione": "risks",
-    "references": "references",
-    "riferimenti": "references",
-    "disclaimer": "disclaimer",
-    "note legali": "disclaimer",
-}
+SECTION_ALIASES: dict[str, str] = section_alias_map()
 
 
 def section_title(section_key: str, *, language: str = "English") -> str:
@@ -102,11 +68,7 @@ def section_title(section_key: str, *, language: str = "English") -> str:
 
 
 def _section_title_keys(section_key: str) -> set[str]:
-    keys = {SECTION_HEADINGS[section_key].lower()}
-    for alias, key in SECTION_ALIASES.items():
-        if key == section_key:
-            keys.add(alias)
-    return keys
+    return section_title_variants(section_key)
 
 
 def performance_section_titles() -> set[str]:
@@ -152,8 +114,9 @@ def _rename_section_heading(
     *,
     language: str,
 ) -> str:
-    """Normalize the first matching section heading to the canonical localized title."""
-    canonical = localized_section_heading(section_key, language)
+    """Normalize the first matching section heading to the canonical English title."""
+    _ = language
+    canonical = localized_section_heading(section_key, "English")
     keys = _section_title_keys(section_key)
     sections = _find_sections(content)
     for start, end, level, title in sections:
@@ -801,4 +764,8 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
     if calendar_warning:
         warnings.append(calendar_warning)
     warnings.extend(validate_material_news_prominence(updated, inputs))
+
+    for section_key in briefing_section_order():
+        updated = _rename_section_heading(updated, section_key, language=language)
+
     return updated, warnings

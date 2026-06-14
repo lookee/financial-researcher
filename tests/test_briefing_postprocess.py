@@ -181,8 +181,10 @@ Drivers.
             "current_date": "2026-06-12",
         }
         processed, _ = postprocess_briefing(content, inputs)
-        assert processed.count("## Snapshot della Performance Watchlist") == 1
-        assert "## Watchlist Performance Snapshot" not in processed
+        assert processed.count("## Watchlist Performance Snapshot") == 1
+        assert "## Snapshot della Performance Watchlist" not in processed
+        assert "## Executive Summary" in processed
+        assert "## What's Driving the Moves" in processed
         assert "| table |" in processed
 
 

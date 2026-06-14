@@ -14,55 +14,17 @@ from financial_researcher.services.forward_calendar import (
     build_recent_dated_events_table,
     fetch_forward_calendar_events,
 )
+from financial_researcher.localization import (
+    briefing_section_order,
+    english_section_headings,
+    is_italian_language,
+    section_heading,
+)
 from financial_researcher.session_profiles import resolve_session_profile
 from financial_researcher.settings import get_default_language
 
-BRIEFING_SECTION_ORDER = [
-    "executive_summary",
-    "performance",
-    "drivers",
-    "outlook",
-    "calendar",
-    "themes",
-    "risks",
-    "references",
-    "disclaimer",
-]
-
-BRIEFING_SECTION_HEADINGS_EN: dict[str, str] = {
-    "executive_summary": "Executive Summary",
-    "performance": "Watchlist Performance Snapshot",
-    "drivers": "What's Driving the Moves",
-    "outlook": "Medium-Term Outlook",
-    "calendar": "Event Calendar",
-    "themes": "Correlated Themes",
-    "risks": "Risks & Watchpoints",
-    "references": "References",
-    "disclaimer": "Disclaimer",
-}
-
-BRIEFING_SECTION_HEADINGS_IT: dict[str, str] = {
-    "executive_summary": "Sommario Esecutivo",
-    "performance": "Snapshot della Performance Watchlist",
-    "drivers": "Cosa Guida i Movimenti",
-    "outlook": "Prospettive di Medio Termine",
-    "calendar": "Calendario Eventi",
-    "themes": "Temi Correlati",
-    "risks": "Rischi e Punti di Attenzione",
-    "references": "Riferimenti",
-    "disclaimer": "Disclaimer",
-}
-
-
-def is_italian_language(language: str) -> bool:
-    return language.lower().startswith("ital")
-
-
-def localized_section_heading(section_key: str, language: str) -> str:
-    """Single localized ## heading for a briefing section key."""
-    if is_italian_language(language):
-        return BRIEFING_SECTION_HEADINGS_IT[section_key]
-    return BRIEFING_SECTION_HEADINGS_EN[section_key]
+BRIEFING_SECTION_ORDER = briefing_section_order()
+BRIEFING_SECTION_HEADINGS_EN = english_section_headings()
 
 MILAN_TZ = ZoneInfo("Europe/Rome")
 SESSIONS_PATH = Path(__file__).parent.parent / "defaults" / "sessions_milan.yaml"
@@ -786,18 +748,15 @@ def build_watchlist_summary_checklist(instruments: list[dict[str, Any]]) -> str:
 
 
 def build_briefing_section_headings(language: str) -> str:
-    """Markdown checklist of ## headings for the chief strategist (one language only)."""
+    """Markdown checklist of ## headings for the chief strategist."""
+    _ = language
     lines = [
         "Use EXACTLY these ## section headings in this order — copy verbatim, no variants:",
+        "Keep all section headings in English even when the briefing body is in another language.",
         "",
     ]
     for index, key in enumerate(BRIEFING_SECTION_ORDER, start=2):
-        lines.append(f"{index}. ## {localized_section_heading(key, language)}")
-    lines.append("")
-    if is_italian_language(language):
-        lines.append("Write the briefing body in Italian. Do not use English section headings.")
-    else:
-        lines.append("Keep all section headings in English.")
+        lines.append(f"{index}. ## {section_heading(key)}")
     return "\n".join(lines)
 
 
@@ -807,11 +766,7 @@ def build_watchlist_driver_checklist(
     language: str = "English",
 ) -> str:
     """Explicit per-instrument checklist for mandatory briefing coverage."""
-    drivers_heading = (
-        "Cosa Guida i Movimenti"
-        if language.lower().startswith("ital")
-        else "What's Driving the Moves"
-    )
+    drivers_heading = section_heading("drivers")
     lines = [
         f"MANDATORY: cover ALL {len(instruments)} instruments below — one entry each, "
         f"in this order, in '{drivers_heading}':",

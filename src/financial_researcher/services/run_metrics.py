@@ -10,53 +10,12 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from financial_researcher.paths import metrics_dir
+from financial_researcher.localization import agent_labels, run_metadata_copy
 
 MILAN_TZ = ZoneInfo("Europe/Rome")
 
 _RUN_METADATA_START = "<!-- financial-researcher:run-metadata -->"
 _RUN_METADATA_END = "<!-- /financial-researcher:run-metadata -->"
-
-_AGENT_LABELS: dict[str, dict[str, str]] = {
-    "English": {
-        "market": "Market analyst",
-        "news": "News analyst",
-        "outlook": "Outlook analyst",
-        "calendar": "Calendar analyst",
-        "chief": "Chief strategist",
-    },
-    "Italian": {
-        "market": "Analista mercato",
-        "news": "Analista news",
-        "outlook": "Analista outlook",
-        "calendar": "Analista calendario",
-        "chief": "Chief strategist",
-    },
-}
-
-_METADATA_COPY: dict[str, dict[str, str]] = {
-    "English": {
-        "heading": "Run metadata",
-        "profile": "Model profile",
-        "duration": "Processing time",
-        "requests": "LLM requests",
-        "tokens": "Tokens (prompt / completion / total)",
-        "agents_heading": "Models by agent",
-        "agent_col": "Agent",
-        "model_col": "Model (configured → resolved)",
-        "openrouter_savings": "OpenRouter savings (1–10)",
-    },
-    "Italian": {
-        "heading": "Informazioni di elaborazione",
-        "profile": "Profilo modelli",
-        "duration": "Tempo di elaborazione",
-        "requests": "Richieste LLM",
-        "tokens": "Token (prompt / completion / totale)",
-        "agents_heading": "Modelli per agente",
-        "agent_col": "Agente",
-        "model_col": "Modello (configurato → risolti)",
-        "openrouter_savings": "Risparmio OpenRouter (1–10)",
-    },
-}
 
 
 def extract_usage_metrics(crew: Any) -> dict[str, int]:
@@ -165,13 +124,11 @@ def _format_token_count(value: int) -> str:
 
 
 def _metadata_copy(language: str) -> dict[str, str]:
-    key = "Italian" if language.strip().lower().startswith("ital") else "English"
-    return _METADATA_COPY[key]
+    return run_metadata_copy(language=language)
 
 
 def _agent_labels(language: str) -> dict[str, str]:
-    key = "Italian" if language.strip().lower().startswith("ital") else "English"
-    return _AGENT_LABELS[key]
+    return agent_labels(language=language)
 
 
 def strip_run_metadata_footer(markdown: str) -> str:

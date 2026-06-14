@@ -28,6 +28,7 @@ from matplotlib.patches import Patch
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 
+from financial_researcher.localization import label
 from financial_researcher.services import chart_theme
 
 # Horizon -> trailing daily sessions (None = year-to-date slice).
@@ -977,8 +978,7 @@ def build_charts_markdown(
     """Markdown block of chart images, referenced by path relative to base_dir."""
     if not artifacts:
         return ""
-    italian = language.lower().startswith("ital")
-    heading = "Andamento Grafico" if italian else "Performance Charts"
+    heading = label("charts", "performance_charts")
     lines = [f"### {heading}", ""]
     for artifact in artifacts:
         if base_dir is not None:

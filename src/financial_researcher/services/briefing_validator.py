@@ -16,11 +16,7 @@ from financial_researcher.services.briefing_postprocess import (
     _normalize_title,
     _section_title_keys,
 )
-from financial_researcher.services.watchlist_context import (
-    BRIEFING_SECTION_HEADINGS_EN,
-    is_italian_language,
-    localized_section_heading,
-)
+from financial_researcher.localization import english_section_headings, localized_section_heading
 
 PCT_IN_BODY_RE = re.compile(
     r"([+-]?\d+[,.]\d+|\d+[,.]\d+|\d+)\s*%\s*(?:\s*1[DWMY]|1[DWMY]|YTD|giornaliera|settimanale|mensile|annuale)?",
@@ -129,15 +125,6 @@ def validate_section_language(content: str, *, language: str) -> list[str]:
                 f"Duplicate section '{localized_section_heading(key, language)}' "
                 f"appears {count} times."
             )
-
-    if is_italian_language(language):
-        for _, _, _, title in sections:
-            normalized = _normalize_title(title)
-            for en_heading in BRIEFING_SECTION_HEADINGS_EN.values():
-                if normalized == en_heading.lower() and en_heading != "Disclaimer":
-                    warnings.append(
-                        f"English heading '{title}' in Italian briefing."
-                    )
     return warnings
 
 
