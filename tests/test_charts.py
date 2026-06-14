@@ -303,6 +303,20 @@ class TestBuildWatchlistBreadthChart:
         assert artifact is not None
         assert "settimana" in artifact.caption.lower()
 
+    def test_close_renders_two_horizons(self, tmp_path):
+        artifact = build_watchlist_breadth_chart(
+            [
+                _instrument("AAA.MI", performance={"1d": 1.0, "1w": 2.0}),
+                _instrument("BBB.MI", performance={"1d": -0.5, "1w": -1.0}),
+                _instrument("CCC.MI", performance={"1d": 0.2, "1w": 0.0}),
+            ],
+            session="close",
+            output_path=tmp_path / "breadth_close.png",
+            language="English",
+        )
+        assert artifact is not None
+        assert "day and week" in artifact.caption.lower()
+
     def test_returns_none_with_single_instrument(self, tmp_path):
         artifact = build_watchlist_breadth_chart(
             [_instrument("AAA.MI")],

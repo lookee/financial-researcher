@@ -24,6 +24,7 @@ matplotlib.use("Agg")
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 
@@ -459,6 +460,82 @@ def _count_performance_breadth(
     return counts
 
 
+_BREADTH_FLAT = "#D1D5DB"
+
+
+def _breadth_legend_labels(*, italian: bool) -> tuple[str, str, str]:
+    if italian:
+        return "Positivi", "Pari", "Negativi"
+    return "Advancing", "Unchanged", "Declining"
+
+
+def _render_breadth_donut(
+    ax,
+    counts: dict[str, int],
+    *,
+    metric_label: str,
+    italian: bool,
+) -> None:
+    """Draw one donut for advancing / unchanged / declining counts."""
+    pos_label, flat_label, neg_label = _breadth_legend_labels(italian=italian)
+    segments: list[tuple[int, str]] = []
+    for key, color in (
+        ("up", chart_theme.POSITIVE),
+        ("flat", _BREADTH_FLAT),
+        ("down", chart_theme.NEGATIVE),
+    ):
+        if counts[key] > 0:
+            segments.append((counts[key], color))
+
+    if not segments:
+        ax.axis("off")
+        return
+
+    sizes = [size for size, _ in segments]
+    colors = [color for _, color in segments]
+    total = sum(sizes)
+
+    ax.pie(
+        sizes,
+        colors=colors,
+        startangle=90,
+        counterclock=False,
+        wedgeprops={
+            "width": 0.5,
+            "edgecolor": chart_theme.BACKGROUND,
+            "linewidth": 2.0,
+        },
+    )
+    ax.text(
+        0,
+        0.06,
+        str(total),
+        ha="center",
+        va="center",
+        fontsize=22,
+        fontweight="bold",
+        color=chart_theme.INK,
+    )
+    instruments_word = "titoli" if italian else "names"
+    ax.text(
+        0,
+        -0.14,
+        instruments_word,
+        ha="center",
+        va="center",
+        fontsize=9,
+        color=chart_theme.MUTED,
+    )
+    ax.set_title(
+        metric_label,
+        fontsize=11,
+        fontweight="600",
+        color=chart_theme.INK,
+        pad=10,
+    )
+    ax.set_aspect("equal")
+
+
 def build_watchlist_breadth_chart(
     instruments: list[dict[str, Any]],
     *,
@@ -467,7 +544,7 @@ def build_watchlist_breadth_chart(
     language: str,
     metrics: tuple[str, ...] | None = None,
 ) -> ChartArtifact | None:
-    """Render stacked advancing/declining counts for session-appropriate horizons."""
+    """Render donut charts of advancing/declining counts per session horizon."""
     italian = language.lower().startswith("ital")
     watchlist = _watchlist_instruments(instruments)
     if len(watchlist) < _MIN_BREADTH_INSTRUMENTS:
@@ -487,111 +564,43 @@ def build_watchlist_breadth_chart(
         return None
 
     title = _breadth_caption(italian=italian, session=session)
-    x_labels = [
-        _BREADTH_METRIC_LABELS[metric][0 if italian else 1] for metric, _ in series
-    ]
-    pos_label = "Positivi" if italian else "Advancing"
-    neg_label = "Negativi" if italian else "Declining"
-    flat_label = "Pari" if italian else "Unchanged"
+    pos_label, flat_label, neg_label = _breadth_legend_labels(italian=italian)
 
     with plt.rc_context(chart_theme.rcparams()):
-        fig, ax = plt.subplots(figsize=(6.8, 4.2))
-        ax.set_facecolor(chart_theme.BACKGROUND)
+        if len(series) == 1:
+            fig, ax = plt.subplots(figsize=(5.4, 4.6))
+            axes = [ax]
+        else:
+            fig, axes = plt.subplots(1, len(series), figsize=(8.6, 4.6))
 
-        x_pos = np.arange(len(series))
-        bar_width = 0.52
-        ups = [counts["up"] for _, counts in series]
-        downs = [counts["down"] for _, counts in series]
-        flats = [counts["flat"] for _, counts in series]
+        for ax, (metric, counts) in zip(np.atleast_1d(axes), series):
+            metric_label = _BREADTH_METRIC_LABELS[metric][0 if italian else 1]
+            if metric == "1d" and session == "midday":
+                partial = " (parz.)" if italian else " (partial)"
+                metric_label = f"{metric_label}{partial}"
+            _render_breadth_donut(ax, counts, metric_label=metric_label, italian=italian)
 
-        ax.bar(
-            x_pos,
-            ups,
-            bar_width,
-            label=pos_label,
-            color=chart_theme.POSITIVE,
-            alpha=0.92,
-            zorder=2,
-        )
-        bottom_flat = np.array(ups, dtype=float)
-        if any(flats):
-            ax.bar(
-                x_pos,
-                flats,
-                bar_width,
-                bottom=bottom_flat,
-                label=flat_label,
-                color=chart_theme.MUTED,
-                alpha=0.35,
-                zorder=2,
-            )
-            bottom_flat = bottom_flat + np.array(flats, dtype=float)
-        ax.bar(
-            x_pos,
-            downs,
-            bar_width,
-            bottom=bottom_flat,
-            label=neg_label,
-            color=chart_theme.NEGATIVE,
-            alpha=0.92,
-            zorder=2,
-        )
-
-        for idx, counts in enumerate([c for _, c in series]):
-            running = 0.0
-            for key, color, label in (
-                ("up", chart_theme.BACKGROUND, str(counts["up"])),
-                ("flat", chart_theme.INK, str(counts["flat"])),
-                ("down", chart_theme.BACKGROUND, str(counts["down"])),
-            ):
-                segment = counts[key]
-                if segment <= 0:
-                    continue
-                ax.text(
-                    idx,
-                    running + segment / 2,
-                    label,
-                    ha="center",
-                    va="center",
-                    fontsize=10,
-                    fontweight="bold",
-                    color=color,
-                )
-                running += segment
-
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(x_labels, fontsize=10, color=chart_theme.INK)
-        ax.set_ylabel(
-            "Titoli" if italian else "Instruments",
-            fontsize=10,
-            color=chart_theme.MUTED,
-            labelpad=8,
-        )
-        y_max = max(up + down + flat for up, down, flat in zip(ups, downs, flats))
-        ax.set_ylim(0, max(y_max + 0.6, 2.5))
-        ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
-
-        ax.tick_params(axis="x", length=0)
-        ax.tick_params(axis="y", labelsize=9, colors=chart_theme.MUTED)
-        for spine in ("top", "right", "left"):
-            ax.spines[spine].set_visible(False)
-        ax.spines["bottom"].set_color(chart_theme.HAIRLINE)
-        ax.grid(axis="y", color=chart_theme.GRID, linewidth=0.9)
-        ax.set_axisbelow(True)
-
-        ax.set_title(
+        fig.suptitle(
             title,
-            loc="left",
+            x=0.02,
+            ha="left",
             fontsize=14,
             fontweight="bold",
             color=chart_theme.INK,
-            pad=14,
+            y=0.98,
         )
-        ax.legend(
-            loc="upper right",
+        fig.legend(
+            handles=[
+                Patch(facecolor=chart_theme.POSITIVE, label=pos_label),
+                Patch(facecolor=_BREADTH_FLAT, label=flat_label),
+                Patch(facecolor=chart_theme.NEGATIVE, label=neg_label),
+            ],
+            loc="lower center",
+            ncol=3,
             fontsize=9,
             frameon=False,
             labelcolor=chart_theme.MUTED,
+            bbox_to_anchor=(0.5, -0.02),
         )
 
         source = "Fonte: Yahoo Finance" if italian else "Source: Yahoo Finance"
