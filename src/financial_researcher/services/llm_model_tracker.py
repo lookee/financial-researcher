@@ -111,8 +111,12 @@ def _patch_litellm_completion() -> None:
 
 
 def ensure_llm_model_tracker_installed() -> None:
-    """Install the LiteLLM completion patch once for the process."""
-    _patch_litellm_completion()
+    """Install the LiteLLM completion patch when litellm is available."""
+    try:
+        _patch_litellm_completion()
+    except ImportError:
+        # CrewAI-free unit CI has no litellm; tracking still works via thread-local agent tags.
+        return
 
 
 def tracked_llm_call(agent_key: str, call_fn: Any, /, *args: Any, **kwargs: Any) -> Any:
