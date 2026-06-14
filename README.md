@@ -116,13 +116,13 @@ By default each briefing ends with a **run-metadata** section: processing time, 
 
 ### Performance charts
 
-Each briefing embeds a **performance heatmap** (ticker × horizons, green/red), a **risk/return scatter** (30-day volatility vs YTD), and **indexed-to-100** line charts (white background, editorial palette) in the Performance section. The set depends on the Milan **session**:
+Each briefing embeds a **performance heatmap** (ticker × horizons, green/red), a **risk/return scatter** (30-day volatility vs YTD), a **watchlist breadth** chart (advancing vs declining names on 1D/1W), and **indexed-to-100** line charts (white background, editorial palette) in the Performance section. The set depends on the Milan **session**:
 
 | Session | Heatmap columns | Cross-sectional | Line charts |
 |---------|-----------------|-----------------|-------------|
-| `pre_open` | 1W · 1M · YTD | Risk/return scatter | Weekly |
-| `post_open`, `midday` | 1D · 1W · 1M · YTD | Risk/return scatter | Intraday + weekly |
-| `close` | 1D · 1W · 1M · YTD | Risk/return scatter | Session, weekly, monthly, 12-month |
+| `pre_open` | 1W · 1M · YTD | Scatter · breadth (1W) | Weekly |
+| `post_open`, `midday` | 1D · 1W · 1M · YTD | Scatter · breadth (1D + 1W) | Intraday + weekly |
+| `close` | 1D · 1W · 1M · YTD | Scatter · breadth (1D + 1W) | Session, weekly, monthly, 12-month |
 
 Charts are rendered deterministically in Python ([`chart_generator.py`](src/financial_researcher/services/chart_generator.py)) from Yahoo daily closes and 5-minute intraday bars — **the LLMs never receive the price series or the images**, so they add zero token cost. PNGs are written to `output/briefings/charts/` and referenced from the markdown; when emailing, they are embedded inline via Resend CID attachments. Disable with `--no-charts` or `BRIEFING_CHARTS=0`.
 

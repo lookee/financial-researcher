@@ -60,6 +60,21 @@ _HEATMAP_COLUMN_LABELS: dict[str, tuple[str, str]] = {
     "ytd": ("YTD", "YTD"),
 }
 
+# Watchlist breadth chart metrics per session (advancing vs declining counts).
+_SESSION_BREADTH_METRICS: dict[str, tuple[str, ...]] = {
+    "pre_open": ("1w",),
+    "post_open": ("1d", "1w"),
+    "midday": ("1d", "1w"),
+    "close": ("1d", "1w"),
+}
+
+_BREADTH_METRIC_LABELS: dict[str, tuple[str, str]] = {
+    "1d": ("Giorn.", "1D"),
+    "1w": ("Sett.", "1W"),
+}
+
+_MIN_BREADTH_INSTRUMENTS = 2
+
 _MIN_DAILY_POINTS = 3
 _MIN_INTRADAY_POINTS = 2
 
@@ -82,6 +97,11 @@ def resolve_chart_horizons(session: str) -> tuple[str, ...]:
 def resolve_heatmap_columns(session: str) -> tuple[str, ...]:
     """Return performance heatmap columns for a Milan briefing session."""
     return _SESSION_HEATMAP_COLUMNS.get(session, ("1d", "1w", "1m", "ytd"))
+
+
+def resolve_breadth_metrics(session: str) -> tuple[str, ...]:
+    """Return performance horizons counted in the watchlist breadth chart."""
+    return _SESSION_BREADTH_METRICS.get(session, ("1d", "1w"))
 
 
 def _watchlist_instruments(instruments: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -395,6 +415,204 @@ def build_risk_return_scatter(
         caption=title,
         path=output_path,
         content_id=f"chart-risk-return-{output_path.stem}",
+    )
+
+
+def _breadth_caption(*, italian: bool, session: str) -> str:
+    if session == "midday":
+        return (
+            "Ampiezza watchlist — positivi vs negativi (1D parziale e settimana)"
+            if italian
+            else "Watchlist breadth — advancing vs declining (partial 1D and week)"
+        )
+    if session == "pre_open":
+        return (
+            "Ampiezza watchlist — positivi vs negativi (settimana)"
+            if italian
+            else "Watchlist breadth — advancing vs declining (week)"
+        )
+    return (
+        "Ampiezza watchlist — positivi vs negativi (giorno e settimana)"
+        if italian
+        else "Watchlist breadth — advancing vs declining (day and week)"
+    )
+
+
+def _count_performance_breadth(
+    watchlist: list[dict[str, Any]],
+    metric: str,
+) -> dict[str, int]:
+    """Count instruments with positive, negative, or flat performance for a horizon."""
+    counts = {"up": 0, "down": 0, "flat": 0}
+    for item in watchlist:
+        perf = item.get("performance") or {}
+        value = perf.get(metric)
+        if value is None:
+            continue
+        numeric = float(value)
+        if numeric > 0:
+            counts["up"] += 1
+        elif numeric < 0:
+            counts["down"] += 1
+        else:
+            counts["flat"] += 1
+    return counts
+
+
+def build_watchlist_breadth_chart(
+    instruments: list[dict[str, Any]],
+    *,
+    session: str,
+    output_path: Path,
+    language: str,
+    metrics: tuple[str, ...] | None = None,
+) -> ChartArtifact | None:
+    """Render stacked advancing/declining counts for session-appropriate horizons."""
+    italian = language.lower().startswith("ital")
+    watchlist = _watchlist_instruments(instruments)
+    if len(watchlist) < _MIN_BREADTH_INSTRUMENTS:
+        return None
+
+    chosen = metrics if metrics is not None else resolve_breadth_metrics(session)
+    if not chosen:
+        return None
+
+    series: list[tuple[str, dict[str, int]]] = []
+    for metric in chosen:
+        counts = _count_performance_breadth(watchlist, metric)
+        if counts["up"] + counts["down"] + counts["flat"] >= _MIN_BREADTH_INSTRUMENTS:
+            series.append((metric, counts))
+
+    if not series:
+        return None
+
+    title = _breadth_caption(italian=italian, session=session)
+    x_labels = [
+        _BREADTH_METRIC_LABELS[metric][0 if italian else 1] for metric, _ in series
+    ]
+    pos_label = "Positivi" if italian else "Advancing"
+    neg_label = "Negativi" if italian else "Declining"
+    flat_label = "Pari" if italian else "Unchanged"
+
+    with plt.rc_context(chart_theme.rcparams()):
+        fig, ax = plt.subplots(figsize=(6.8, 4.2))
+        ax.set_facecolor(chart_theme.BACKGROUND)
+
+        x_pos = np.arange(len(series))
+        bar_width = 0.52
+        ups = [counts["up"] for _, counts in series]
+        downs = [counts["down"] for _, counts in series]
+        flats = [counts["flat"] for _, counts in series]
+
+        ax.bar(
+            x_pos,
+            ups,
+            bar_width,
+            label=pos_label,
+            color=chart_theme.POSITIVE,
+            alpha=0.92,
+            zorder=2,
+        )
+        bottom_flat = np.array(ups, dtype=float)
+        if any(flats):
+            ax.bar(
+                x_pos,
+                flats,
+                bar_width,
+                bottom=bottom_flat,
+                label=flat_label,
+                color=chart_theme.MUTED,
+                alpha=0.35,
+                zorder=2,
+            )
+            bottom_flat = bottom_flat + np.array(flats, dtype=float)
+        ax.bar(
+            x_pos,
+            downs,
+            bar_width,
+            bottom=bottom_flat,
+            label=neg_label,
+            color=chart_theme.NEGATIVE,
+            alpha=0.92,
+            zorder=2,
+        )
+
+        for idx, counts in enumerate([c for _, c in series]):
+            running = 0.0
+            for key, color, label in (
+                ("up", chart_theme.BACKGROUND, str(counts["up"])),
+                ("flat", chart_theme.INK, str(counts["flat"])),
+                ("down", chart_theme.BACKGROUND, str(counts["down"])),
+            ):
+                segment = counts[key]
+                if segment <= 0:
+                    continue
+                ax.text(
+                    idx,
+                    running + segment / 2,
+                    label,
+                    ha="center",
+                    va="center",
+                    fontsize=10,
+                    fontweight="bold",
+                    color=color,
+                )
+                running += segment
+
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(x_labels, fontsize=10, color=chart_theme.INK)
+        ax.set_ylabel(
+            "Titoli" if italian else "Instruments",
+            fontsize=10,
+            color=chart_theme.MUTED,
+            labelpad=8,
+        )
+        y_max = max(up + down + flat for up, down, flat in zip(ups, downs, flats))
+        ax.set_ylim(0, max(y_max + 0.6, 2.5))
+        ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
+
+        ax.tick_params(axis="x", length=0)
+        ax.tick_params(axis="y", labelsize=9, colors=chart_theme.MUTED)
+        for spine in ("top", "right", "left"):
+            ax.spines[spine].set_visible(False)
+        ax.spines["bottom"].set_color(chart_theme.HAIRLINE)
+        ax.grid(axis="y", color=chart_theme.GRID, linewidth=0.9)
+        ax.set_axisbelow(True)
+
+        ax.set_title(
+            title,
+            loc="left",
+            fontsize=14,
+            fontweight="bold",
+            color=chart_theme.INK,
+            pad=14,
+        )
+        ax.legend(
+            loc="upper right",
+            fontsize=9,
+            frameon=False,
+            labelcolor=chart_theme.MUTED,
+        )
+
+        source = "Fonte: Yahoo Finance" if italian else "Source: Yahoo Finance"
+        fig.text(
+            0.01,
+            0.01,
+            f"Financial Researcher · {source}",
+            fontsize=8,
+            color=chart_theme.MUTED,
+            ha="left",
+        )
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output_path, format="png", bbox_inches="tight")
+        plt.close(fig)
+
+    return ChartArtifact(
+        horizon="breadth",
+        caption=title,
+        path=output_path,
+        content_id=f"chart-breadth-{output_path.stem}",
     )
 
 
@@ -713,6 +931,16 @@ def generate_briefing_charts(
     )
     if scatter is not None:
         artifacts.append(scatter)
+
+    breadth_path = out_dir / f"{slug}_breadth.png"
+    breadth = build_watchlist_breadth_chart(
+        instruments,
+        session=session,
+        output_path=breadth_path,
+        language=language,
+    )
+    if breadth is not None:
+        artifacts.append(breadth)
 
     chosen = horizons if horizons is not None else resolve_chart_horizons(session)
     for horizon in chosen:

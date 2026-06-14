@@ -14,7 +14,9 @@ from financial_researcher.services.chart_generator import (
     build_indexed_chart,
     build_performance_heatmap,
     build_risk_return_scatter,
+    build_watchlist_breadth_chart,
     generate_briefing_charts,
+    resolve_breadth_metrics,
     resolve_chart_horizons,
     resolve_heatmap_columns,
 )
@@ -72,6 +74,14 @@ class TestResolveHeatmapColumns:
 
     def test_close_includes_1d(self):
         assert resolve_heatmap_columns("close") == ("1d", "1w", "1m", "ytd")
+
+
+class TestResolveBreadthMetrics:
+    def test_pre_open_week_only(self):
+        assert resolve_breadth_metrics("pre_open") == ("1w",)
+
+    def test_close_day_and_week(self):
+        assert resolve_breadth_metrics("close") == ("1d", "1w")
 
 
 class TestResolveChartHorizons:
@@ -261,6 +271,64 @@ class TestBuildRiskReturnScatter:
         assert artifact is None
 
 
+class TestBuildWatchlistBreadthChart:
+    def test_renders_breadth_png(self, tmp_path):
+        out = tmp_path / "breadth.png"
+        artifact = build_watchlist_breadth_chart(
+            [
+                _instrument("AAA.MI", performance={"1d": 2.0, "1w": 1.0}),
+                _instrument("BBB.MI", performance={"1d": -1.5, "1w": -0.2}),
+                _instrument("CCC.MI", performance={"1d": 0.5, "1w": 0.0}),
+            ],
+            session="close",
+            output_path=out,
+            language="English",
+        )
+        assert artifact is not None
+        assert artifact.horizon == "breadth"
+        assert "breadth" in artifact.caption.lower()
+        assert out.is_file()
+        assert out.stat().st_size > 0
+
+    def test_pre_open_week_only(self, tmp_path):
+        artifact = build_watchlist_breadth_chart(
+            [
+                _instrument("AAA.MI", performance={"1w": 1.0}),
+                _instrument("BBB.MI", performance={"1w": -0.5}),
+            ],
+            session="pre_open",
+            output_path=tmp_path / "breadth_pre.png",
+            language="Italian",
+        )
+        assert artifact is not None
+        assert "settimana" in artifact.caption.lower()
+
+    def test_returns_none_with_single_instrument(self, tmp_path):
+        artifact = build_watchlist_breadth_chart(
+            [_instrument("AAA.MI")],
+            session="close",
+            output_path=tmp_path / "x.png",
+            language="English",
+        )
+        assert artifact is None
+
+    def test_skips_benchmark_rows(self, tmp_path):
+        artifact = build_watchlist_breadth_chart(
+            [
+                {
+                    "ticker": "FTSEMIB.MI",
+                    "type": "benchmark",
+                    "performance": {"1d": 0.5, "1w": 0.2},
+                },
+                _instrument("AAA.MI"),
+            ],
+            session="close",
+            output_path=tmp_path / "x.png",
+            language="English",
+        )
+        assert artifact is None
+
+
 class TestGenerateBriefingCharts:
     def test_close_generates_heatmap_and_line_charts(self, tmp_path):
         instruments = [
@@ -275,9 +343,10 @@ class TestGenerateBriefingCharts:
             out_dir=tmp_path,
         )
         horizons = {a.horizon for a in artifacts}
-        assert horizons == {"heatmap", "risk_return", "1d", "1w", "1m", "1y"}
+        assert horizons == {"heatmap", "risk_return", "breadth", "1d", "1w", "1m", "1y"}
         assert artifacts[0].horizon == "heatmap"
         assert artifacts[1].horizon == "risk_return"
+        assert artifacts[2].horizon == "breadth"
 
     def test_midday_generates_heatmap_intraday_and_week(self, tmp_path):
         instruments = [
@@ -291,7 +360,13 @@ class TestGenerateBriefingCharts:
             slug="watchlist_2026-06-13_midday",
             out_dir=tmp_path,
         )
-        assert {a.horizon for a in artifacts} == {"heatmap", "risk_return", "1d", "1w"}
+        assert {a.horizon for a in artifacts} == {
+            "heatmap",
+            "risk_return",
+            "breadth",
+            "1d",
+            "1w",
+        }
 
     def test_pre_open_heatmap_and_week_line(self, tmp_path):
         artifacts = generate_briefing_charts(
@@ -301,9 +376,9 @@ class TestGenerateBriefingCharts:
             slug="watchlist_2026-06-13_pre_open",
             out_dir=tmp_path,
         )
-        assert {a.horizon for a in artifacts} == {"heatmap", "risk_return", "1w"}
+        assert {a.horizon for a in artifacts} == {"heatmap", "risk_return", "breadth", "1w"}
 
-    def test_single_instrument_skips_scatter(self, tmp_path):
+    def test_single_instrument_skips_scatter_and_breadth(self, tmp_path):
         artifacts = generate_briefing_charts(
             [_instrument("AAA.MI", intraday_bars=15)],
             session="midday",
@@ -311,7 +386,9 @@ class TestGenerateBriefingCharts:
             slug="watchlist_single",
             out_dir=tmp_path,
         )
-        assert "risk_return" not in {a.horizon for a in artifacts}
+        horizons = {a.horizon for a in artifacts}
+        assert "risk_return" not in horizons
+        assert "breadth" not in horizons
 
 
 class TestBuildChartsMarkdown:
