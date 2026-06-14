@@ -12,8 +12,10 @@ from financial_researcher.services.chart_generator import (
     ChartArtifact,
     build_charts_markdown,
     build_indexed_chart,
+    build_performance_heatmap,
     generate_briefing_charts,
     resolve_chart_horizons,
+    resolve_heatmap_columns,
 )
 from financial_researcher.services.market_data import (
     extract_history_series,
@@ -45,15 +47,27 @@ def _instrument(
     start: float = 100.0,
     drift: float = 0.001,
     intraday_bars: int = 0,
+    performance: dict | None = None,
 ) -> dict:
     entry = {
         "ticker": ticker,
         "name": f"{ticker} Fund",
+        "type": "etf",
         "history": _history(days, start, drift),
+        "performance": performance
+        or {"1d": 1.2, "1w": -0.5, "1m": 3.0, "ytd": 10.0, "1y": 15.0},
     }
     if intraday_bars:
         entry["intraday"] = _intraday(intraday_bars, start, drift)
     return entry
+
+
+class TestResolveHeatmapColumns:
+    def test_pre_open_excludes_1d(self):
+        assert resolve_heatmap_columns("pre_open") == ("1w", "1m", "ytd")
+
+    def test_close_includes_1d(self):
+        assert resolve_heatmap_columns("close") == ("1d", "1w", "1m", "ytd")
 
 
 class TestResolveChartHorizons:
@@ -136,8 +150,45 @@ class TestBuildIndexedChart:
         assert artifact is None
 
 
+class TestBuildPerformanceHeatmap:
+    def test_renders_heatmap_png(self, tmp_path):
+        out = tmp_path / "heatmap.png"
+        artifact = build_performance_heatmap(
+            [
+                _instrument("AAA.MI", performance={"1d": 2.0, "1w": 1.0, "1m": 5.0, "ytd": 12.0}),
+                _instrument("BBB.MI", performance={"1d": -1.5, "1w": 0.2, "1m": -2.0, "ytd": 3.0}),
+            ],
+            session="close",
+            output_path=out,
+            language="English",
+        )
+        assert artifact is not None
+        assert artifact.horizon == "heatmap"
+        assert out.is_file()
+        assert out.stat().st_size > 0
+
+    def test_pre_open_three_columns(self, tmp_path):
+        artifact = build_performance_heatmap(
+            [_instrument("AAA.MI")],
+            session="pre_open",
+            output_path=tmp_path / "heatmap_pre.png",
+            language="Italian",
+        )
+        assert artifact is not None
+        assert "settimana" in artifact.caption.lower()
+
+    def test_skips_benchmark_rows(self, tmp_path):
+        artifact = build_performance_heatmap(
+            [{"ticker": "FTSEMIB.MI", "type": "benchmark", "performance": {"1d": 0.5}}],
+            session="close",
+            output_path=tmp_path / "x.png",
+            language="English",
+        )
+        assert artifact is None
+
+
 class TestGenerateBriefingCharts:
-    def test_close_generates_four_horizons(self, tmp_path):
+    def test_close_generates_heatmap_and_line_charts(self, tmp_path):
         instruments = [
             _instrument("AAA.MI", intraday_bars=20),
             _instrument("BBB.MI", intraday_bars=20),
@@ -150,9 +201,10 @@ class TestGenerateBriefingCharts:
             out_dir=tmp_path,
         )
         horizons = {a.horizon for a in artifacts}
-        assert horizons == {"1d", "1w", "1m", "1y"}
+        assert horizons == {"heatmap", "1d", "1w", "1m", "1y"}
+        assert artifacts[0].horizon == "heatmap"
 
-    def test_midday_generates_intraday_and_week(self, tmp_path):
+    def test_midday_generates_heatmap_intraday_and_week(self, tmp_path):
         instruments = [_instrument("AAA.MI", intraday_bars=15)]
         artifacts = generate_briefing_charts(
             instruments,
@@ -161,9 +213,9 @@ class TestGenerateBriefingCharts:
             slug="watchlist_2026-06-13_midday",
             out_dir=tmp_path,
         )
-        assert {a.horizon for a in artifacts} == {"1d", "1w"}
+        assert {a.horizon for a in artifacts} == {"heatmap", "1d", "1w"}
 
-    def test_pre_open_week_only(self, tmp_path):
+    def test_pre_open_heatmap_and_week_line(self, tmp_path):
         artifacts = generate_briefing_charts(
             [_instrument("AAA.MI")],
             session="pre_open",
@@ -171,7 +223,7 @@ class TestGenerateBriefingCharts:
             slug="watchlist_2026-06-13_pre_open",
             out_dir=tmp_path,
         )
-        assert {a.horizon for a in artifacts} == {"1w"}
+        assert {a.horizon for a in artifacts} == {"heatmap", "1w"}
 
 
 class TestBuildChartsMarkdown:

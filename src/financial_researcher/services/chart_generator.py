@@ -24,6 +24,8 @@ matplotlib.use("Agg")
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 
 from financial_researcher.services import chart_theme
 
@@ -43,6 +45,21 @@ _SESSION_CHART_HORIZONS: dict[str, tuple[str, ...]] = {
     "close": ("1d", "1w", "1m", "1y"),
 }
 
+# Performance heatmap columns (cross-sectional snapshot, session-aware).
+_SESSION_HEATMAP_COLUMNS: dict[str, tuple[str, ...]] = {
+    "pre_open": ("1w", "1m", "ytd"),
+    "post_open": ("1d", "1w", "1m", "ytd"),
+    "midday": ("1d", "1w", "1m", "ytd"),
+    "close": ("1d", "1w", "1m", "ytd"),
+}
+
+_HEATMAP_COLUMN_LABELS: dict[str, tuple[str, str]] = {
+    "1d": ("Giorn.", "1D"),
+    "1w": ("Sett.", "1W"),
+    "1m": ("Mese", "1M"),
+    "ytd": ("YTD", "YTD"),
+}
+
 _MIN_DAILY_POINTS = 3
 _MIN_INTRADAY_POINTS = 2
 
@@ -60,6 +77,190 @@ class ChartArtifact:
 def resolve_chart_horizons(session: str) -> tuple[str, ...]:
     """Return chart horizons for a Milan briefing session."""
     return _SESSION_CHART_HORIZONS.get(session, ("1w", "1y"))
+
+
+def resolve_heatmap_columns(session: str) -> tuple[str, ...]:
+    """Return performance heatmap columns for a Milan briefing session."""
+    return _SESSION_HEATMAP_COLUMNS.get(session, ("1d", "1w", "1m", "ytd"))
+
+
+def _heatmap_caption(*, italian: bool, session: str) -> str:
+    if session == "pre_open":
+        return (
+            "Mappa performance — settimana, mese, YTD"
+            if italian
+            else "Performance heatmap — week, month, YTD"
+        )
+    if session == "midday":
+        return (
+            "Mappa performance — giornaliera (parziale), settimana, mese, YTD"
+            if italian
+            else "Performance heatmap — intraday (partial), week, month, YTD"
+        )
+    return (
+        "Mappa performance — giornaliera, settimana, mese, YTD"
+        if italian
+        else "Performance heatmap — day, week, month, YTD"
+    )
+
+
+def _fmt_pct_cell(value: float | None, *, italian: bool) -> str:
+    if value is None:
+        return "n/a"
+    sign = "+" if value >= 0 else "−"
+    body = f"{abs(value):.1f}%".replace(".", "," if italian else ".")
+    return f"{sign}{body}"
+
+
+def _heatmap_colormap():
+    """Diverging green–white–red map centred on zero."""
+    return LinearSegmentedColormap.from_list(
+        "performance_diverging",
+        [chart_theme.NEGATIVE, "#FEE2E2", chart_theme.BACKGROUND, "#D1FAE5", chart_theme.POSITIVE],
+        N=256,
+    )
+
+
+def build_performance_heatmap(
+    instruments: list[dict[str, Any]],
+    *,
+    session: str,
+    output_path: Path,
+    language: str,
+    columns: tuple[str, ...] | None = None,
+) -> ChartArtifact | None:
+    """Render a ticker × horizon performance heatmap. Returns None when insufficient data."""
+    italian = language.lower().startswith("ital")
+    chosen = columns if columns is not None else resolve_heatmap_columns(session)
+    watchlist = [
+        item
+        for item in instruments
+        if item.get("type") not in ("benchmark",) and item.get("ticker")
+    ]
+    if not watchlist or not chosen:
+        return None
+
+    rows: list[dict[str, Any]] = []
+    matrix: list[list[float | None]] = []
+    for item in watchlist:
+        perf = item.get("performance") or {}
+        values = [perf.get(key) for key in chosen]
+        if not any(v is not None for v in values):
+            continue
+        sort_key = perf.get("1d") if "1d" in chosen else perf.get("ytd")
+        rows.append(
+            {
+                "ticker": item.get("ticker", "?"),
+                "values": values,
+                "sort": sort_key if sort_key is not None else float("-inf"),
+            }
+        )
+        matrix.append(values)
+
+    if not rows:
+        return None
+
+    rows.sort(key=lambda row: row["sort"], reverse=True)
+    matrix = [row["values"] for row in rows]
+    tickers = [row["ticker"] for row in rows]
+
+    numeric = [v for row in matrix for v in row if v is not None]
+    if not numeric:
+        return None
+
+    abs_max = max(abs(min(numeric)), abs(max(numeric)), 0.5)
+    norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0.0, vmax=abs_max)
+    cmap = _heatmap_colormap()
+
+    col_labels = [
+        _HEATMAP_COLUMN_LABELS[key][0 if italian else 1] for key in chosen
+    ]
+    data = np.array(
+        [[float(v) if v is not None else np.nan for v in row] for row in matrix],
+        dtype=float,
+    )
+
+    row_count = len(tickers)
+    fig_height = max(2.8, 0.52 * row_count + 1.4)
+
+    with plt.rc_context(chart_theme.rcparams()):
+        fig, ax = plt.subplots(figsize=(8.4, fig_height))
+        ax.set_facecolor(chart_theme.BACKGROUND)
+
+        masked = np.ma.masked_invalid(data)
+        im = ax.imshow(masked, aspect="auto", cmap=cmap, norm=norm)
+
+        ax.set_xticks(range(len(col_labels)))
+        ax.set_xticklabels(col_labels, fontsize=10, color=chart_theme.MUTED)
+        ax.set_yticks(range(row_count))
+        ax.set_yticklabels(tickers, fontsize=10, fontweight="bold", color=chart_theme.INK)
+
+        for row_idx in range(row_count):
+            for col_idx in range(len(chosen)):
+                value = matrix[row_idx][col_idx]
+                text = _fmt_pct_cell(value, italian=italian)
+                cell_color = chart_theme.INK
+                if value is not None and abs(value) >= abs_max * 0.55:
+                    cell_color = chart_theme.BACKGROUND
+                ax.text(
+                    col_idx,
+                    row_idx,
+                    text,
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                    fontweight="600",
+                    color=cell_color,
+                )
+
+        for edge in range(row_count + 1):
+            ax.axhline(edge - 0.5, color=chart_theme.HAIRLINE, linewidth=0.8)
+        for edge in range(len(col_labels) + 1):
+            ax.axvline(edge - 0.5, color=chart_theme.HAIRLINE, linewidth=0.8)
+
+        ax.tick_params(length=0)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        title = _heatmap_caption(italian=italian, session=session)
+        ax.set_title(
+            title,
+            loc="left",
+            fontsize=14,
+            fontweight="bold",
+            color=chart_theme.INK,
+            pad=14,
+        )
+
+        cbar = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.02, aspect=18)
+        cbar.ax.tick_params(labelsize=8, colors=chart_theme.MUTED)
+        cbar.outline.set_visible(False)
+        cbar.set_label(
+            "%" if not italian else "%",
+            fontsize=8,
+            color=chart_theme.MUTED,
+        )
+
+        source = "Fonte: Yahoo Finance" if italian else "Source: Yahoo Finance"
+        fig.text(
+            0.01,
+            0.01,
+            f"Financial Researcher · {source}",
+            fontsize=8,
+            color=chart_theme.MUTED,
+            ha="left",
+        )
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output_path, format="png", bbox_inches="tight")
+        plt.close(fig)
+
+    return ChartArtifact(
+        horizon="heatmap",
+        caption=title,
+        path=output_path,
+        content_id=f"chart-heatmap-{output_path.stem}",
+    )
 
 
 def _horizon_caption(horizon: str, *, italian: bool, session: str) -> str:
@@ -356,8 +557,19 @@ def generate_briefing_charts(
 ) -> list[ChartArtifact]:
     """Render session-appropriate charts for a briefing run."""
     italian = language.lower().startswith("ital")
-    chosen = horizons if horizons is not None else resolve_chart_horizons(session)
     artifacts: list[ChartArtifact] = []
+
+    heatmap_path = out_dir / f"{slug}_heatmap.png"
+    heatmap = build_performance_heatmap(
+        instruments,
+        session=session,
+        output_path=heatmap_path,
+        language=language,
+    )
+    if heatmap is not None:
+        artifacts.append(heatmap)
+
+    chosen = horizons if horizons is not None else resolve_chart_horizons(session)
     for horizon in chosen:
         caption = _horizon_caption(horizon, italian=italian, session=session)
         output_path = out_dir / f"{slug}_{horizon}.png"
