@@ -84,6 +84,14 @@ def resolve_heatmap_columns(session: str) -> tuple[str, ...]:
     return _SESSION_HEATMAP_COLUMNS.get(session, ("1d", "1w", "1m", "ytd"))
 
 
+def _watchlist_instruments(instruments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        item
+        for item in instruments
+        if item.get("type") not in ("benchmark",) and item.get("ticker")
+    ]
+
+
 def _heatmap_caption(*, italian: bool, session: str) -> str:
     if session == "pre_open":
         return (
@@ -132,11 +140,7 @@ def build_performance_heatmap(
     """Render a ticker × horizon performance heatmap. Returns None when insufficient data."""
     italian = language.lower().startswith("ital")
     chosen = columns if columns is not None else resolve_heatmap_columns(session)
-    watchlist = [
-        item
-        for item in instruments
-        if item.get("type") not in ("benchmark",) and item.get("ticker")
-    ]
+    watchlist = _watchlist_instruments(instruments)
     if not watchlist or not chosen:
         return None
 
@@ -260,6 +264,137 @@ def build_performance_heatmap(
         caption=title,
         path=output_path,
         content_id=f"chart-heatmap-{output_path.stem}",
+    )
+
+
+def _risk_return_caption(*, italian: bool) -> str:
+    return (
+        "Rischio vs rendimento — volatilità 30g e YTD"
+        if italian
+        else "Risk vs return — 30-day volatility and YTD"
+    )
+
+
+def build_risk_return_scatter(
+    instruments: list[dict[str, Any]],
+    *,
+    session: str,
+    output_path: Path,
+    language: str,
+    return_key: str = "ytd",
+) -> ChartArtifact | None:
+    """Render a risk/return scatter (30d vol vs YTD). Returns None when insufficient data."""
+    _ = session  # reserved for future session-specific return horizons
+    italian = language.lower().startswith("ital")
+    points: list[dict[str, Any]] = []
+    for index, item in enumerate(_watchlist_instruments(instruments)):
+        vol = item.get("volatility_30d")
+        perf = item.get("performance") or {}
+        ytd = perf.get(return_key)
+        if vol is None or ytd is None:
+            continue
+        points.append(
+            {
+                "ticker": item.get("ticker", "?"),
+                "vol": float(vol),
+                "return": float(ytd),
+                "color": chart_theme.series_color(index),
+            }
+        )
+
+    if len(points) < 2:
+        return None
+
+    vols = [point["vol"] for point in points]
+    returns = [point["return"] for point in points]
+    vol_min, vol_max = min(vols), max(vols)
+    ret_min, ret_max = min(returns), max(returns)
+    vol_pad = max((vol_max - vol_min) * 0.12, 1.0)
+    ret_pad = max((ret_max - ret_min) * 0.12, 1.0)
+    x_lo = max(0.0, vol_min - vol_pad)
+    x_hi = vol_max + vol_pad
+    y_lo = ret_min - ret_pad
+    y_hi = ret_max + ret_pad
+    if y_lo < 0 < y_hi:
+        y_lo = min(y_lo, -ret_pad * 0.5)
+        y_hi = max(y_hi, ret_pad * 0.5)
+
+    title = _risk_return_caption(italian=italian)
+    x_label = "Volatilità 30g (%)" if italian else "30-day volatility (%)"
+    y_label = "YTD (%)" if italian else "YTD (%)"
+
+    with plt.rc_context(chart_theme.rcparams()):
+        fig, ax = plt.subplots(figsize=(8.4, 5.2))
+        chart_theme.style_axes(ax)
+
+        for point in points:
+            ax.scatter(
+                point["vol"],
+                point["return"],
+                s=72,
+                color=point["color"],
+                edgecolors=chart_theme.BACKGROUND,
+                linewidths=1.2,
+                zorder=3,
+            )
+            ax.annotate(
+                point["ticker"],
+                xy=(point["vol"], point["return"]),
+                xytext=(6, 4),
+                textcoords="offset points",
+                fontsize=9,
+                fontweight="bold",
+                color=point["color"],
+                annotation_clip=False,
+            )
+
+        ax.axhline(0.0, color=chart_theme.HAIRLINE, linewidth=1.0, zorder=1)
+        if len(points) >= 3:
+            ax.axvline(float(np.median(vols)), color=chart_theme.GRID, linewidth=0.9, zorder=1)
+
+        ax.set_xlim(x_lo, x_hi)
+        ax.set_ylim(y_lo, y_hi)
+        ax.set_xlabel(x_label, fontsize=10, color=chart_theme.MUTED, labelpad=8)
+        ax.set_ylabel(y_label, fontsize=10, color=chart_theme.MUTED, labelpad=8)
+        ax.xaxis.set_major_formatter(
+            plt.FuncFormatter(
+                lambda val, _pos: f"{val:.0f}%".replace(".", "," if italian else ".")
+            )
+        )
+        ax.yaxis.set_major_formatter(
+            plt.FuncFormatter(
+                lambda val, _pos: f"{val:+.0f}%".replace(".", "," if italian else ".")
+            )
+        )
+
+        ax.set_title(
+            title,
+            loc="left",
+            fontsize=14,
+            fontweight="bold",
+            color=chart_theme.INK,
+            pad=14,
+        )
+
+        source = "Fonte: Yahoo Finance" if italian else "Source: Yahoo Finance"
+        fig.text(
+            0.01,
+            0.01,
+            f"Financial Researcher · {source}",
+            fontsize=8,
+            color=chart_theme.MUTED,
+            ha="left",
+        )
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output_path, format="png", bbox_inches="tight")
+        plt.close(fig)
+
+    return ChartArtifact(
+        horizon="risk_return",
+        caption=title,
+        path=output_path,
+        content_id=f"chart-risk-return-{output_path.stem}",
     )
 
 
@@ -568,6 +703,16 @@ def generate_briefing_charts(
     )
     if heatmap is not None:
         artifacts.append(heatmap)
+
+    scatter_path = out_dir / f"{slug}_risk_return.png"
+    scatter = build_risk_return_scatter(
+        instruments,
+        session=session,
+        output_path=scatter_path,
+        language=language,
+    )
+    if scatter is not None:
+        artifacts.append(scatter)
 
     chosen = horizons if horizons is not None else resolve_chart_horizons(session)
     for horizon in chosen:

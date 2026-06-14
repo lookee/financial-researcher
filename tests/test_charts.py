@@ -13,6 +13,7 @@ from financial_researcher.services.chart_generator import (
     build_charts_markdown,
     build_indexed_chart,
     build_performance_heatmap,
+    build_risk_return_scatter,
     generate_briefing_charts,
     resolve_chart_horizons,
     resolve_heatmap_columns,
@@ -48,6 +49,7 @@ def _instrument(
     drift: float = 0.001,
     intraday_bars: int = 0,
     performance: dict | None = None,
+    volatility_30d: float | None = 15.0,
 ) -> dict:
     entry = {
         "ticker": ticker,
@@ -57,6 +59,8 @@ def _instrument(
         "performance": performance
         or {"1d": 1.2, "1w": -0.5, "1m": 3.0, "ytd": 10.0, "1y": 15.0},
     }
+    if volatility_30d is not None:
+        entry["volatility_30d"] = volatility_30d
     if intraday_bars:
         entry["intraday"] = _intraday(intraday_bars, start, drift)
     return entry
@@ -187,6 +191,76 @@ class TestBuildPerformanceHeatmap:
         assert artifact is None
 
 
+class TestBuildRiskReturnScatter:
+    def test_renders_scatter_png(self, tmp_path):
+        out = tmp_path / "risk_return.png"
+        artifact = build_risk_return_scatter(
+            [
+                _instrument("AAA.MI", volatility_30d=12.0, performance={"ytd": 25.0}),
+                _instrument("BBB.MI", volatility_30d=22.0, performance={"ytd": -5.0}),
+            ],
+            session="close",
+            output_path=out,
+            language="English",
+        )
+        assert artifact is not None
+        assert artifact.horizon == "risk_return"
+        assert "volatility" in artifact.caption.lower()
+        assert out.is_file()
+        assert out.stat().st_size > 0
+
+    def test_italian_caption(self, tmp_path):
+        artifact = build_risk_return_scatter(
+            [
+                _instrument("AAA.MI", volatility_30d=10.0, performance={"ytd": 8.0}),
+                _instrument("BBB.MI", volatility_30d=18.0, performance={"ytd": 2.0}),
+            ],
+            session="close",
+            output_path=tmp_path / "scatter_it.png",
+            language="Italian",
+        )
+        assert artifact is not None
+        assert "volatilità" in artifact.caption.lower()
+
+    def test_returns_none_with_single_point(self, tmp_path):
+        artifact = build_risk_return_scatter(
+            [_instrument("AAA.MI")],
+            session="close",
+            output_path=tmp_path / "x.png",
+            language="English",
+        )
+        assert artifact is None
+
+    def test_returns_none_without_volatility(self, tmp_path):
+        artifact = build_risk_return_scatter(
+            [
+                _instrument("AAA.MI", volatility_30d=None),
+                _instrument("BBB.MI", volatility_30d=None),
+            ],
+            session="close",
+            output_path=tmp_path / "x.png",
+            language="English",
+        )
+        assert artifact is None
+
+    def test_skips_benchmark_rows(self, tmp_path):
+        artifact = build_risk_return_scatter(
+            [
+                {
+                    "ticker": "FTSEMIB.MI",
+                    "type": "benchmark",
+                    "volatility_30d": 10.0,
+                    "performance": {"ytd": 5.0},
+                },
+                _instrument("AAA.MI"),
+            ],
+            session="close",
+            output_path=tmp_path / "x.png",
+            language="English",
+        )
+        assert artifact is None
+
+
 class TestGenerateBriefingCharts:
     def test_close_generates_heatmap_and_line_charts(self, tmp_path):
         instruments = [
@@ -201,11 +275,15 @@ class TestGenerateBriefingCharts:
             out_dir=tmp_path,
         )
         horizons = {a.horizon for a in artifacts}
-        assert horizons == {"heatmap", "1d", "1w", "1m", "1y"}
+        assert horizons == {"heatmap", "risk_return", "1d", "1w", "1m", "1y"}
         assert artifacts[0].horizon == "heatmap"
+        assert artifacts[1].horizon == "risk_return"
 
     def test_midday_generates_heatmap_intraday_and_week(self, tmp_path):
-        instruments = [_instrument("AAA.MI", intraday_bars=15)]
+        instruments = [
+            _instrument("AAA.MI", intraday_bars=15),
+            _instrument("BBB.MI", intraday_bars=15),
+        ]
         artifacts = generate_briefing_charts(
             instruments,
             session="midday",
@@ -213,17 +291,27 @@ class TestGenerateBriefingCharts:
             slug="watchlist_2026-06-13_midday",
             out_dir=tmp_path,
         )
-        assert {a.horizon for a in artifacts} == {"heatmap", "1d", "1w"}
+        assert {a.horizon for a in artifacts} == {"heatmap", "risk_return", "1d", "1w"}
 
     def test_pre_open_heatmap_and_week_line(self, tmp_path):
         artifacts = generate_briefing_charts(
-            [_instrument("AAA.MI")],
+            [_instrument("AAA.MI"), _instrument("BBB.MI")],
             session="pre_open",
             language="English",
             slug="watchlist_2026-06-13_pre_open",
             out_dir=tmp_path,
         )
-        assert {a.horizon for a in artifacts} == {"heatmap", "1w"}
+        assert {a.horizon for a in artifacts} == {"heatmap", "risk_return", "1w"}
+
+    def test_single_instrument_skips_scatter(self, tmp_path):
+        artifacts = generate_briefing_charts(
+            [_instrument("AAA.MI", intraday_bars=15)],
+            session="midday",
+            language="English",
+            slug="watchlist_single",
+            out_dir=tmp_path,
+        )
+        assert "risk_return" not in {a.horizon for a in artifacts}
 
 
 class TestBuildChartsMarkdown:
