@@ -4,10 +4,8 @@ from types import SimpleNamespace
 
 from financial_researcher.services.llm_model_tracker import (
     RunModelTracker,
-    _ModelCaptureLogger,
     extract_resolved_model,
     reset_run_model_tracker,
-    tracked_llm_call,
 )
 
 
@@ -46,22 +44,45 @@ class TestRunModelTracker:
         assert tracker.snapshot() == {}
 
 
-class TestModelCaptureLogger:
-    def test_logs_model_for_active_agent(self):
+class TestLitellmCompletionPatch:
+    def test_wrap_stream_records_last_chunk_model(self):
+        reset_run_model_tracker()
+        from financial_researcher.services.llm_model_tracker import (
+            _wrap_stream,
+            get_run_model_tracker,
+        )
+
+        chunks = list(
+            _wrap_stream(
+                "news",
+                (
+                    SimpleNamespace(model="openrouter/openrouter/auto"),
+                    SimpleNamespace(model="anthropic/claude-haiku-4-5"),
+                ),
+            )
+        )
+        assert len(chunks) == 2
+        assert get_run_model_tracker().snapshot() == {
+            "news": ["anthropic/claude-haiku-4-5"]
+        }
+
+    def test_tracked_llm_call_records_resolved_model(self):
         reset_run_model_tracker()
         from financial_researcher.services import llm_model_tracker as module
 
-        logger = _ModelCaptureLogger()
+        module.tracked_llm_call(
+            "news",
+            lambda: SimpleNamespace(model="deepseek/deepseek-v3.2"),
+        )
+        assert module.get_run_model_tracker().snapshot() == {}
 
-        def fake_call():
-            logger.log_success_event(
-                {},
-                SimpleNamespace(model="google/gemini-2.5-flash"),
-                0,
-                1,
+        def invoke():
+            module._record_agent_model(
+                module._active_agent(),
+                SimpleNamespace(model="deepseek/deepseek-v3.2"),
             )
 
-        tracked_llm_call("market", fake_call)
+        module.tracked_llm_call("news", invoke)
         assert module.get_run_model_tracker().snapshot() == {
-            "market": ["google/gemini-2.5-flash"]
+            "news": ["deepseek/deepseek-v3.2"]
         }

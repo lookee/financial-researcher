@@ -12,6 +12,9 @@ from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from financial_researcher import llm_compat  # noqa: F401 — patch LLM before agents run
 from financial_researcher.agent_llm import build_agent_llm
+from financial_researcher.services.llm_model_tracker import ensure_llm_model_tracker_installed
+
+ensure_llm_model_tracker_installed()
 
 from financial_researcher.tools.scrape_limited import build_scrape_tool
 from financial_researcher.tools.serper_news import (

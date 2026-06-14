@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import threading
+from collections.abc import Iterator
 from typing import Any
 
-from litellm.integrations.custom_logger import CustomLogger
-
 _ACTIVE_AGENT = threading.local()
-_INSTALLED = False
+_COMPLETION_PATCHED = False
+_ORIGINAL_COMPLETION: Any = None
 
 
 class RunModelTracker:
@@ -69,33 +69,50 @@ def extract_resolved_model(response_obj: Any) -> str | None:
     return None
 
 
-class _ModelCaptureLogger(CustomLogger):
-    def log_success_event(
-        self,
-        kwargs: dict[str, Any],
-        response_obj: Any,
-        start_time: float,
-        end_time: float,
-    ) -> None:
+def _record_agent_model(agent: str | None, response_obj: Any) -> None:
+    model = extract_resolved_model(response_obj)
+    if agent and model:
+        _RUN_TRACKER.record(agent, model)
+
+
+def _record_active_agent_model(response_obj: Any) -> None:
+    _record_agent_model(_active_agent(), response_obj)
+
+
+def _wrap_stream(agent: str | None, stream: Any) -> Iterator[Any]:
+    last_chunk: Any = None
+    for chunk in stream:
+        last_chunk = chunk
+        yield chunk
+    if agent:
+        _record_agent_model(agent, last_chunk)
+
+
+def _patch_litellm_completion() -> None:
+    """Patch litellm.completion so tracking survives CrewAI callback resets."""
+    global _COMPLETION_PATCHED, _ORIGINAL_COMPLETION
+    if _COMPLETION_PATCHED:
+        return
+
+    import litellm
+
+    _ORIGINAL_COMPLETION = litellm.completion
+
+    def completion(*args: Any, **kwargs: Any) -> Any:
         agent = _active_agent()
-        if not agent:
-            return
-        model = extract_resolved_model(response_obj)
-        if model:
-            _RUN_TRACKER.record(agent, model)
+        response = _ORIGINAL_COMPLETION(*args, **kwargs)
+        if kwargs.get("stream"):
+            return _wrap_stream(agent, response)
+        _record_agent_model(agent, response)
+        return response
+
+    litellm.completion = completion
+    _COMPLETION_PATCHED = True
 
 
 def ensure_llm_model_tracker_installed() -> None:
-    """Register the LiteLLM callback once for the process."""
-    global _INSTALLED
-    if _INSTALLED:
-        return
-    import litellm
-
-    logger = _ModelCaptureLogger()
-    if not any(isinstance(item, _ModelCaptureLogger) for item in litellm.callbacks):
-        litellm.callbacks.append(logger)
-    _INSTALLED = True
+    """Install the LiteLLM completion patch once for the process."""
+    _patch_litellm_completion()
 
 
 def tracked_llm_call(agent_key: str, call_fn: Any, /, *args: Any, **kwargs: Any) -> Any:
