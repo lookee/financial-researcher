@@ -42,7 +42,7 @@ _METADATA_COPY: dict[str, dict[str, str]] = {
         "tokens": "Tokens (prompt / completion / total)",
         "agents_heading": "Models by agent",
         "agent_col": "Agent",
-        "model_col": "Model",
+        "model_col": "Model (configured → resolved)",
         "openrouter_savings": "OpenRouter savings (1–10)",
     },
     "Italian": {
@@ -53,7 +53,7 @@ _METADATA_COPY: dict[str, dict[str, str]] = {
         "tokens": "Token (prompt / completion / totale)",
         "agents_heading": "Modelli per agente",
         "agent_col": "Agente",
-        "model_col": "Modello",
+        "model_col": "Modello (configurato → risolti)",
         "openrouter_savings": "Risparmio OpenRouter (1–10)",
     },
 }
@@ -102,10 +102,49 @@ def metrics_output_path(*, date_str: str, session: str) -> Path:
 
 
 def build_agent_models_map() -> dict[str, str]:
-    """Return resolved model id per agent for the active profile."""
+    """Return configured model id per agent for the active profile."""
     from financial_researcher.agent_llm import _AGENT_KEYS, resolve_agent_model
 
     return {agent: resolve_agent_model(agent) for agent in _AGENT_KEYS}
+
+
+def format_agent_model_display(
+    *,
+    configured: str,
+    resolved_models: list[str] | None,
+) -> str:
+    """Format configured vs resolved model ids for run metadata."""
+    configured = configured.strip() or "—"
+    if not resolved_models:
+        return f"`{configured}`"
+
+    unique_resolved = [model for model in resolved_models if model.strip()]
+    if not unique_resolved:
+        return f"`{configured}`"
+
+    if len(unique_resolved) == 1 and unique_resolved[0] == configured:
+        return f"`{configured}`"
+
+    resolved = ", ".join(f"`{model}`" for model in unique_resolved)
+    return f"`{configured}` → {resolved}"
+
+
+def build_agent_models_display_map(
+    *,
+    agent_models: dict[str, str],
+    agent_models_used: dict[str, list[str]] | None = None,
+) -> dict[str, str]:
+    """Return footer-ready model strings per agent."""
+    from financial_researcher.agent_llm import _AGENT_KEYS
+
+    used = agent_models_used or {}
+    return {
+        agent: format_agent_model_display(
+            configured=agent_models.get(agent, "—"),
+            resolved_models=used.get(agent),
+        )
+        for agent in _AGENT_KEYS
+    }
 
 
 def format_duration(seconds: float) -> str:
@@ -153,6 +192,11 @@ def format_run_metadata_footer(
     copy = _metadata_copy(language)
     labels = _agent_labels(language)
     agent_models: dict[str, str] = metrics_payload.get("agent_models") or {}
+    agent_models_used: dict[str, list[str]] = metrics_payload.get("agent_models_used") or {}
+    agent_display = build_agent_models_display_map(
+        agent_models=agent_models,
+        agent_models_used=agent_models_used,
+    )
 
     summary_rows = [
         f"| {copy['profile']} | {metrics_payload.get('model_profile', '—')} |",
@@ -170,8 +214,8 @@ def format_run_metadata_footer(
         summary_rows.append(f"| {copy['openrouter_savings']} | {int(tradeoff)} |")
 
     agent_rows = [
-        f"| {labels[agent]} | `{model}` |"
-        for agent, model in agent_models.items()
+        f"| {labels[agent]} | {agent_display.get(agent, '—')} |"
+        for agent in agent_models
         if agent in labels
     ]
 
@@ -218,6 +262,7 @@ def build_run_metrics_payload(
     warnings: list[str],
     model_profile: str | None = None,
     agent_models: dict[str, str] | None = None,
+    agent_models_used: dict[str, list[str]] | None = None,
     openrouter_auto_tradeoff: int | None = None,
     timestamp: datetime | None = None,
 ) -> dict[str, Any]:
@@ -239,6 +284,8 @@ def build_run_metrics_payload(
         payload["model_profile"] = model_profile
     if agent_models:
         payload["agent_models"] = agent_models
+    if agent_models_used:
+        payload["agent_models_used"] = agent_models_used
     if openrouter_auto_tradeoff is not None:
         payload["openrouter_auto_tradeoff"] = int(openrouter_auto_tradeoff)
     return payload

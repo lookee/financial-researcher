@@ -49,36 +49,8 @@ jobs:
       - name: Run full test suite
         run: uv run python -m pytest tests/ -q
 
-  badge:
-    name: update test badge
-    runs-on: ubuntu-latest
-    needs: full
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        run: pip install uv
-
-      - name: Sync project dependencies
-        run: uv sync
-
-      - name: Update test count badge
+      - name: Verify test count badge
         env:
           MPLCONFIGDIR: /tmp/matplotlib
           MPLBACKEND: Agg
-        run: uv run python scripts/update_test_badge.py
-
-      - name: Commit badge update
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/badges/tests.json
-          if git diff --staged --quiet; then
-            echo "Test badge already up to date"
-          else
-            git commit -m "chore: update test count badge"
-            git push
-          fi
+        run: uv run python scripts/update_test_badge.py --check

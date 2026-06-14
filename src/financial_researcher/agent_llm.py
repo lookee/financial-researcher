@@ -200,7 +200,7 @@ def describe_active_profile() -> str:
 
 def build_agent_llm(agent: str):
     """Construct a CrewAI LLM with model tier and reasoning effort for one agent."""
-    from crewai import LLM
+    from financial_researcher.services.llm_model_tracker import build_tracked_llm
 
     model = resolve_agent_model(agent)
     llm_kwargs: dict[str, Any] = {
@@ -211,4 +211,4 @@ def build_agent_llm(agent: str):
         tradeoff = resolve_openrouter_auto_tradeoff()
         if tradeoff is not None:
             llm_kwargs["plugins"] = build_openrouter_auto_plugins(tradeoff)
-    return LLM(**llm_kwargs)
+    return build_tracked_llm(agent_key=agent, **llm_kwargs)

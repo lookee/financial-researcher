@@ -9,8 +9,10 @@ from zoneinfo import ZoneInfo
 from financial_researcher.paths import metrics_dir
 from financial_researcher.services.run_metrics import (
     append_run_metadata_footer,
+    build_agent_models_display_map,
     build_run_metrics_payload,
     extract_usage_metrics,
+    format_agent_model_display,
     format_duration,
     format_metrics_summary,
     format_run_metadata_footer,
@@ -101,6 +103,33 @@ class TestFormatMetricsSummary:
         assert line == "Tokens: prompt=1200 completion=800 | requests=7 | warnings=2"
 
 
+class TestFormatAgentModelDisplay:
+    def test_shows_configured_only_without_resolved(self):
+        assert format_agent_model_display(
+            configured="openai/gpt-5.4-mini",
+            resolved_models=None,
+        ) == "`openai/gpt-5.4-mini`"
+
+    def test_shows_single_matching_model_without_arrow(self):
+        assert format_agent_model_display(
+            configured="openai/gpt-5.4-mini",
+            resolved_models=["openai/gpt-5.4-mini"],
+        ) == "`openai/gpt-5.4-mini`"
+
+    def test_shows_full_resolved_list_for_openrouter_auto(self):
+        rendered = format_agent_model_display(
+            configured="openrouter/openrouter/auto",
+            resolved_models=[
+                "deepseek/deepseek-v3.2",
+                "anthropic/claude-haiku-4-5",
+            ],
+        )
+        assert rendered == (
+            "`openrouter/openrouter/auto` → "
+            "`deepseek/deepseek-v3.2`, `anthropic/claude-haiku-4-5`"
+        )
+
+
 class TestRunMetadataFooter:
     def _payload(self) -> dict:
         return build_run_metrics_payload(
@@ -149,6 +178,37 @@ class TestRunMetadataFooter:
         )
         assert "Risparmio OpenRouter (1–10)" in footer
         assert "| 9 |" in footer
+
+    def test_footer_shows_resolved_models_per_agent(self):
+        payload = self._payload()
+        payload["model_profile"] = "openrouter_auto_economy"
+        payload["agent_models"] = {
+            "market": "openrouter/openrouter/auto",
+            "news": "openrouter/openrouter/auto",
+            "outlook": "openrouter/openrouter/auto",
+            "calendar": "openrouter/openrouter/auto",
+            "chief": "openrouter/openrouter/auto",
+        }
+        payload["agent_models_used"] = {
+            "news": [
+                "deepseek/deepseek-v3.2",
+                "anthropic/claude-haiku-4-5",
+            ],
+            "chief": ["openai/gpt-5.4-mini"],
+        }
+        footer = format_run_metadata_footer(
+            metrics_payload=payload,
+            language="Italian",
+        )
+        assert (
+            "`openrouter/openrouter/auto` → "
+            "`deepseek/deepseek-v3.2`, `anthropic/claude-haiku-4-5`"
+        ) in footer
+        assert "`openrouter/openrouter/auto` → `openai/gpt-5.4-mini`" in footer
+        assert build_agent_models_display_map(
+            agent_models=payload["agent_models"],
+            agent_models_used=payload["agent_models_used"],
+        )["news"].startswith("`openrouter/openrouter/auto` →")
 
     def test_footer_in_english(self):
         footer = format_run_metadata_footer(

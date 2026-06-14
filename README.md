@@ -349,6 +349,21 @@ financial-researcher/
 ```
 </details>
 
+### Tests
+
+```bash
+uv run pytest -q
+```
+
+When you add or remove tests, refresh the README badge (committed manually — CI no longer pushes to `main`):
+
+```bash
+uv run python scripts/update_test_badge.py
+git add .github/badges/tests.json
+```
+
+CI runs `scripts/update_test_badge.py --check` and fails if the badge is stale.
+
 ## Acknowledgements
 
 Extends CrewAI patterns from **Ed Donner's** [AI Engineer Agentic Track](https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/). Details in [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md).

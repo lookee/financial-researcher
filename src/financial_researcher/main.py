@@ -40,6 +40,10 @@ from financial_researcher.services.briefing_validator import (
     validate_briefing,
 )
 from financial_researcher.services.briefing_email import BriefingEmailError, send_briefing_email
+from financial_researcher.services.llm_model_tracker import (
+    get_run_model_tracker,
+    reset_run_model_tracker,
+)
 from financial_researcher.services.run_metrics import (
     append_run_metadata_footer,
     build_agent_models_map,
@@ -119,6 +123,7 @@ def run_briefing(
     briefing_crew = WatchlistBriefingCrew()
     briefing_crew.executive_briefing_task().output_file = output_file
     crew = briefing_crew.crew()
+    reset_run_model_tracker()
     started_at = time.perf_counter()
     result = crew.kickoff(inputs=inputs)
     duration_seconds = time.perf_counter() - started_at
@@ -171,6 +176,7 @@ def run_briefing(
         warnings=warnings + validation_warnings,
         model_profile=resolve_active_profile_name(),
         agent_models=build_agent_models_map(),
+        agent_models_used=get_run_model_tracker().snapshot(),
         openrouter_auto_tradeoff=(
             resolve_openrouter_auto_tradeoff()
             if uses_openrouter_auto_routing()
