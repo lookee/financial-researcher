@@ -33,6 +33,8 @@ SECTION_ALIASES: dict[str, str] = {
     "snapshot della performance watchlist": "performance",
     "scatto della performance della watchlist": "performance",
     "prestazioni della watchlist": "performance",
+    "performance": "performance",
+    "performance snapshot": "performance",
     "cosa guida i movimenti": "drivers",
     "medium-term outlook": "outlook",
     "prospettive a medio termine": "outlook",

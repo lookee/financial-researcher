@@ -150,6 +150,73 @@ class TestValidateCitations:
         assert any("gaps" in warning for warning in warnings)
 
 
+class TestPerformanceChartsInjection:
+    def _inputs(self, *, charts_md: str) -> dict:
+        instruments = [
+            {
+                "citation": 1,
+                "name": "ETF",
+                "ticker": "X.MI",
+                "performance": {"1d": 1.0},
+                "price": {"last": 10},
+                "currency": "EUR",
+            }
+        ]
+        return {
+            "language": "English",
+            "watchlist_context": json.dumps(
+                {
+                    "instruments": instruments,
+                    "language": "English",
+                    "current_date": "2026-06-15",
+                }
+            ),
+            "watchlist_performance_table": "| table |",
+            "watchlist_performance_charts_md": charts_md,
+            "current_date": "2026-06-15",
+        }
+
+    def test_injects_charts_when_executive_summary_heading_missing(self):
+        content = """\
+# Milan Watchlist — Pre-open 2026-06-15
+
+**Market mood:** Cautious open.
+
+- **ETF (X.MI)** leads the narrative [1].
+
+## What's Driving the Moves
+
+Drivers.
+"""
+        charts_md = "### Performance Charts\n\n![heatmap](charts/watchlist_pre_open_heatmap.png)\n"
+        processed, _ = postprocess_briefing(content, self._inputs(charts_md=charts_md))
+        assert "charts/watchlist_pre_open_heatmap.png" in processed
+        assert "## Watchlist Performance Snapshot" in processed
+        assert "| table |" in processed
+
+    def test_replaces_performance_heading_alias(self):
+        content = """\
+# Title
+
+## Executive Summary
+
+Summary.
+
+## Performance
+
+Leader line.
+
+## What's Driving the Moves
+
+Drivers.
+"""
+        charts_md = "![week](charts/watchlist_pre_open_1w.png)\n"
+        processed, _ = postprocess_briefing(content, self._inputs(charts_md=charts_md))
+        assert processed.count("## Watchlist Performance Snapshot") == 1
+        assert "charts/watchlist_pre_open_1w.png" in processed
+        assert "Leader line." not in processed
+
+
 class TestDuplicatePerformanceSection:
     def test_postprocess_removes_duplicate_performance_sections(self):
         content = """\

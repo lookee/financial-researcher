@@ -192,6 +192,134 @@ def _split_before_section(content: str, title_keys: set[str]) -> tuple[str, str 
     return content, None, ""
 
 
+def _chart_image_srcs(charts_md: str) -> list[str]:
+    """Extract image paths from a charts markdown block."""
+    srcs: list[str] = []
+    for line in charts_md.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("![") or "](" not in stripped:
+            continue
+        src = stripped.split("](", 1)[1].rstrip(")")
+        if src:
+            srcs.append(src)
+    return srcs
+
+
+def _charts_embedded(content: str, charts_md: str) -> bool:
+    """True when chart image references from charts_md appear in the briefing."""
+    srcs = _chart_image_srcs(charts_md)
+    if not srcs:
+        return not charts_md.strip()
+    return any(src in content for src in srcs)
+
+
+def _insert_performance_section_after(
+    content: str,
+    *,
+    after_title_keys: set[str],
+    performance_body: str,
+    language: str,
+) -> str:
+    """Insert a canonical performance section immediately after a matched heading."""
+    sections = _find_sections(content)
+    for start, end, _level, title in sections:
+        if _normalize_title(title) not in after_title_keys:
+            continue
+        perf_heading = f"## {section_title('performance', language=language)}"
+        insert = f"\n\n{perf_heading}\n\n{performance_body.strip()}\n\n"
+        return content[:end].rstrip() + insert + content[end:].lstrip("\n")
+    return content
+
+
+def _insert_performance_section_after_title(content: str, *, performance_body: str, language: str) -> str:
+    """Insert performance after the H1 title block when no executive summary is found."""
+    sections = _find_sections(content)
+    if not sections:
+        perf_heading = f"## {section_title('performance', language=language)}"
+        return f"{content.rstrip()}\n\n{perf_heading}\n\n{performance_body.strip()}\n\n"
+
+    first_start, first_end, first_level, _ = sections[0]
+    if first_level != 1:
+        return content
+
+    insert_at = first_end
+    for start, _end, level, _title in sections[1:]:
+        if level <= 2:
+            insert_at = start
+            break
+    else:
+        insert_at = len(content)
+
+    perf_heading = f"## {section_title('performance', language=language)}"
+    insert = f"\n\n{perf_heading}\n\n{performance_body.strip()}\n\n"
+    return content[:insert_at].rstrip() + insert + content[insert_at:].lstrip("\n")
+
+
+def _insert_performance_section_before_references(
+    content: str,
+    *,
+    performance_body: str,
+    language: str,
+) -> str:
+    """Insert performance immediately before the references section."""
+    before, refs_block, after = _split_before_section(content, references_section_titles())
+    if refs_block is None:
+        return content
+    perf_heading = f"## {section_title('performance', language=language)}"
+    insert = f"\n\n{perf_heading}\n\n{performance_body.strip()}\n\n"
+    return before.rstrip() + insert + refs_block + after
+
+
+def _ensure_performance_block(
+    content: str,
+    *,
+    performance_body: str,
+    charts_md: str,
+    language: str,
+) -> str:
+    """Guarantee the performance table and charts are present in the briefing body."""
+    if not performance_body.strip():
+        return content
+    if charts_md and _charts_embedded(content, charts_md):
+        return content
+
+    updated = content
+    for after_keys in (
+        _section_title_keys("executive_summary"),
+        _section_title_keys("drivers"),
+        _section_title_keys("outlook"),
+    ):
+        updated = _insert_performance_section_after(
+            updated,
+            after_title_keys=after_keys,
+            performance_body=performance_body,
+            language=language,
+        )
+        if charts_md and _charts_embedded(updated, charts_md):
+            return updated
+
+    updated = _insert_performance_section_after_title(
+        updated,
+        performance_body=performance_body,
+        language=language,
+    )
+    if charts_md and _charts_embedded(updated, charts_md):
+        return updated
+
+    updated = _insert_performance_section_before_references(
+        updated,
+        performance_body=performance_body,
+        language=language,
+    )
+    if charts_md and _charts_embedded(updated, charts_md):
+        return updated
+
+    perf_heading = f"## {section_title('performance', language=language)}"
+    return (
+        f"{content.rstrip()}\n\n{perf_heading}\n\n{performance_body.strip()}\n\n"
+    )
+
+
 def build_market_data_references(
     instruments: list[dict[str, Any]],
     *,
@@ -717,6 +845,14 @@ def postprocess_briefing(content: str, inputs: dict[str, str]) -> tuple[str, lis
     )
     updated = _rename_section_heading(updated, "performance", language=language)
     updated = _remove_duplicate_sections(updated, "performance")
+
+    if charts_md and not _charts_embedded(updated, charts_md) and performance_table:
+        updated = _ensure_performance_block(
+            updated,
+            performance_body=performance_body,
+            charts_md=charts_md,
+            language=language,
+        )
 
     updated = enforce_high_tag_cap(
         updated, inputs.get("watchlist_material_news", "")

@@ -16,6 +16,7 @@ from financial_researcher.services.chart_generator import (
     build_risk_return_scatter,
     build_watchlist_breadth_chart,
     generate_briefing_charts,
+    resolve_chart_markdown_src,
     resolve_breadth_metrics,
     resolve_chart_horizons,
     resolve_heatmap_columns,
@@ -420,13 +421,27 @@ class TestBuildChartsMarkdown:
         assert "### Performance Charts" in md
         assert "![12-month trend — indexed to 100](charts/watchlist_close_1y.png)" in md
 
+    def test_resolve_markdown_src_falls_back_to_charts_prefix(self, tmp_path):
+        charts = tmp_path / "charts"
+        charts.mkdir()
+        png = charts / "watchlist_pre_open_1w.png"
+        png.write_bytes(b"png")
+        assert resolve_chart_markdown_src(png) == f"charts/{png.name}"
+
     def test_empty_when_no_artifacts(self):
         assert build_charts_markdown([], language="Italian") == ""
 
 
 class TestEmailChartEmbedding:
-    def test_attachment_and_cid_rewrite(self, tmp_path):
-        png = tmp_path / "watchlist_close_1y.png"
+    def test_attachment_and_cid_rewrite(self, tmp_path, monkeypatch):
+        briefings = tmp_path / "briefings"
+        charts = briefings / "charts"
+        charts.mkdir(parents=True)
+        monkeypatch.setattr(
+            "financial_researcher.services.briefing_email.briefings_dir",
+            lambda: briefings,
+        )
+        png = charts / "watchlist_close_1y.png"
         png.write_bytes(b"\x89PNG\r\n\x1a\n fake")
         artifact = ChartArtifact(
             horizon="1y",
@@ -442,3 +457,9 @@ class TestEmailChartEmbedding:
         html = '<img alt="cap" src="charts/watchlist_close_1y.png">'
         rewritten = _inline_chart_images(html, src_to_cid)
         assert 'src="cid:chart-1y-watchlist_close_1y"' in rewritten
+
+    def test_cid_rewrite_handles_percent_encoded_src(self):
+        src = "charts/watchlist_2026-06-15_pre_open_heatmap.png"
+        html = f'<img alt="cap" src="{src}">'
+        rewritten = _inline_chart_images(html, {src: "chart-heatmap"})
+        assert 'src="cid:chart-heatmap"' in rewritten

@@ -5,10 +5,13 @@ from __future__ import annotations
 import base64
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import requests
 
+from financial_researcher.paths import briefings_dir
 from financial_researcher.services.briefing_html import briefing_markdown_to_email_html
+from financial_researcher.services.chart_generator import resolve_chart_markdown_src
 from financial_researcher.settings import get_email_settings
 
 RESEND_API_URL = "https://api.resend.com/emails"
@@ -33,14 +36,19 @@ def _build_chart_attachments(
                 "content_type": "image/png",
             }
         )
-        src_to_cid[f"charts/{path.name}"] = content_id
+        markdown_src = resolve_chart_markdown_src(path, base_dir=briefings_dir())
+        src_to_cid[markdown_src] = content_id
     return attachments, src_to_cid
 
 
 def _inline_chart_images(html: str, src_to_cid: dict[str, str]) -> str:
-    """Rewrite <img src="charts/..."> to inline cid: references for email."""
+    """Rewrite <img src="..."> to inline cid: references for email."""
     for src, content_id in src_to_cid.items():
-        html = html.replace(f'src="{src}"', f'src="cid:{content_id}"')
+        cid = f"cid:{content_id}"
+        html = html.replace(f'src="{src}"', f'src="{cid}"')
+        encoded = quote(src, safe="/")
+        if encoded != src:
+            html = html.replace(f'src="{encoded}"', f'src="{cid}"')
     return html
 
 

@@ -969,6 +969,19 @@ def generate_briefing_charts(
     return artifacts
 
 
+def resolve_chart_markdown_src(path: Path, *, base_dir: Path | None = None) -> str:
+    """Return the markdown image path for a chart (relative to base_dir when possible)."""
+    resolved = path.expanduser().resolve()
+    if base_dir is not None:
+        try:
+            return resolved.relative_to(base_dir.expanduser().resolve()).as_posix()
+        except ValueError:
+            pass
+    if resolved.parent.name == "charts":
+        return f"charts/{resolved.name}"
+    return resolved.as_posix()
+
+
 def build_charts_markdown(
     artifacts: list[ChartArtifact],
     *,
@@ -981,13 +994,7 @@ def build_charts_markdown(
     heading = label("charts", "performance_charts")
     lines = [f"### {heading}", ""]
     for artifact in artifacts:
-        if base_dir is not None:
-            try:
-                src = artifact.path.relative_to(base_dir).as_posix()
-            except ValueError:
-                src = artifact.path.as_posix()
-        else:
-            src = artifact.path.as_posix()
+        src = resolve_chart_markdown_src(artifact.path, base_dir=base_dir)
         lines.append(f"![{artifact.caption}]({src})")
         lines.append("")
     return "\n".join(lines).strip()
