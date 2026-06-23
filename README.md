@@ -281,9 +281,9 @@ Profiles follow `{provider}_{tier}` naming. **Free tiers** use the `free_` prefi
 | `openai_economy` | `OPENAI_API_KEY` | mini on all analysts, `gpt-5.4` chief |
 | **Single-provider (paid)** | | |
 | `anthropic_balanced` | `ANTHROPIC_API_KEY` | Haiku on market/calendar, Sonnet 4.6 on news/chief |
-| `deepseek_balanced` | `DEEPSEEK_API_KEY` | V4 Flash on analysts, V4 Pro on news/chief |
+| `deepseek_balanced` | `DEEPSEEK_API_KEY` | V4 Flash on market/outlook, V4 Pro on news/calendar/chief |
 | **Multi-provider (paid)** | | |
-| `mixed_balanced` | OpenAI + Anthropic + DeepSeek | Flash analysts · Sonnet news · `gpt-5.4` outlook · `gpt-5.5` chief |
+| `mixed_balanced` | OpenAI + Anthropic + DeepSeek | Flash market · Sonnet news · `gpt-5.4` outlook · V4 Pro calendar · `gpt-5.5` chief |
 | **Free (zero LLM cost)** | | |
 | `free_groq` | `GROQ_API_KEY` | Llama via Groq — experimental |
 | `free_openrouter_nex` | `OPENROUTER_API_KEY` | [Nex-N2-Pro (free)](https://openrouter.ai/nex-agi/nex-n2-pro:free) — experimental |

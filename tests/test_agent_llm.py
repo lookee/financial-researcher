@@ -67,6 +67,7 @@ def test_is_free_profile():
 def test_deepseek_balanced_profile_models(monkeypatch):
     monkeypatch.setenv("FR_MODEL_PROFILE", "deepseek_balanced")
     assert resolve_agent_model("market") == "deepseek/deepseek-v4-flash"
+    assert resolve_agent_model("calendar") == "deepseek/deepseek-v4-pro"
     assert resolve_agent_model("chief") == "deepseek/deepseek-v4-pro"
 
 

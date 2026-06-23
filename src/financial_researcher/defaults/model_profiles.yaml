@@ -58,12 +58,12 @@ profiles:
 
   deepseek_balanced:
     description: >
-      DeepSeek only — V4 Flash on analysts, V4 Pro on news/chief.
+      DeepSeek only — V4 Flash on market/outlook, V4 Pro on news/calendar/chief.
     agents:
       market: { model: deepseek/deepseek-v4-flash, reasoning: low }
       news: { model: deepseek/deepseek-v4-pro, reasoning: medium }
       outlook: { model: deepseek/deepseek-v4-flash, reasoning: low }
-      calendar: { model: deepseek/deepseek-v4-flash, reasoning: low }
+      calendar: { model: deepseek/deepseek-v4-pro, reasoning: low }
       chief: { model: deepseek/deepseek-v4-pro, reasoning: medium }
 
   # --- Multi-provider (paid) ---
@@ -75,7 +75,7 @@ profiles:
       market: { model: deepseek/deepseek-v4-flash, reasoning: low }
       news: { model: anthropic/claude-sonnet-4-6, reasoning: medium }
       outlook: { model: openai/gpt-5.4, reasoning: low }
-      calendar: { model: deepseek/deepseek-v4-flash, reasoning: low }
+      calendar: { model: deepseek/deepseek-v4-pro, reasoning: low }
       chief: { model: openai/gpt-5.5, reasoning: medium }
 
   # --- Free tier (zero LLM cost) ---
