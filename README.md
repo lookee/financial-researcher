@@ -18,17 +18,41 @@ Under the hood, a deterministic Python data layer (Yahoo Finance + OpenFIGI) fee
 
 ## Sample briefings
 
-Static samples live in [`examples/briefings/`](examples/briefings/) (tracked in git). Each file is one full executive memo; **body** language and Milan session are listed below. Section headings in all samples are **English**.
+Static samples live in [`examples/briefings/`](examples/briefings/) (tracked in git). Each file is one full executive memo; **body** language and Milan session are listed below (newest first). Section headings in all samples are **English**. Session charts are in [`examples/briefings/charts/`](examples/briefings/charts/).
 
 | Body | Date | Session | Briefing |
 |------|------|---------|----------|
-| Italian | 2026-06-09 | `close` | [watchlist_2026-06-09_close.md](examples/briefings/watchlist_2026-06-09_close.md) |
-| Italian | 2026-06-10 | `close` | [watchlist_2026-06-10_close.md](examples/briefings/watchlist_2026-06-10_close.md) |
-| Italian | 2026-06-11 | `close` | [watchlist_2026-06-11_close.md](examples/briefings/watchlist_2026-06-11_close.md) |
-| Italian | 2026-06-12 | `post_open` | [watchlist_2026-06-12_post_open.md](examples/briefings/watchlist_2026-06-12_post_open.md) |
-| Italian | 2026-06-12 | `midday` | [watchlist_2026-06-12_midday.md](examples/briefings/watchlist_2026-06-12_midday.md) |
+| Italian | 2026-06-24 | `close` | [watchlist_2026-06-24_close.md](examples/briefings/watchlist_2026-06-24_close.md) |
+| Italian | 2026-06-24 | `midday` | [watchlist_2026-06-24_midday.md](examples/briefings/watchlist_2026-06-24_midday.md) |
+| Italian | 2026-06-24 | `pre_open` | [watchlist_2026-06-24_pre_open.md](examples/briefings/watchlist_2026-06-24_pre_open.md) |
+| Italian | 2026-06-23 | `close` | [watchlist_2026-06-23_close.md](examples/briefings/watchlist_2026-06-23_close.md) |
+| Italian | 2026-06-23 | `midday` | [watchlist_2026-06-23_midday.md](examples/briefings/watchlist_2026-06-23_midday.md) |
+| Italian | 2026-06-23 | `post_open` | [watchlist_2026-06-23_post_open.md](examples/briefings/watchlist_2026-06-23_post_open.md) |
+| Italian | 2026-06-23 | `pre_open` | [watchlist_2026-06-23_pre_open.md](examples/briefings/watchlist_2026-06-23_pre_open.md) |
+| Italian | 2026-06-22 | `close` | [watchlist_2026-06-22_close.md](examples/briefings/watchlist_2026-06-22_close.md) |
+| Italian | 2026-06-22 | `midday` | [watchlist_2026-06-22_midday.md](examples/briefings/watchlist_2026-06-22_midday.md) |
+| Italian | 2026-06-19 | `close` | [watchlist_2026-06-19_close.md](examples/briefings/watchlist_2026-06-19_close.md) |
+| Italian | 2026-06-19 | `pre_open` | [watchlist_2026-06-19_pre_open.md](examples/briefings/watchlist_2026-06-19_pre_open.md) |
+| Italian | 2026-06-18 | `close` | [watchlist_2026-06-18_close.md](examples/briefings/watchlist_2026-06-18_close.md) |
+| Italian | 2026-06-18 | `midday` | [watchlist_2026-06-18_midday.md](examples/briefings/watchlist_2026-06-18_midday.md) |
+| Italian | 2026-06-18 | `post_open` | [watchlist_2026-06-18_post_open.md](examples/briefings/watchlist_2026-06-18_post_open.md) |
+| Italian | 2026-06-18 | `pre_open` | [watchlist_2026-06-18_pre_open.md](examples/briefings/watchlist_2026-06-18_pre_open.md) |
+| Italian | 2026-06-17 | `close` | [watchlist_2026-06-17_close.md](examples/briefings/watchlist_2026-06-17_close.md) |
+| Italian | 2026-06-17 | `midday` | [watchlist_2026-06-17_midday.md](examples/briefings/watchlist_2026-06-17_midday.md) |
+| Italian | 2026-06-17 | `post_open` | [watchlist_2026-06-17_post_open.md](examples/briefings/watchlist_2026-06-17_post_open.md) |
+| Italian | 2026-06-16 | `close` | [watchlist_2026-06-16_close.md](examples/briefings/watchlist_2026-06-16_close.md) |
+| Italian | 2026-06-16 | `post_open` | [watchlist_2026-06-16_post_open.md](examples/briefings/watchlist_2026-06-16_post_open.md) |
+| Italian | 2026-06-15 | `close` | [watchlist_2026-06-15_close.md](examples/briefings/watchlist_2026-06-15_close.md) |
+| Italian | 2026-06-15 | `post_open` | [watchlist_2026-06-15_post_open.md](examples/briefings/watchlist_2026-06-15_post_open.md) |
+| Italian | 2026-06-15 | `pre_open` | [watchlist_2026-06-15_pre_open.md](examples/briefings/watchlist_2026-06-15_pre_open.md) |
+| Italian | 2026-06-13 | `close` | [watchlist_2026-06-13_close.md](examples/briefings/watchlist_2026-06-13_close.md) |
 | Italian | 2026-06-12 | `close` | [watchlist_2026-06-12_close.md](examples/briefings/watchlist_2026-06-12_close.md) |
 | English | 2026-06-12 | `close` | [watchlist_2026-06-12_close_en.md](examples/briefings/watchlist_2026-06-12_close_en.md) |
+| Italian | 2026-06-12 | `midday` | [watchlist_2026-06-12_midday.md](examples/briefings/watchlist_2026-06-12_midday.md) |
+| Italian | 2026-06-12 | `post_open` | [watchlist_2026-06-12_post_open.md](examples/briefings/watchlist_2026-06-12_post_open.md) |
+| Italian | 2026-06-11 | `close` | [watchlist_2026-06-11_close.md](examples/briefings/watchlist_2026-06-11_close.md) |
+| Italian | 2026-06-10 | `close` | [watchlist_2026-06-10_close.md](examples/briefings/watchlist_2026-06-10_close.md) |
+| Italian | 2026-06-09 | `close` | [watchlist_2026-06-09_close.md](examples/briefings/watchlist_2026-06-09_close.md) |
 
 
 ✍️ [Blog article](https://www.lucaamore.com/?p=2777)
