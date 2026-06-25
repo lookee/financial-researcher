@@ -13,6 +13,9 @@ All tracked samples in [`briefings/`](briefings/) (newest first). Session charts
 
 | Language | Date | Session | File |
 |----------|------|---------|------|
+| Italian | 2026-06-25 | `close` | [watchlist_2026-06-25_close.md](briefings/watchlist_2026-06-25_close.md) |
+| Italian | 2026-06-25 | `midday` | [watchlist_2026-06-25_midday.md](briefings/watchlist_2026-06-25_midday.md) |
+| Italian | 2026-06-25 | `pre_open` | [watchlist_2026-06-25_pre_open.md](briefings/watchlist_2026-06-25_pre_open.md) |
 | Italian | 2026-06-24 | `close` | [watchlist_2026-06-24_close.md](briefings/watchlist_2026-06-24_close.md) |
 | Italian | 2026-06-24 | `midday` | [watchlist_2026-06-24_midday.md](briefings/watchlist_2026-06-24_midday.md) |
 | Italian | 2026-06-24 | `pre_open` | [watchlist_2026-06-24_pre_open.md](briefings/watchlist_2026-06-24_pre_open.md) |

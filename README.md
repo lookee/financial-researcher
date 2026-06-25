@@ -22,6 +22,9 @@ Static samples live in [`examples/briefings/`](examples/briefings/) (tracked in 
 
 | Body | Date | Session | Briefing |
 |------|------|---------|----------|
+| Italian | 2026-06-25 | `close` | [watchlist_2026-06-25_close.md](examples/briefings/watchlist_2026-06-25_close.md) |
+| Italian | 2026-06-25 | `midday` | [watchlist_2026-06-25_midday.md](examples/briefings/watchlist_2026-06-25_midday.md) |
+| Italian | 2026-06-25 | `pre_open` | [watchlist_2026-06-25_pre_open.md](examples/briefings/watchlist_2026-06-25_pre_open.md) |
 | Italian | 2026-06-24 | `close` | [watchlist_2026-06-24_close.md](examples/briefings/watchlist_2026-06-24_close.md) |
 | Italian | 2026-06-24 | `midday` | [watchlist_2026-06-24_midday.md](examples/briefings/watchlist_2026-06-24_midday.md) |
 | Italian | 2026-06-24 | `pre_open` | [watchlist_2026-06-24_pre_open.md](examples/briefings/watchlist_2026-06-24_pre_open.md) |
